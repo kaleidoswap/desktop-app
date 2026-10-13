@@ -2,7 +2,10 @@
 
 import {
   Brain,
+  ArrowDown,
+  ArrowUp,
   ChevronRight,
+  FlaskConical,
   Clock,
   Coins,
   Cpu,
@@ -10,20 +13,19 @@ import {
   History,
   Loader2,
   Plus,
-  Send,
   ShieldAlert,
   Sparkles,
   Square,
   Trash2,
   Zap,
 } from 'lucide-react'
-import React, { useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import { Link } from 'react-router-dom'
 
-import { SETTINGS_PATH } from '../../app/router/paths'
+import { SETTINGS_PATH, WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppSelector } from '../../app/store/hooks'
 
 import { BrainLauncher } from './brain-launcher'
@@ -127,7 +129,7 @@ const StatsFooter: React.FC<{ stats: ChatMsgStats }> = ({ stats }) => {
     !!device
   if (!hasAny) return null
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 border-t border-divider/10 pt-1.5 text-[0.65rem] text-content-tertiary">
+    <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 border-t border-divider/10 pt-1.5 text-xs text-content-tertiary">
       {typeof tokensPerSecond === 'number' && tokensPerSecond > 0 && (
         <span className="inline-flex items-center gap-1">
           <Gauge className="h-3 w-3" />
@@ -187,11 +189,17 @@ const ThinkingDisclosure: React.FC<{
   // collapse once the answer appears. `pinnedOpen` lets a manual toggle win.
   const [pinnedOpen, setPinnedOpen] = useState<boolean | null>(null)
   const open = pinnedOpen ?? !hasContent
+  const bodyRef = useRef<HTMLDivElement>(null)
+  // Keep the newest reasoning in view while it streams.
+  useEffect(() => {
+    if (open && reasoning && bodyRef.current)
+      bodyRef.current.scrollTop = bodyRef.current.scrollHeight
+  }, [open, reasoning, text])
   return (
     <div className="mb-2 overflow-hidden rounded-lg border border-primary/20 bg-primary/5">
       <button
         aria-expanded={open}
-        className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+        className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-xs font-medium text-primary transition-colors hover:bg-primary/10"
         onClick={() => setPinnedOpen(!open)}
         type="button"
       >
@@ -200,12 +208,15 @@ const ThinkingDisclosure: React.FC<{
         />
         <Sparkles className={`h-3 w-3 ${reasoning ? 'animate-pulse' : ''}`} />
         <span>{reasoning ? 'Thinking…' : 'Thought process'}</span>
-        <span className="ml-auto text-[0.65rem] font-normal text-content-tertiary">
+        <span className="ml-auto text-xs font-normal text-content-tertiary">
           {open ? 'Hide' : 'Show'}
         </span>
       </button>
       {open && (
-        <div className="max-h-56 overflow-y-auto whitespace-pre-wrap break-words border-t border-primary/15 bg-surface-base/60 px-3 py-2.5 font-mono text-[0.72rem] leading-relaxed text-content-tertiary">
+        <div
+          className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words border-t border-primary/15 bg-surface-base/60 px-3 py-2 font-mono text-xs leading-relaxed text-content-tertiary"
+          ref={bodyRef}
+        >
           {text}
         </div>
       )}
@@ -290,16 +301,42 @@ export const Component: React.FC = () => {
   const tps = mind.status?.tokensPerSecond
 
   // Persisted across Mind sub-tabs (owned by the layout).
-  const { messages, setMessages, input, setInput } = useMindChat()
+  const {
+    messages,
+    setMessages,
+    input,
+    setInput,
+    sending,
+    setSending,
+    activeChatRef,
+    stoppedRef,
+  } = useMindChat()
+  const hasNode = !!useAppSelector((state) =>
+    state.nodeSettings.data.node_url?.trim()
+  )
   const hasMaker = !!useAppSelector((state) =>
     state.nodeSettings.data.default_maker_url?.trim()
   )
-  const [sending, setSending] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   // chatId of the in-flight turn, so the stop button can cancel it.
-  const activeChatRef = useRef<string | null>(null)
-  const stoppedRef = useRef(false)
+
+  const [clearError, setClearError] = useState<string | null>(null)
+  const clearChat = async () => {
+    setSending(true)
+    setClearError(null)
+    try {
+      await mind.clearChat()
+      setMessages([])
+      setInput('')
+      setShowHistory(false)
+    } catch {
+      setClearError('Could not clear the conversation. Please try again.')
+    } finally {
+      setSending(false)
+    }
+  }
 
   const stop = () => {
     const id = activeChatRef.current
@@ -308,11 +345,48 @@ export const Component: React.FC = () => {
     void mind.cancelChat(id)
   }
 
-  const scrollToEnd = () =>
-    setTimeout(
-      () => listRef.current?.scrollTo(0, listRef.current.scrollHeight),
-      50
-    )
+  // Grow the composer with its content (up to its max height).
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [input])
+
+  // Stick to the bottom only while the reader is already there, so scrolling
+  // up to re-read isn't yanked back by every streamed token.
+  const stickRef = useRef(true)
+  const rafRef = useRef<number | null>(null)
+  const [showJump, setShowJump] = useState(false)
+
+  const onListScroll = () => {
+    const el = listRef.current
+    if (!el) return
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+    stickRef.current = atBottom
+    setShowJump(!atBottom)
+  }
+
+  const scrollToEnd = useCallback((force = false) => {
+    if (force) stickRef.current = true
+    if (!stickRef.current || rafRef.current !== null) return
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null
+      const el = listRef.current
+      if (el) el.scrollTop = el.scrollHeight
+    })
+  }, [])
+
+  useEffect(() => {
+    scrollToEnd()
+  }, [messages, scrollToEnd])
+
+  useEffect(
+    () => () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    },
+    []
+  )
 
   // Before chat works the brain must be running. While it's offline (no model
   // downloaded yet, or just not started), guide the user through that setup
@@ -321,7 +395,7 @@ export const Component: React.FC = () => {
 
   const send = async (override?: string) => {
     const prompt = (override ?? input).trim()
-    if (!prompt || sending || !providerOn) return
+    if (!prompt || activeChatRef.current || sending || !providerOn) return
     const assistantId = crypto.randomUUID()
     const now = Date.now()
     setInput('')
@@ -340,7 +414,7 @@ export const Component: React.FC = () => {
     setSending(true)
     activeChatRef.current = assistantId
     stoppedRef.current = false
-    scrollToEnd()
+    scrollToEnd(true)
     // Correlate tool calls↔results by (name, occurrence). The sidecar fires the
     // call event fire-and-forget after an async lookup, so a fast result can
     // race ahead of its call — counting per name makes the i-th call and i-th
@@ -470,97 +544,103 @@ export const Component: React.FC = () => {
       setSending(false)
       activeChatRef.current = null
       scrollToEnd()
+      inputRef.current?.focus()
     }
   }
 
   return (
-    <section className="flex min-h-[440px] flex-1 flex-col overflow-hidden rounded-2xl border border-border-default bg-surface-base/50">
-      {/* Header */}
-      <div className="flex items-center gap-2.5 border-b border-divider/15 px-5 py-3.5">
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
-          <Brain className="h-[1.05rem] w-[1.05rem] text-primary" />
+    <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border-default bg-surface-base/50">
+      {/* Header — single slim row: status, then compact icon actions. */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-divider/15 px-3 py-2">
+        <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
+          <Brain className="h-4 w-4 text-primary" />
         </div>
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold leading-tight text-content-primary">
-            Chat
-          </h2>
-          <p className="truncate text-xs leading-tight text-content-tertiary">
-            {providerOn
-              ? 'Ask about balances, channels, swaps…'
-              : 'Start a model to chat'}
-          </p>
-        </div>
-        <div className="ml-auto flex flex-shrink-0 items-center gap-2">
-          {providerOn && (
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.7rem] font-medium ${
-                onGpu
-                  ? 'bg-status-success/15 text-status-success'
-                  : device === 'cpu'
-                    ? 'bg-status-warning/15 text-status-warning'
-                    : 'bg-surface-overlay text-content-tertiary'
-              }`}
-              title={
-                onGpu
-                  ? 'Inference is running on the GPU (Metal)'
-                  : device === 'cpu'
-                    ? 'Running on CPU — GPU/Metal was unavailable. See Brain → Recent activity.'
-                    : 'Detecting inference backend…'
-              }
-            >
-              {onGpu ? (
-                <Zap className="h-3 w-3" />
-              ) : (
-                <Cpu className="h-3 w-3" />
-              )}
-              {deviceLabel}
-              {typeof tps === 'number' && tps > 0
-                ? ` · ${tps.toFixed(0)} tok/s`
-                : ''}
-            </span>
-          )}
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-medium ${
-              providerOn
-                ? 'bg-primary/15 text-primary'
+        <span
+          className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-amber-300"
+          title="KaleidoMind is experimental"
+        >
+          <FlaskConical className="h-2.5 w-2.5" />
+          Beta
+        </span>
+        <span
+          className={`inline-flex min-w-0 items-center gap-1.5 truncate rounded-full px-2 py-0.5 text-xs font-medium ${
+            onGpu
+              ? 'bg-status-success/15 text-status-success'
+              : device === 'cpu'
+                ? 'bg-status-warning/15 text-status-warning'
                 : 'bg-surface-overlay text-content-tertiary'
-            }`}
+          }`}
+          title={
+            onGpu
+              ? 'Online · inference is running on the GPU (Metal)'
+              : device === 'cpu'
+                ? 'Online · running on CPU, GPU/Metal was unavailable. See Brain → Recent activity.'
+                : 'Online · detecting inference backend…'
+          }
+        >
+          <span className="h-1.5 w-1.5 flex-shrink-0 animate-pulse rounded-full bg-current" />
+          {onGpu ? (
+            <Zap className="h-3 w-3 flex-shrink-0" />
+          ) : (
+            <Cpu className="h-3 w-3 flex-shrink-0" />
+          )}
+          {deviceLabel}
+          {typeof tps === 'number' && tps > 0
+            ? ` · ${tps.toFixed(0)} tok/s`
+            : ''}
+        </span>
+        <span
+          className="min-w-0 truncate text-xs text-content-secondary"
+          title={mind.status?.activeModelName ?? undefined}
+        >
+          {mind.status?.activeModelName}
+        </span>
+        <div className="ml-auto flex flex-shrink-0 items-center gap-1.5">
+          <ThinkingToggle disabled={sending} />
+          <button
+            aria-label="New chat"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border-default text-content-secondary hover:bg-surface-overlay disabled:opacity-40 disabled:hover:bg-transparent"
+            disabled={messages.length === 0 || sending}
+            onClick={() => void clearChat()}
+            title="New chat"
+            type="button"
           >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                providerOn ? 'animate-pulse bg-primary' : 'bg-content-tertiary'
-              }`}
-            />
-            {providerOn ? 'Online' : 'Offline'}
-          </span>
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+          <button
+            aria-label="History"
+            aria-pressed={showHistory}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-md border text-content-secondary hover:bg-surface-overlay ${
+              showHistory
+                ? 'border-primary/40 bg-primary/10 text-primary'
+                : 'border-border-default'
+            }`}
+            onClick={() => setShowHistory((value) => !value)}
+            title="History"
+            type="button"
+          >
+            <History className="h-3.5 w-3.5" />
+          </button>
         </div>
-        <ThinkingToggle disabled={sending} />
-        <button
-          className="inline-flex items-center gap-1.5 rounded-md border border-border-default px-2.5 py-1.5 text-xs text-content-secondary hover:bg-surface-overlay disabled:opacity-40 disabled:hover:bg-transparent"
-          disabled={messages.length === 0 || sending}
-          onClick={() => {
-            setMessages([])
-            setInput('')
-            setShowHistory(false)
-          }}
-          title="Start a new chat"
-          type="button"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          New chat
-        </button>
-        <button
-          className="inline-flex items-center gap-1.5 rounded-md border border-border-default px-2.5 py-1.5 text-xs text-content-secondary hover:bg-surface-overlay"
-          onClick={() => setShowHistory((value) => !value)}
-          type="button"
-        >
-          <History className="h-3.5 w-3.5" />
-          History
-        </button>
       </div>
 
-      {!hasMaker && (
-        <div className="border-b border-divider/15 bg-status-warning/10 px-5 py-2 text-xs text-content-secondary">
+      {clearError && (
+        <p className="px-4 py-2 text-sm text-red-400" role="alert">
+          {clearError}
+        </p>
+      )}
+
+      {!hasNode && (
+        <div className="border-b border-divider/15 bg-surface-overlay px-4 py-1.5 text-xs text-content-secondary">
+          Chat is local. Connect a node to check balances, manage channels or
+          swap.{' '}
+          <Link className="text-primary underline" to={WALLET_SETUP_PATH}>
+            Connect a node
+          </Link>
+        </div>
+      )}
+      {hasNode && !hasMaker && (
+        <div className="border-b border-divider/15 bg-status-warning/10 px-4 py-1.5 text-xs text-content-secondary">
           No maker configured for this account, so swap and channel tools are
           unavailable.{' '}
           <Link className="text-primary underline" to={SETTINGS_PATH}>
@@ -571,7 +651,7 @@ export const Component: React.FC = () => {
       )}
 
       {showHistory && (
-        <div className="border-b border-divider/15 bg-surface-overlay/40 px-5 py-3">
+        <div className="border-b border-divider/15 bg-surface-overlay/40 px-4 py-2">
           <div className="mb-2 flex items-center">
             <p className="text-xs font-semibold text-content-primary">
               Saved conversation · {messages.length} messages
@@ -579,17 +659,16 @@ export const Component: React.FC = () => {
             <div className="ml-auto flex gap-2">
               <button
                 className="inline-flex items-center gap-1 text-xs text-content-tertiary hover:text-content-primary"
-                onClick={() => {
-                  setMessages([])
-                  setShowHistory(false)
-                }}
+                disabled={sending}
+                onClick={() => void clearChat()}
                 type="button"
               >
                 <Plus className="h-3.5 w-3.5" /> New chat
               </button>
               <button
                 className="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-300"
-                onClick={() => setMessages([])}
+                disabled={sending}
+                onClick={() => void clearChat()}
                 type="button"
               >
                 <Trash2 className="h-3.5 w-3.5" /> Clear
@@ -614,7 +693,7 @@ export const Component: React.FC = () => {
                     {message.text || message.thinking || 'Thinking…'}
                   </span>
                   {message.createdAt && (
-                    <span className="ml-auto shrink-0 text-[0.65rem] text-content-tertiary">
+                    <span className="ml-auto shrink-0 text-xs text-content-tertiary">
                       {new Date(message.createdAt).toLocaleString()}
                     </span>
                   )}
@@ -626,78 +705,105 @@ export const Component: React.FC = () => {
       )}
 
       {/* Messages */}
-      <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4" ref={listRef}>
-        {messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center px-4 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
-              <Brain className="h-7 w-7 text-primary" />
-            </div>
-            <p className="text-base font-semibold text-content-primary">
-              Your sovereign financial agent
-            </p>
-            <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-content-tertiary">
-              I run locally and help with your wallet, node and portfolio. Pick
-              a starting point, or just ask.
-            </p>
-            <WelcomeActions
-              disabled={!providerOn || sending}
-              onPick={(p) => void send(p)}
-              providerOn={providerOn}
-            />
-          </div>
-        ) : (
-          messages.map((m, i) =>
-            m.role === 'user' ? (
-              <div className="flex justify-end" key={m.id ?? i}>
-                <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-3.5 py-2.5 text-sm text-white shadow-sm">
-                  {m.text}
+      <div className="relative min-h-0 flex-1">
+        <div
+          className="h-full overflow-y-auto px-4 py-3"
+          onScroll={onListScroll}
+          ref={listRef}
+        >
+          <div className="mx-auto w-full max-w-3xl space-y-3">
+            {messages.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
+                  <Brain className="h-7 w-7 text-primary" />
                 </div>
+                <p className="text-base font-semibold text-content-primary">
+                  {hasNode
+                    ? 'Your sovereign financial agent'
+                    : 'Your local AI assistant'}
+                </p>
+                <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-content-tertiary">
+                  {hasNode
+                    ? 'I run locally and help with your wallet, node and portfolio. Pick a starting point, or just ask.'
+                    : 'Ask a question, explore an idea or learn about Lightning. Your conversation runs on this desktop.'}
+                </p>
+                <WelcomeActions
+                  disabled={!providerOn || sending}
+                  nodeConnected={hasNode}
+                  onPick={(p) => void send(p)}
+                  providerOn={providerOn}
+                />
               </div>
             ) : (
-              <div className="flex items-start gap-2.5" key={m.id ?? i}>
-                <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
-                  <Brain className="h-4 w-4 text-primary" />
-                </div>
-                <div className="max-w-[88%] break-words rounded-2xl rounded-tl-md border border-divider/10 bg-surface-overlay px-3.5 py-2.5 text-sm leading-relaxed text-content-primary">
-                  {m.thinking && (
-                    <ThinkingDisclosure
-                      hasContent={!!m.text}
-                      live={m.streaming}
-                      text={m.thinking}
-                    />
-                  )}
-                  {m.toolEvents?.map((ev) => (
-                    <ToolEventView event={ev} key={ev.id} />
-                  ))}
-                  {m.text ? (
-                    <MarkdownText text={m.text} />
-                  ) : m.streaming && !m.thinking && !m.toolEvents?.length ? (
-                    <span className="inline-flex items-center gap-2 text-content-tertiary">
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                      Thinking…
-                    </span>
-                  ) : null}
-                  {!m.streaming &&
-                    m.followups &&
-                    m.followups.length > 0 &&
-                    i === messages.length - 1 && (
-                      <FollowupActions
-                        actions={m.followups}
-                        disabled={!providerOn || sending}
-                        onPick={(p) => void send(p)}
-                      />
-                    )}
-                  {!m.streaming && m.stats && <StatsFooter stats={m.stats} />}
-                </div>
-              </div>
-            )
-          )
+              messages.map((m, i) =>
+                m.role === 'user' ? (
+                  <div className="flex justify-end" key={m.id ?? i}>
+                    <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-3.5 py-2.5 text-sm text-white shadow-sm">
+                      {m.text}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2.5" key={m.id ?? i}>
+                    <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
+                      <Brain className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="max-w-[88%] break-words rounded-2xl rounded-tl-md border border-divider/10 bg-surface-overlay px-3.5 py-2.5 text-sm leading-relaxed text-content-primary">
+                      {m.thinking && (
+                        <ThinkingDisclosure
+                          hasContent={!!m.text}
+                          live={m.streaming}
+                          text={m.thinking}
+                        />
+                      )}
+                      {m.toolEvents?.map((ev) => (
+                        <ToolEventView event={ev} key={ev.id} />
+                      ))}
+                      {m.text ? (
+                        <MarkdownText text={m.text} />
+                      ) : m.streaming &&
+                        !m.thinking &&
+                        !m.toolEvents?.length ? (
+                        <span className="inline-flex items-center gap-2 text-content-tertiary">
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                          Thinking…
+                        </span>
+                      ) : null}
+                      {hasNode &&
+                        !m.streaming &&
+                        m.followups &&
+                        m.followups.length > 0 &&
+                        i === messages.length - 1 && (
+                          <FollowupActions
+                            actions={m.followups}
+                            disabled={!providerOn || sending}
+                            onPick={(p) => void send(p)}
+                          />
+                        )}
+                      {!m.streaming && m.stats && (
+                        <StatsFooter stats={m.stats} />
+                      )}
+                    </div>
+                  </div>
+                )
+              )
+            )}
+          </div>
+        </div>
+        {showJump && (
+          <button
+            aria-label="Jump to latest"
+            className="absolute bottom-3 right-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border-default bg-surface-overlay text-content-secondary shadow-lg hover:text-content-primary"
+            onClick={() => scrollToEnd(true)}
+            type="button"
+          >
+            <ArrowDown className="h-4 w-4" />
+          </button>
         )}
       </div>
 
       {/* Spend confirmation */}
       {mind.pendingConfirm && (
-        <div className="mx-4 mb-3 rounded-xl border border-amber-600/60 bg-amber-950/30 p-4">
+        <div className="mx-3 mb-2 rounded-xl border border-amber-600/60 bg-amber-950/30 p-4">
           <div className="mb-2 flex items-center gap-2">
             <ShieldAlert className="h-4 w-4 text-amber-400" />
             <span className="text-sm font-semibold text-amber-200">
@@ -761,56 +867,67 @@ export const Component: React.FC = () => {
           </div>
         </div>
       )}
-      <div className="border-t border-divider/15 px-4 py-3">
-        {/* While the model is working, make it unmistakable that input is paused. */}
-        {sending && (
-          <div className="mb-2 flex items-center gap-2 px-1 text-xs font-medium text-primary">
-            <span className="flex items-end gap-0.5">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
-            </span>
-            KaleidoMind is responding… tap ■ to stop
-          </div>
-        )}
-        <div
-          className={`flex items-center gap-2 rounded-xl border bg-surface-overlay/40 py-1.5 pl-3 pr-1.5 transition-colors ${
-            sending
-              ? 'border-primary/40 opacity-70'
-              : 'border-border-default focus-within:border-primary/50'
-          }`}
-        >
-          <input
-            className="flex-1 bg-transparent py-1.5 text-sm text-content-primary placeholder-content-tertiary focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={!providerOn || sending}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && send()}
-            placeholder={
+      <div className="px-3 pb-3 pt-1">
+        <div className="mx-auto w-full max-w-3xl">
+          <div
+            className={`rounded-2xl border bg-surface-overlay/50 shadow-sm transition-colors ${
               sending
-                ? 'Waiting for KaleidoMind to finish…'
-                : providerOn
-                  ? 'Message KaleidoMind…'
-                  : 'Start a model first'
-            }
-            value={input}
-          />
-          <button
-            aria-label={sending ? 'Stop KaleidoMind' : 'Send message'}
-            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-all active:scale-95 disabled:opacity-40 ${
-              sending
-                ? 'bg-red text-white hover:bg-red/90'
-                : 'bg-primary text-surface-base hover:bg-primary-emphasis'
+                ? 'border-primary/40'
+                : 'border-border-default focus-within:border-primary/50'
             }`}
-            disabled={!providerOn || (!sending && !input.trim())}
-            onClick={() => (sending ? stop() : send())}
-            type="button"
           >
-            {sending ? (
-              <Square className="h-3.5 w-3.5 fill-current" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </button>
+            <textarea
+              aria-label="Message KaleidoMind"
+              className="block max-h-40 w-full resize-none bg-transparent px-4 pb-1 pt-3 text-sm leading-relaxed text-content-primary placeholder-content-tertiary focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!providerOn}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter sends, Shift+Enter adds a line; ignore while composing (IME).
+                if (
+                  e.key === 'Enter' &&
+                  !e.shiftKey &&
+                  !e.nativeEvent.isComposing
+                ) {
+                  e.preventDefault()
+                  if (!sending) void send()
+                }
+              }}
+              placeholder={
+                providerOn
+                  ? sending
+                    ? 'Reply to KaleidoMind…'
+                    : 'Message KaleidoMind…'
+                  : 'Start a model first'
+              }
+              ref={inputRef}
+              rows={1}
+              value={input}
+            />
+            <div className="flex items-center gap-1 px-2 pb-2">
+              <span className="ml-1 hidden truncate text-xs text-content-tertiary sm:inline">
+                {sending
+                  ? 'Responding… press ■ to stop'
+                  : 'Enter to send · Shift+Enter for a new line'}
+              </span>
+              <button
+                aria-label={sending ? 'Stop KaleidoMind' : 'Send message'}
+                className={`ml-auto flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-all active:scale-95 disabled:opacity-40 ${
+                  sending
+                    ? 'bg-red text-white hover:bg-red/90'
+                    : 'bg-primary text-surface-base hover:bg-primary-emphasis'
+                }`}
+                disabled={!providerOn || (!sending && !input.trim())}
+                onClick={() => (sending ? stop() : void send())}
+                type="button"
+              >
+                {sending ? (
+                  <Square className="h-3.5 w-3.5 fill-current" />
+                ) : (
+                  <ArrowUp className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </section>

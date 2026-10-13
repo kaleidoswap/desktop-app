@@ -55,6 +55,25 @@ const DEFAULT_ACTIONS: SuggestedAction[] = [
   },
 ]
 
+const CHAT_ACTIONS: SuggestedAction[] = [
+  {
+    icon: 'node',
+    id: 'learn',
+    prompt:
+      'Explain Lightning payment channels in two sentences. Do not use tools.',
+    subtitle: 'A short explanation of payment channels',
+    title: 'Understand Lightning',
+  },
+  {
+    icon: 'chat',
+    id: 'ideas',
+    prompt:
+      'Help me plan my day. Ask me for my three priorities. Do not use tools.',
+    subtitle: 'Turn a few priorities into a simple plan',
+    title: 'Plan my day',
+  },
+]
+
 /**
  * Compact next-step buttons rendered UNDER an assistant reply — the agent's
  * proposed follow-ups (provided per-turn by the sidecar). One tap continues.
@@ -88,15 +107,16 @@ export const FollowupActions: React.FC<{
 
 export const WelcomeActions: React.FC<{
   providerOn: boolean
+  nodeConnected?: boolean
   disabled: boolean
   onPick: (prompt: string) => void
-}> = ({ disabled, onPick, providerOn }) => {
+}> = ({ disabled, onPick, providerOn, nodeConnected = true }) => {
   const [actions, setActions] = useState<SuggestedAction[]>(DEFAULT_ACTIONS)
 
   // Ask the agent for its own starters once a model is online; fall back to the
   // defaults on any error so the first screen is never empty.
   useEffect(() => {
-    if (!providerOn) return
+    if (!providerOn || !nodeConnected) return
     let alive = true
     mindClient
       .getSuggestedActions()
@@ -107,11 +127,11 @@ export const WelcomeActions: React.FC<{
     return () => {
       alive = false
     }
-  }, [providerOn])
+  }, [providerOn, nodeConnected])
 
   return (
     <div className="mt-5 grid w-full max-w-md grid-cols-1 gap-2.5 sm:grid-cols-2">
-      {actions.map((a) => {
+      {(nodeConnected ? actions : CHAT_ACTIONS).map((a) => {
         const Icon = ACTION_ICONS[a.icon] ?? Sparkles
         return (
           <button

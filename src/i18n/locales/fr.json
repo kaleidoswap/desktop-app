@@ -3295,5 +3295,20 @@
       "rln_list_channels": "Lister les canaux",
       "rln_get_address": "Adresse on-chain"
     }
+  },
+  "ux": {
+    "node": "Nœud",
+    "checking": "Vérification…",
+    "channelPending": "Canal en cours d’ouverture. Le solde sera disponible lorsque le nœud indiquera que le canal est prêt.",
+    "channelUnavailable": "Canal indisponible. Vérifiez la connexion au pair et l’état du nœud.",
+    "balanceHelp": "Les soldes incluent les fonds des canaux. Les réserves et limites de paiement peuvent réduire le montant disponible à l’envoi.",
+    "dataUnavailable": "Impossible de charger les données actuelles. Les valeurs affichées peuvent être obsolètes. Vérifiez à nouveau le nœud.",
+    "canSend": "Vous pouvez envoyer",
+    "canReceive": "Vous pouvez recevoir",
+    "lspRecovery": "Vérifiez le réseau du nœud et l’adresse du LSP, puis réessayez. Vous pouvez aussi saisir un autre fournisseur à gauche.",
+    "paymentLimit": "Limite par paiement",
+    "quoteUnavailable": "Cotation indisponible",
+    "lightningAvailable": "Canal Lightning disponible",
+    "checkSwapAvailability": "Vérifiez les paires et les cotations disponibles avant un échange."
   }
 }

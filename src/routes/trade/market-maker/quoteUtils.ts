@@ -154,6 +154,18 @@ export const createQuoteRequestHandler = (
       }
     }
 
+    // Create a unique key for this quote request (using tickers for consistency with previous logic)
+    const quoteKey = `${fromAssetTicker}/${toAssetTicker}/${fromAmount}/from`
+
+    // Skip if this is the exact same quote we just requested
+    if (quoteKey === lastRequestedQuoteKey) {
+      const timeSinceLastRequest = Date.now() - lastQuoteRequestTime
+      if (timeSinceLastRequest < QUOTE_REQUEST_RATE_LIMIT_MS) {
+        // Rate limiting - no need to log this frequently
+        return
+      }
+    }
+
     // Only set loading states if we don't already have a valid quote
     // This prevents blocking users who have valid quotes while background updates happen
     const currentlyHasValidQuote = hasValidQuote ? hasValidQuote() : false
@@ -167,30 +179,20 @@ export const createQuoteRequestHandler = (
       }
     }
 
-    // Create a unique key for this quote request (using tickers for consistency with previous logic)
-    const quoteKey = `${fromAssetTicker}/${toAssetTicker}/${fromAmount}`
-
-    // Skip if this is the exact same quote we just requested
-    if (quoteKey === lastRequestedQuoteKey) {
-      const timeSinceLastRequest = Date.now() - lastQuoteRequestTime
-      if (timeSinceLastRequest < QUOTE_REQUEST_RATE_LIMIT_MS) {
-        // Rate limiting - no need to log this frequently
-        return
-      }
-    }
-
     // Send the request immediately, passing tickers, assets, and trading pairs
     // Handle async request without blocking
-    sendQuoteRequest(
+    const sent = await sendQuoteRequest(
       fromAssetTicker,
       toAssetTicker,
       fromAmount,
       assets,
       tradingPairs,
       t
-    ).catch((error) => {
-      logger.error('Error in async quote request:', error)
-    })
+    )
+    if (!sent) {
+      setIsQuoteLoading?.(false)
+      setIsToAmountLoading?.(false)
+    }
   }
 }
 
@@ -255,8 +257,8 @@ const sendQuoteRequest = async (
       // Check if WebSocket is not ready for communication
       if (!webSocketService.isConnectionReadyForCommunication()) {
         logger.debug('WebSocket connection not ready for quote requests')
-        // Don't show error toast for connection readiness issues, as they're temporary
-        return
+        // The form must clear its loading state even when disconnected.
+        return false
       }
 
       // Show error toast only if it's been enough time since the last similar error toast
@@ -271,6 +273,7 @@ const sendQuoteRequest = async (
         lastQuoteErrorToastTime = Date.now()
       }
     }
+    return success
   } catch (error) {
     logger.error('Error in sendQuoteRequest:', error)
     if (Date.now() - lastQuoteErrorToastTime > ERROR_TOAST_COOLDOWN_MS) {
@@ -283,6 +286,7 @@ const sendQuoteRequest = async (
       })
       lastQuoteErrorToastTime = Date.now()
     }
+    return false
   }
 }
 
@@ -345,6 +349,15 @@ export const createReverseQuoteRequestHandler = (
       return
     }
 
+    const quoteKey = `${fromAssetTicker}/${toAssetTicker}/${toAmount}/to`
+
+    if (quoteKey === lastRequestedQuoteKey) {
+      const timeSinceLastRequest = Date.now() - lastQuoteRequestTime
+      if (timeSinceLastRequest < QUOTE_REQUEST_RATE_LIMIT_MS) {
+        return
+      }
+    }
+
     const currentlyHasValidQuote = hasValidQuote ? hasValidQuote() : false
 
     if (!currentlyHasValidQuote) {
@@ -356,19 +369,10 @@ export const createReverseQuoteRequestHandler = (
       }
     }
 
-    const quoteKey = `${fromAssetTicker}/${toAssetTicker}/to:${toAmount}`
-
-    if (quoteKey === lastRequestedQuoteKey) {
-      const timeSinceLastRequest = Date.now() - lastQuoteRequestTime
-      if (timeSinceLastRequest < QUOTE_REQUEST_RATE_LIMIT_MS) {
-        return
-      }
-    }
-
     logger.debug(
       `[ReverseQuote] Sending: ${fromAssetTicker}->${toAssetTicker}, to_amount=${toAmount}`
     )
-    sendQuoteRequest(
+    const sent = await sendQuoteRequest(
       fromAssetTicker,
       toAssetTicker,
       toAmount,
@@ -376,9 +380,11 @@ export const createReverseQuoteRequestHandler = (
       tradingPairs,
       t,
       'to'
-    ).catch((error) => {
-      logger.error('[ReverseQuote] Error in request:', error)
-    })
+    )
+    if (!sent) {
+      setIsQuoteLoading?.(false)
+      setIsFromAmountLoading?.(false)
+    }
   }
 }
 

@@ -17,10 +17,7 @@ export const RootRoute = () => {
   useEffect(() => {
     const currentPath = location.pathname
 
-    if (
-      currentPath !== TRADE_MARKET_MAKER_PATH &&
-      webSocketService.isConnected()
-    ) {
+    if (currentPath !== TRADE_MARKET_MAKER_PATH) {
       logger.info(
         `Route changed from market maker to ${currentPath}, cleaning up WebSocket connection`
       )
@@ -31,12 +28,10 @@ export const RootRoute = () => {
   // Cleanup WebSocket on component unmount (app closing)
   useEffect(() => {
     return () => {
-      if (webSocketService.isConnected()) {
-        logger.info(
-          'Root component unmounting - cleaning up WebSocket connections'
-        )
-        webSocketService.close()
-      }
+      logger.info(
+        'Root component unmounting - cleaning up WebSocket connections'
+      )
+      webSocketService.close()
     }
   }, [])
 

@@ -31,3 +31,22 @@ describe('getMakerClient', () => {
     expect(client.config.baseUrl).toBe('https://maker.example.com')
   })
 })
+
+// Health checks have their own timeout; a slow probe must not shorten a payment.
+describe('node health client', () => {
+  it('uses a short timeout and preserves the wallet client timeout', async () => {
+    const { KaleidoClient } = await import('kaleido-sdk')
+    const { getNodeHealthApiWrapper, getKaleidoClient } =
+      await import('../client')
+    const state = stateWith('https://health-test.example.com')
+    const wallet = await getKaleidoClient(state)
+    getNodeHealthApiWrapper(state)
+    expect(KaleidoClient.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ nodeUrl: 'http://127.0.0.1:3001', timeout: 5 })
+    )
+    expect(await getKaleidoClient(state)).toBe(wallet)
+    expect(
+      (wallet as unknown as { config: { timeout: number } }).config.timeout
+    ).toBe(60)
+  })
+})

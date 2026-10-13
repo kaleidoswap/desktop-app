@@ -3295,5 +3295,20 @@
       "rln_list_channels": "Listar canales",
       "rln_get_address": "Dirección on-chain"
     }
+  },
+  "ux": {
+    "node": "Nodo",
+    "checking": "Comprobando…",
+    "channelPending": "Canal en apertura. El saldo no estará disponible hasta que el nodo lo marque como listo.",
+    "channelUnavailable": "Canal no disponible. Comprueba la conexión con el par y el estado del nodo.",
+    "balanceHelp": "Los saldos incluyen fondos de canales. Las reservas y los límites de pago pueden reducir el importe que puedes enviar.",
+    "dataUnavailable": "No se pudieron cargar los datos actuales. Los valores mostrados pueden estar desactualizados. Vuelve a comprobar el nodo.",
+    "canSend": "Puedes enviar",
+    "canReceive": "Puedes recibir",
+    "lspRecovery": "Comprueba la red del nodo y la dirección del LSP e inténtalo de nuevo. También puedes indicar otro proveedor a la izquierda.",
+    "paymentLimit": "Límite por pago",
+    "quoteUnavailable": "Cotización no disponible",
+    "lightningAvailable": "Canal Lightning disponible",
+    "checkSwapAvailability": "Consulta los pares y las cotizaciones disponibles antes de intercambiar."
   }
 }

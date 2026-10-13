@@ -5,7 +5,7 @@
 // subscription and provider status are shared across Brain/Models/Skills/Chat
 // instead of being re-created per page.
 
-import type { Dispatch, SetStateAction } from 'react'
+import type { Dispatch, MutableRefObject, SetStateAction } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
 import type { SuggestedAction } from '../../api/mind'
@@ -55,6 +55,10 @@ export interface ChatMsg {
 // Chat state is owned by the layout so the conversation survives navigating
 // between Mind sub-tabs (Brain / Models / Skills / Chat).
 export interface MindChatState {
+  sending: boolean
+  setSending: Dispatch<SetStateAction<boolean>>
+  activeChatRef: MutableRefObject<string | null>
+  stoppedRef: MutableRefObject<boolean>
   messages: ChatMsg[]
   setMessages: Dispatch<SetStateAction<ChatMsg[]>>
   input: string

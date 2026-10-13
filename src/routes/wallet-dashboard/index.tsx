@@ -74,7 +74,7 @@ const ChannelAssetBadge: React.FC<{ ticker: string }> = ({ ticker }) => {
   const isUsdt = ticker === 'USDT'
   return (
     <span
-      className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${
+      className={`flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${
         isUsdt
           ? 'bg-asset-usdt/10 border border-asset-usdt/20'
           : 'text-secondary bg-secondary/10 border border-secondary/20'
@@ -260,6 +260,17 @@ export const Component = () => {
     (btcBalanceResponse.isLoading && !btcBalanceResponse.data) ||
     (listChannelsResponse.isLoading && !listChannelsResponse.data)
 
+  const hasUsableChannel = channels.some(
+    (channel) => channel.ready && channel.is_usable
+  )
+
+  const balanceUnavailable =
+    !btcBalanceResponse.data || !listChannelsResponse.data
+  const dataUnavailable =
+    btcBalanceResponse.isError ||
+    listChannelsResponse.isError ||
+    assetsResponse.isError
+
   const isAssetsLoading =
     assetsResponse.isUninitialized ||
     (assetsResponse.isLoading && !assetsResponse.data)
@@ -289,7 +300,7 @@ export const Component = () => {
       return (
         <div className="flex flex-col">
           <span className="font-bold">{formatFn(balance)}</span>
-          <span className="text-[10px] text-content-tertiary font-medium">
+          <span className="text-xs text-content-tertiary font-medium">
             +{formatFn(incoming)} incoming
           </span>
         </div>
@@ -300,6 +311,73 @@ export const Component = () => {
 
   return (
     <div className="w-full h-full flex flex-col animate-in fade-in duration-500">
+      {dataUnavailable && (
+        <div
+          className="mb-3 p-3 rounded-lg border border-amber-500/40 text-sm text-amber-200"
+          role="alert"
+        >
+          {t('ux.dataUnavailable')}{' '}
+          <button className="underline ml-2" onClick={refreshData}>
+            {t('trade.connectionIssues.retryConnection')}
+          </button>
+        </div>
+      )}
+      {!isLoading && !dataUnavailable && !balanceUnavailable && (
+        <section className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-default bg-surface-overlay p-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold text-content-primary">
+              {t(
+                hasUsableChannel
+                  ? 'ux.lightningAvailable'
+                  : channels.length > 0
+                    ? 'navigation.channels'
+                    : totalBalance > 0
+                      ? 'dashboard.openFirstChannel'
+                      : 'dashboard.noFunds'
+              )}
+            </h2>
+            <p className="mt-1 text-sm text-content-secondary">
+              {t(
+                hasUsableChannel
+                  ? 'ux.checkSwapAvailability'
+                  : channels.length > 0
+                    ? channels.some((channel) => !channel.ready)
+                      ? 'ux.channelPending'
+                      : 'ux.channelUnavailable'
+                    : totalBalance > 0
+                      ? 'channels.noChannelsYet'
+                      : 'dashboard.noFundsMessage'
+              )}
+            </p>
+          </div>
+          <button
+            className="shrink-0 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            onClick={() => {
+              if (hasUsableChannel) navigate(TRADE_PATH)
+              else if (channels.length > 0) navigate(CHANNELS_PATH)
+              else if (totalBalance > 0) navigate(ORDER_CHANNEL_PATH)
+              else
+                dispatch(
+                  uiSliceActions.setModal({
+                    assetId: undefined,
+                    type: 'deposit',
+                  })
+                )
+            }}
+            type="button"
+          >
+            {t(
+              hasUsableChannel
+                ? 'dashboard.swap'
+                : channels.length > 0
+                  ? 'channels.manageChannels'
+                  : totalBalance > 0
+                    ? 'channels.buyAChannel'
+                    : 'dashboard.deposit'
+            )}
+          </button>
+        </section>
+      )}
       {/* Modals */}
       {showIssueAssetModal && (
         <IssueAssetModal
@@ -338,33 +416,6 @@ export const Component = () => {
         />
       )}
 
-      {/* KaleidoMind not active in this mode — offer a way to activate it */}
-      {!mindActive && (
-        <button
-          className="group mb-5 flex w-full items-center gap-4 rounded-xl border border-purple/30 bg-gradient-to-r from-purple/10 to-transparent px-5 py-4 text-left transition-all duration-300 hover:border-purple/50 hover:from-purple/15"
-          onClick={activateMind}
-          type="button"
-        >
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-purple/15 text-purple">
-            <Brain className="h-6 w-6" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-bold text-white">
-              {t('dashboard.activateMindTitle', {
-                defaultValue: 'Add KaleidoMind',
-              })}
-            </div>
-            <div className="text-xs text-content-secondary">
-              {t('dashboard.activateMindDesc', {
-                defaultValue:
-                  'Run a local AI brain alongside your node — chat, models and skills.',
-              })}
-            </div>
-          </div>
-          <ArrowRight className="h-5 w-5 flex-shrink-0 text-purple transition-transform duration-300 group-hover:translate-x-1" />
-        </button>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
         {/* ── LEFT COLUMN: Balance + Assets ── */}
         <div className="lg:col-span-7 flex flex-col gap-5 min-h-0">
@@ -401,13 +452,15 @@ export const Component = () => {
             <div className="relative z-10 mb-5">
               <div className="mb-1.5">
                 <p className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
-                  {t('dashboard.totalBalance')}
+                  {t('dashboard.totalBalance')} · BTC
                 </p>
               </div>
               <div className="flex items-baseline gap-2.5 mb-1.5">
-                <span className="text-4xl font-bold text-content-primary leading-none">
+                <span className="text-3xl font-bold text-content-primary leading-none">
                   {isLoading ? (
                     <LoadingPlaceholder width="w-48" />
+                  ) : balanceUnavailable ? (
+                    '—'
                   ) : (
                     formatBitcoinAmount(totalBalance, bitcoinUnit)
                   )}
@@ -417,11 +470,13 @@ export const Component = () => {
                 </span>
               </div>
               <div className="flex items-center gap-4 text-sm flex-wrap">
-                {!isLoading && formatFiat(totalBalance) && (
-                  <span className="text-content-secondary">
-                    ≈ {formatFiat(totalBalance)}
-                  </span>
-                )}
+                {!isLoading &&
+                  !balanceUnavailable &&
+                  formatFiat(totalBalance) && (
+                    <span className="text-content-secondary">
+                      ≈ {formatFiat(totalBalance)}
+                    </span>
+                  )}
                 {btcPrice !== undefined && (
                   <span className="flex items-center gap-1 text-xs text-content-tertiary">
                     <TrendingUp className="w-3 h-3 text-primary" />
@@ -477,7 +532,7 @@ export const Component = () => {
           {/* Assets Card */}
           <div className="flex-1 min-h-0 flex flex-col bg-surface-overlay rounded-2xl border border-border-default/60 shadow-xl overflow-hidden">
             {/* Card header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border-default/40">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border-default/40">
               <h3 className="text-base font-bold text-content-primary">
                 {t('dashboard.assets')}
               </h3>
@@ -502,7 +557,7 @@ export const Component = () => {
             </div>
 
             {/* Column headers */}
-            <div className="grid grid-cols-4 gap-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 border-b border-border-default/30">
+            <div className="grid grid-cols-4 gap-1 text-xs font-semibold uppercase tracking-wider text-gray-400 border-b border-border-default/30">
               <div className="px-4 py-2.5">{t('dashboard.asset')}</div>
               <div className="px-4 py-2.5">
                 {t('dashboard.offChainBalance')}
@@ -514,7 +569,7 @@ export const Component = () => {
             </div>
 
             {/* Bitcoin row — always first */}
-            <div className="group grid grid-cols-4 gap-2 items-center bg-surface-elevated/40 hover:bg-surface-elevated/70 transition-colors border-b border-border-default/20">
+            <div className="group grid grid-cols-4 gap-1 items-center bg-surface-elevated/40 hover:bg-surface-elevated/70 transition-colors border-b border-border-default/20">
               {/* Asset cell */}
               <div className="py-3 px-4 text-sm truncate flex items-center">
                 <BtcIcon className="h-6 w-6 mr-2 flex-shrink-0" />
@@ -529,7 +584,9 @@ export const Component = () => {
                   <LoadingPlaceholder />
                 ) : (
                   <div className="font-bold">
-                    {formatBitcoinAmount(offChainBalance, bitcoinUnit)}
+                    {balanceUnavailable
+                      ? '—'
+                      : formatBitcoinAmount(offChainBalance, bitcoinUnit)}
                   </div>
                 )}
               </div>
@@ -537,6 +594,8 @@ export const Component = () => {
               <div className="text-sm py-3 px-4">
                 {isLoading ? (
                   <LoadingPlaceholder />
+                ) : balanceUnavailable ? (
+                  '—'
                 ) : (
                   renderBalanceWithIncoming(btcOnChain, btcIncoming, (val) =>
                     formatBitcoinAmount(val, bitcoinUnit)
@@ -586,7 +645,7 @@ export const Component = () => {
                       >
                         {icon}
                       </button>
-                      <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+                      <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-surface-high text-content-primary text-xs rounded-md py-0.5 px-1.5 opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
                         {label}
                       </div>
                     </div>
@@ -601,7 +660,7 @@ export const Component = () => {
                 <div className="space-y-0">
                   {[0, 1, 2].map((i) => (
                     <div
-                      className="grid grid-cols-4 gap-2 items-center border-b border-border-default/20 px-4 py-3"
+                      className="grid grid-cols-4 gap-1 items-center border-b border-border-default/20 px-4 py-3"
                       key={i}
                     >
                       <div className="flex items-center gap-2">
@@ -663,8 +722,8 @@ export const Component = () => {
                   <span className="w-2 h-2 rounded-full bg-status-success animate-pulse" />
                   Online
                   <span className="font-bold text-status-success">
-                    {channels.filter((c: any) => c.ready).length}/
-                    {channels.length}
+                    {channels.filter((c: any) => c.ready && c.is_usable).length}
+                    /{channels.length}
                   </span>
                 </span>
               )}
@@ -674,7 +733,7 @@ export const Component = () => {
             <div className="flex items-center justify-between bg-surface-elevated/60 px-3 py-2 rounded-lg border border-dashed border-border-default mb-4">
               <div className="flex items-center gap-1.5 min-w-0">
                 <Lock className="w-3 h-3 text-content-tertiary flex-shrink-0" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-content-tertiary flex-shrink-0">
+                <span className="text-xs font-semibold uppercase tracking-wider text-content-tertiary flex-shrink-0">
                   Node ID
                 </span>
                 <code className="text-xs font-mono text-primary truncate">
@@ -759,11 +818,11 @@ export const Component = () => {
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
                             {ch.ready ? (
-                              <span className="text-[10px] font-semibold text-status-success border border-status-success/30 px-1.5 py-0.5 rounded uppercase">
+                              <span className="text-xs font-semibold text-status-success border border-status-success/30 px-1.5 py-0.5 rounded uppercase">
                                 {t('channelCard.status.open')}
                               </span>
                             ) : (
-                              <span className="text-[10px] font-semibold text-amber-400 border border-amber-400/30 px-1.5 py-0.5 rounded uppercase">
+                              <span className="text-xs font-semibold text-amber-400 border border-amber-400/30 px-1.5 py-0.5 rounded uppercase">
                                 {t('channelCard.status.pending')}
                               </span>
                             )}
@@ -772,7 +831,7 @@ export const Component = () => {
 
                         {/* BTC liquidity bar — purple, collapsed (no out/in labels) */}
                         <div className="mb-1.5">
-                          <div className="grid grid-cols-3 items-center text-[10px] mb-0.5">
+                          <div className="grid grid-cols-3 items-center text-xs mb-0.5">
                             <span className="flex items-center gap-0.5 text-purple">
                               <ArrowUpRight className="w-2.5 h-2.5" />
                               {formatBitcoinAmount(
@@ -807,7 +866,7 @@ export const Component = () => {
                         {/* Asset liquidity bar (if RGB) — green, collapsed */}
                         {asset && (
                           <div>
-                            <div className="grid grid-cols-3 items-center text-[10px] mb-0.5">
+                            <div className="grid grid-cols-3 items-center text-xs mb-0.5">
                               <span className="flex items-center gap-0.5 text-[#10B981]">
                                 <ArrowUpRight className="w-2.5 h-2.5" />
                                 {formatAssetUnits(
@@ -838,10 +897,10 @@ export const Component = () => {
                         )}
 
                         {/* Close + Details — visible on hover */}
-                        <div className="overflow-hidden max-h-0 group-hover/ch:max-h-10 transition-all duration-200">
+                        <div className="transition-all duration-200">
                           <div className="flex items-center justify-between pt-2 mt-1 border-t border-border-default/30">
                             <button
-                              className="flex items-center gap-1 text-[10px] text-content-tertiary hover:text-red-400 hover:bg-red-500/10 px-1.5 py-0.5 rounded transition-colors"
+                              className="flex items-center gap-1 text-xs text-content-tertiary hover:text-red-400 hover:bg-red-500/10 px-1.5 py-0.5 rounded transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setCloseChannelTarget({
@@ -855,7 +914,7 @@ export const Component = () => {
                               {t('channelCard.buttons.close')}
                             </button>
                             <button
-                              className="flex items-center gap-1 text-[10px] text-white border border-white/30 hover:border-white/50 px-2 py-0.5 rounded-md hover:bg-surface-high/50 transition-colors"
+                              className="flex items-center gap-1 text-xs text-white border border-white/30 hover:border-white/50 px-2 py-0.5 rounded-md hover:bg-surface-high/50 transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setInfoChannelTarget(ch)
@@ -943,7 +1002,7 @@ export const Component = () => {
                   >
                     {icon}
                   </button>
-                  <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/act:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+                  <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-surface-high text-content-primary text-xs rounded-md py-0.5 px-1.5 opacity-0 group-hover/act:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
                     {label}
                   </div>
                 </div>
@@ -952,6 +1011,32 @@ export const Component = () => {
           </div>
         </div>
       </div>
+      {/* KaleidoMind not active in this mode — offer a way to activate it */}
+      {!mindActive && (
+        <button
+          className="group mt-5 flex w-full items-center gap-4 rounded-xl border border-purple/30 bg-gradient-to-r from-purple/10 to-transparent px-5 py-4 text-left transition-all duration-300 hover:border-purple/50 hover:from-purple/15"
+          onClick={activateMind}
+          type="button"
+        >
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-purple/15 text-purple">
+            <Brain className="h-6 w-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-bold text-white">
+              {t('dashboard.activateMindTitle', {
+                defaultValue: 'Add KaleidoMind',
+              })}
+            </div>
+            <div className="text-xs text-content-secondary">
+              {t('dashboard.activateMindDesc', {
+                defaultValue:
+                  'Run a local AI brain alongside your node — chat, models and skills.',
+              })}
+            </div>
+          </div>
+          <ArrowRight className="h-5 w-5 flex-shrink-0 text-purple transition-transform duration-300 group-hover:translate-x-1" />
+        </button>
+      )}
     </div>
   )
 }

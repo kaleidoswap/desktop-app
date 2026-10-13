@@ -534,19 +534,35 @@ fn check_account_exists(name: String) -> Result<bool, String> {
 
 #[tauri::command]
 fn set_current_account(
+    app: AppHandle,
     state: tauri::State<CurrentAccount>,
-    account_name: String,
-) -> Result<db::Account, String> {
-    let accounts = db::get_accounts().map_err(|e| e.to_string())?;
-    let account = accounts
-        .into_iter()
-        .find(|a| a.name == account_name)
-        .ok_or_else(|| "Account not found".to_string())?;
-
-    *state
-        .0
-        .write()
-        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(account.clone());
+    mind: State<Arc<MindProcess>>,
+    account_name: Option<String>,
+) -> Result<Option<db::Account>, String> {
+    let account = if let Some(name) = account_name {
+        Some(
+            db::get_accounts()
+                .map_err(|e| e.to_string())?
+                .into_iter()
+                .find(|a| a.name == name)
+                .ok_or_else(|| "Account not found".to_string())?,
+        )
+    } else {
+        None
+    };
+    mind.stop_with_update(|| {
+        *state
+            .0
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = account.clone();
+    });
+    let _ = app.emit(
+        mind::MIND_EVENT,
+        serde_json::json!({
+            "type": "status", "on": false, "activeModelId": null,
+            "activeModelName": null, "tokensPerSecond": null, "startedAt": null
+        }),
+    );
     Ok(account)
 }
 

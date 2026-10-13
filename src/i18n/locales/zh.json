@@ -3286,5 +3286,20 @@
       "rln_list_channels": "列出通道",
       "rln_get_address": "链上地址"
     }
+  },
+  "ux": {
+    "node": "节点",
+    "checking": "检查中…",
+    "channelPending": "通道正在开启。节点标记为就绪前，此余额暂不可用。",
+    "channelUnavailable": "通道不可用。请检查对等节点连接和节点状态。",
+    "balanceHelp": "余额包含通道资金。储备金和支付限额可能减少可发送金额。",
+    "dataUnavailable": "无法加载最新数据。显示的数值可能已过时。请重试以检查节点。",
+    "canSend": "可发送",
+    "canReceive": "可接收",
+    "lspRecovery": "请检查节点网络和LSP地址，然后重试。也可在左侧输入其他服务商。",
+    "paymentLimit": "单笔支付限额",
+    "quoteUnavailable": "报价不可用",
+    "lightningAvailable": "Lightning 通道可用",
+    "checkSwapAvailability": "兑换前请检查可用交易对和报价。"
   }
 }

@@ -3,10 +3,10 @@
 
 import {
   AlertTriangle,
-  Cpu,
   Download,
   HardDrive,
   MemoryStick,
+  Loader2,
   Play,
   Plus,
   RefreshCw,
@@ -47,6 +47,38 @@ export const ModelsManager: React.FC = () => {
   const [url, setUrl] = useState('')
   const [name, setName] = useState('')
   const [customError, setCustomError] = useState('')
+  // Model whose start/stop is in flight, plus the last failure — without these
+  // a failed start/stop rejected silently and the buttons looked dead.
+  const [busy, setBusy] = useState<{
+    id: string
+    action: 'start' | 'stop'
+  } | null>(null)
+  const [actionError, setActionError] = useState('')
+
+  const runAction = async (
+    id: string,
+    action: 'start' | 'stop',
+    fn: () => Promise<void>
+  ) => {
+    setBusy({ action, id })
+    setActionError('')
+    try {
+      await fn()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+  const startModel = (id: string) =>
+    runAction(id, 'start', async () => {
+      // Switching models: the running one has to stop first.
+      if (providerOn) await mind.stopProvider()
+      await mind.startProvider(id)
+    })
+  const stopModel = (id: string) =>
+    runAction(id, 'stop', () => mind.stopProvider())
+  const transitioning = busy !== null || mind.starting || !!mind.loading
 
   const installedIds = useMemo(
     () => new Set(mind.installed.map((m) => m.id)),
@@ -58,38 +90,51 @@ export const ModelsManager: React.FC = () => {
 
   return (
     <MindCard>
-      <div className="mb-1 flex items-center gap-2">
-        <Cpu className="h-5 w-5 text-content-secondary" />
-        <h2 className="font-semibold text-content-primary">Models</h2>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         {!isEmpty && (
-          <span className="rounded-full bg-surface-overlay px-2 py-0.5 text-[10px] font-medium text-content-tertiary">
+          <span className="text-xs text-content-tertiary">
             {mind.installed.length} installed · {mind.catalog.length} available
           </span>
         )}
-        <button
-          aria-label="Refresh model catalog"
-          className="ml-auto flex items-center gap-1 rounded-md border border-border-default px-2.5 py-1 text-xs text-content-secondary hover:bg-surface-overlay"
-          disabled={mind.catalogLoading}
-          onClick={() => void mind.refresh()}
-          type="button"
-        >
-          <RefreshCw
-            className={`h-3.5 w-3.5 ${mind.catalogLoading ? 'animate-spin' : ''}`}
-          />
-          Refresh
-        </button>
-        <button
-          className="flex items-center gap-1 rounded-md border border-border-default px-2.5 py-1 text-xs text-content-secondary hover:bg-surface-overlay"
-          onClick={() => setShowCustom((v) => !v)}
-          type="button"
-        >
-          <Plus className="h-3.5 w-3.5" /> Hugging Face
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            aria-label="Refresh model catalog"
+            className="flex items-center gap-1 rounded-md border border-border-default px-2.5 py-1 text-xs text-content-secondary hover:bg-surface-overlay"
+            disabled={mind.catalogLoading}
+            onClick={() => void mind.refresh()}
+            title="The catalog updates automatically from the latest Mind release and stays available offline."
+            type="button"
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${mind.catalogLoading ? 'animate-spin' : ''}`}
+            />
+            Refresh
+          </button>
+          <button
+            className="flex items-center gap-1 rounded-md border border-border-default px-2.5 py-1 text-xs text-content-secondary hover:bg-surface-overlay"
+            onClick={() => setShowCustom((v) => !v)}
+            type="button"
+          >
+            <Plus className="h-3.5 w-3.5" /> Hugging Face
+          </button>
+        </div>
       </div>
-      <p className="mb-3 text-xs text-content-tertiary">
-        The catalog updates automatically from the latest Mind release. Models
-        remain available offline from the last saved catalog.
-      </p>
+      {actionError && (
+        <div
+          className="mb-3 flex items-start gap-2 rounded-lg border border-status-danger/30 bg-status-danger/5 px-3 py-2 text-xs text-status-danger"
+          role="alert"
+        >
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 flex-1 break-words">{actionError}</span>
+          <button
+            aria-label="Dismiss"
+            onClick={() => setActionError('')}
+            type="button"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
       <HardwareSummary hardware={mind.hardware} />
       {showCustom && (
         <form
@@ -211,7 +256,10 @@ export const ModelsManager: React.FC = () => {
                         {gb(m.sizeBytes)}
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <MemoryStick className="h-3 w-3" />~{m.ramHintGb} GB RAM
+                        <MemoryStick className="h-3 w-3" />
+                        {m.ramHintGb > 0
+                          ? `~${m.ramHintGb} GB RAM`
+                          : 'RAM estimate unavailable'}
                       </span>
                     </div>
                     {m.notes && (
@@ -235,26 +283,53 @@ export const ModelsManager: React.FC = () => {
                       <>
                         {isActive ? (
                           <button
-                            className="flex items-center gap-1 rounded-md bg-status-danger px-2.5 py-1 text-xs font-medium text-white hover:bg-status-danger/90"
-                            onClick={() => mind.stopProvider()}
+                            className="flex items-center gap-1 rounded-md bg-status-danger px-2.5 py-1 text-xs font-medium text-white hover:bg-status-danger/90 disabled:opacity-60"
+                            disabled={transitioning}
+                            onClick={() => void stopModel(m.id)}
                             type="button"
                           >
-                            <Square className="h-3.5 w-3.5" /> Stop
+                            {busy?.id === m.id && busy.action === 'stop' ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Square className="h-3.5 w-3.5" />
+                            )}
+                            {busy?.id === m.id && busy.action === 'stop'
+                              ? 'Stopping…'
+                              : 'Stop'}
                           </button>
                         ) : (
                           <button
                             className="flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-surface-base hover:bg-primary-emphasis disabled:opacity-40"
-                            disabled={providerOn}
-                            onClick={() => mind.startProvider(m.id)}
+                            disabled={transitioning}
+                            onClick={() => void startModel(m.id)}
                             type="button"
                           >
-                            <Play className="h-3.5 w-3.5" /> Start
+                            {busy?.id === m.id && busy.action === 'start' ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Play className="h-3.5 w-3.5" />
+                            )}
+                            {busy?.id === m.id && busy.action === 'start'
+                              ? 'Starting…'
+                              : providerOn
+                                ? 'Switch'
+                                : 'Start'}
                           </button>
                         )}
                         <button
                           className="rounded p-1 text-content-tertiary hover:bg-surface-overlay hover:text-status-danger disabled:opacity-30"
-                          disabled={isActive}
-                          onClick={() => mind.deleteModel(m.id)}
+                          disabled={isActive || transitioning}
+                          onClick={() =>
+                            void mind
+                              .deleteModel(m.id)
+                              .catch((err) =>
+                                setActionError(
+                                  err instanceof Error
+                                    ? err.message
+                                    : String(err)
+                                )
+                              )
+                          }
                           title="Delete"
                           type="button"
                         >

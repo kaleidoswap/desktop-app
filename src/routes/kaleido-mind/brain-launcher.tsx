@@ -126,7 +126,10 @@ const ChooseModel: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
                         {gb(m.sizeBytes)}
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <MemoryStick className="h-3 w-3" />~{m.ramHintGb} GB RAM
+                        <MemoryStick className="h-3 w-3" />
+                        {m.ramHintGb > 0
+                          ? `~${m.ramHintGb} GB RAM`
+                          : 'RAM estimate unavailable'}
                       </span>
                     </div>
                   </div>
@@ -181,6 +184,7 @@ const StartBrain: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
   const navigate = useNavigate()
   const { installed, loading, starting } = mind
   const [selected, setSelected] = useState('')
+  const [error, setError] = useState<string | null>(null)
 
   let lastId: string | null = null
   try {
@@ -200,6 +204,7 @@ const StartBrain: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
 
   const start = () => {
     if (!modelId) return
+    setError(null)
     try {
       localStorage.setItem(LAST_MODEL_KEY, modelId)
     } catch {
@@ -207,7 +212,9 @@ const StartBrain: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
     }
     // loading/providerOn flips → this view is replaced by the chat. On
     // failure mind.starting flips back to false, allowing a retry.
-    void mind.startProvider(modelId).catch(() => {})
+    void mind
+      .startProvider(modelId)
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
   }
 
   if (busy) {
@@ -250,6 +257,14 @@ const StartBrain: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
         Your model is ready. Start the brain to begin chatting.
       </p>
 
+      {error && (
+        <p
+          className="mt-4 rounded-lg border border-status-danger/30 bg-status-danger/10 p-3 text-sm text-status-danger"
+          role="alert"
+        >
+          Could not start the model: {error}
+        </p>
+      )}
       <div className="mt-5 space-y-3">
         {installed.length > 1 && (
           <Select

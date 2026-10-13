@@ -483,7 +483,7 @@ export const Component = () => {
 
       // Quote was cleared or not found
       try {
-        window.requestAnimationFrame(() => {
+        {
           form.setValue('to', '')
           form.setValue('rfq_id', '')
           setHasValidQuote(false)
@@ -529,7 +529,7 @@ export const Component = () => {
               errorMessageTimeoutRef.current = null
             }, 1000) // 1 second delay to allow for quote processing
           }
-        })
+        }
       } catch (error) {
         logger.error('Error clearing quote response UI state:', error)
       }
@@ -552,8 +552,9 @@ export const Component = () => {
         errorMessageTimeoutRef.current = null
       }
 
-      // Use requestAnimationFrame to batch updates and prevent render loops
-      window.requestAnimationFrame(() => {
+      // Process quotes immediately: WebKit can suspend animation frames while
+      // the window is occluded. React batches these state updates itself.
+      {
         const now = Date.now()
         const quoteTimestamp = quoteResponse.timestamp * 1000 // Convert to ms
         const quoteAge = now - quoteTimestamp
@@ -673,7 +674,7 @@ export const Component = () => {
           }
           return null // Clear other errors
         })
-      })
+      }
     }
   }, [quoteResponse, form, assets, requestQuote])
 
@@ -713,15 +714,16 @@ export const Component = () => {
     return await getKaleidoClient({ nodeSettings })
   }, [nodeSettings])
 
-  const { data: assetsData } = nodeApi.endpoints.listAssets.useQuery(
-    undefined,
-    {
-      pollingInterval: 30000,
-      refetchOnFocus: false,
-      refetchOnMountOrArgChange: false,
-      refetchOnReconnect: false,
-    }
-  )
+  const {
+    data: assetsData,
+    isError: assetsLoadFailed,
+    refetch: refetchAssets,
+  } = nodeApi.endpoints.listAssets.useQuery(undefined, {
+    pollingInterval: 30000,
+    refetchOnFocus: false,
+    refetchOnMountOrArgChange: false,
+    refetchOnReconnect: false,
+  })
 
   useEffect(() => {
     if (assetsData && assetsData.nia) {
@@ -874,6 +876,20 @@ export const Component = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const [quoteFailureMessage, setQuoteFailureMessage] = useState<string | null>(
+    null
+  )
+  useEffect(() => {
+    if (hasValidQuote) setQuoteFailureMessage(null)
+  }, [hasValidQuote])
+  useEffect(() => {
+    const subscription = form.watch((_value, { name }) => {
+      if (name === 'from' || name === 'fromAsset' || name === 'toAsset')
+        setQuoteFailureMessage(null)
+    })
+    return () => subscription.unsubscribe()
+  }, [form])
+
   // Handle quote errors immediately to reset loading states
   useEffect(() => {
     if (quoteError) {
@@ -919,7 +935,10 @@ export const Component = () => {
         } else {
           userFriendlyError = t('tradeMarketMaker.error.amountOutsideRange')
         }
-      } else if (quoteError.includes('No tradable pair found')) {
+      } else if (
+        quoteError.includes('No tradable pair found') ||
+        quoteError.includes('Trading pair not found')
+      ) {
         userFriendlyError = t('tradeMarketMaker.error.pairNotAvailable')
       } else if (quoteError.includes('Invalid asset')) {
         userFriendlyError = t('tradeMarketMaker.error.assetNotValid')
@@ -927,6 +946,7 @@ export const Component = () => {
         userFriendlyError = t('tradeMarketMaker.error.unableToCalculateQuote')
       }
 
+      setQuoteFailureMessage(userFriendlyError)
       // Show the user-friendly error message, but preserve unconfirmed channel errors
       setErrorMessage((prev) => {
         if (prev && prev.includes('awaiting confirmation')) {
@@ -938,7 +958,7 @@ export const Component = () => {
       // Clear the error from the store after handling it
       dispatch(clearQuoteError(undefined))
     }
-  }, [quoteError, form, dispatch, formatAmount, displayAsset])
+  }, [quoteError, form, dispatch, formatAmount, displayAsset, t])
 
   // Replace the original setFromAmount function with the enhanced one
   const setFromAmount = useCallback(
@@ -1567,7 +1587,8 @@ export const Component = () => {
 
   // Update error message when amounts change - use subscription instead of watch
   useEffect(() => {
-    const subscription = form.watch((value) => {
+    const validate = () => {
+      const value = form.getValues()
       const fromAmount = parseAssetAmount(
         value.from || '',
         value.fromAsset || ''
@@ -1620,8 +1641,11 @@ export const Component = () => {
         }
         return errorMsg
       })
-    })
-
+    }
+    // Revalidate when asynchronous balances/limits arrive, even if the user
+    // has not edited the form since the initial zero-valued loading state.
+    validate()
+    const subscription = form.watch(validate)
     return () => subscription.unsubscribe()
   }, [
     minFromAmount,
@@ -1637,6 +1661,7 @@ export const Component = () => {
     isQuoteLoading,
     isPriceLoading,
     missingChannelAsset,
+    t,
   ])
 
   // Use our utility function to create the fetch and set pairs handler
@@ -1700,10 +1725,10 @@ export const Component = () => {
         t
       )(),
     [
+      getClient,
       dispatch,
       form,
       formatAmount,
-      setTradingPairs,
       setTradablePairs,
       setSelectedPair,
       setIsPairsLoading,
@@ -2185,20 +2210,19 @@ export const Component = () => {
           }))
         )
 
-        logger.info(
-          `📈 Trading pairs result: found=${pairsFound}, count=${tradablePairs.length}`,
-          {
-            assetsAvailable: assetsData.nia.length,
-            channelsAvailable: (channelsList ?? []).length,
-            channelsReady: (channelsList ?? []).filter((c: any) => c.ready)
-              .length,
-          }
-        )
+        logger.info(`📈 Trading pairs result: found=${pairsFound}`, {
+          assetsAvailable: assetsData.nia.length,
+          channelsAvailable: (channelsList ?? []).length,
+          channelsReady: (channelsList ?? []).filter((c: any) => c.ready)
+            .length,
+        })
 
         if (!pairsFound) {
           logger.warn('❌ No tradable pairs found from maker')
           setLoadingPhase('error')
-          setValidationError('no-trading-pairs')
+          setValidationError(
+            pairsFound === null ? 'maker-unavailable' : 'no-trading-pairs'
+          )
           return
         }
 
@@ -2228,6 +2252,11 @@ export const Component = () => {
     }
 
     // Check assets data availability
+    if (assetsLoadFailed) {
+      setValidationError('setup-error')
+      setLoadingPhase('error')
+      return
+    }
     if (!assetsData) {
       logger.debug('⏳ Waiting for RTK Query assets data - no data yet')
       return
@@ -2243,7 +2272,10 @@ export const Component = () => {
     optimizedSetup()
   }, [
     loadingPhase,
-    assetsData?.nia?.length,
+    assetsData,
+    assetsLoadFailed,
+    fetchAndSetPairsWithData,
+    t,
     nodeInfo,
     btcBalance,
     getInfo,
@@ -2318,6 +2350,8 @@ export const Component = () => {
       return
     }
 
+    let cancelled = false
+    const controller = new AbortController()
     const initializeWebSocket = async () => {
       try {
         logger.info('Initializing WebSocket connection for trading interface')
@@ -2347,9 +2381,11 @@ export const Component = () => {
           clientId,
           dispatch,
           5, // 5 retry attempts
-          8000 // Reduced timeout to 8 seconds per attempt
+          8000,
+          controller.signal
         )
 
+        if (cancelled) return
         if (success) {
           logger.info('WebSocket initialized and connected successfully')
           setIsWebSocketInitialized(true)
@@ -2366,6 +2402,7 @@ export const Component = () => {
           toast.error(t('tradeMarketMaker.toast.connectionFailed'))
         }
       } catch (error) {
+        if (cancelled) return
         logger.error('Error initializing WebSocket:', error)
         toast.error(t('tradeMarketMaker.toast.connectionError'))
       }
@@ -2373,7 +2410,11 @@ export const Component = () => {
 
     // Reduced delay for faster initialization
     const timer = setTimeout(initializeWebSocket, 200)
-    return () => clearTimeout(timer)
+    return () => {
+      cancelled = true
+      controller.abort()
+      clearTimeout(timer)
+    }
   }, [
     loadingPhase,
     isWebSocketInitialized,
@@ -2400,6 +2441,9 @@ export const Component = () => {
     }
   }, [form, selectedPair, requestQuote])
 
+  const watchedFromAsset = form?.watch('fromAsset')
+  const watchedToAsset = form?.watch('toAsset')
+
   // Set up quote request timer when component mounts or when assets change
   useEffect(() => {
     const fromAsset = form.getValues().fromAsset
@@ -2417,12 +2461,7 @@ export const Component = () => {
         stopQuoteRequestTimer()
       }
     }
-  }, [
-    form.getValues().fromAsset,
-    form.getValues().toAsset,
-    wsConnected,
-    requestQuote,
-  ])
+  }, [form, watchedFromAsset, watchedToAsset, wsConnected, requestQuote])
 
   // Ref to track form change debounce timer
   const formChangeTimerRef = useRef<number | null>(null)
@@ -2620,29 +2659,15 @@ export const Component = () => {
     [tradablePairs, assets, isUsingOnchainBalance, channels]
   )
 
-  // Memoized asset options for both fields to prevent recomputation on every render
   const fromAssetOptions = useMemo(
-    () => (form ? getAssetOptions(form.getValues()?.toAsset ?? '', true) : []),
-    [
-      getAssetOptions,
-      form?.getValues()?.toAsset,
-      tradablePairs,
-      isUsingOnchainBalance,
-    ]
+    () => getAssetOptions(watchedToAsset ?? '', true),
+    [getAssetOptions, watchedToAsset]
   )
-
   const toAssetOptions = useMemo(
-    () =>
-      form ? getAssetOptions(form.getValues()?.fromAsset ?? '', false) : [],
-    [
-      getAssetOptions,
-      form?.getValues()?.fromAsset,
-      tradablePairs,
-      isUsingOnchainBalance,
-    ]
+    () => getAssetOptions(watchedFromAsset ?? '', false),
+    [getAssetOptions, watchedFromAsset]
   )
 
-  // Improved window focus event listener with better logic
   useEffect(() => {
     if (!makerConnectionUrl) return
 
@@ -3005,11 +3030,22 @@ export const Component = () => {
     setShowConfirmation(true)
   }
 
+  const submittingSwapRef = useRef(false)
+  const [isSubmittingSwap, setIsSubmittingSwap] = useState(false)
+  const canConfirmSwap =
+    hasValidQuote && wsConnected && !errorMessage && !quoteFailureMessage
+
+  // Lock immediately: node polling only sees the swap after initialization.
   // Wrapper around executeSwap to handle UI state
   const handleExecuteSwap = async (data: Fields) => {
+    if (submittingSwapRef.current || isSwapInProgress || !canConfirmSwap) return
+    submittingSwapRef.current = true
+    setIsSubmittingSwap(true)
     try {
       await executeSwap(data)
     } finally {
+      submittingSwapRef.current = false
+      setIsSubmittingSwap(false)
       setShowConfirmation(false)
     }
   }
@@ -3248,21 +3284,19 @@ export const Component = () => {
 
       return result
     },
-    [channels, assets, tradablePairs]
+    [channels, tradablePairs]
   )
 
   // Watch for asset changes to trigger re-validation
-  const watchedFromAsset = form?.watch('fromAsset')
-  const watchedToAsset = form?.watch('toAsset')
 
   // Check if currently selected assets have only unconfirmed channels
   const fromAssetUnconfirmed = useMemo(() => {
-    if (!form || !watchedFromAsset) return false
+    if (!watchedFromAsset) return false
     return hasOnlyUnconfirmedChannels(watchedFromAsset)
   }, [watchedFromAsset, hasOnlyUnconfirmedChannels])
 
   const toAssetUnconfirmed = useMemo(() => {
-    if (!form || !watchedToAsset) return false
+    if (!watchedToAsset) return false
     return hasOnlyUnconfirmedChannels(watchedToAsset)
   }, [watchedToAsset, hasOnlyUnconfirmedChannels])
 
@@ -3311,7 +3345,33 @@ export const Component = () => {
   return (
     <div className="w-full min-h-full overflow-y-auto relative">
       {/* Handle insufficient balance with action buttons */}
-      {shouldShowInsufficientBalance ? (
+      {loadingPhase === 'error' &&
+      ['setup-error', 'no-assets', 'maker-unavailable'].includes(
+        validationError ?? ''
+      ) ? (
+        <div
+          className="max-w-2xl mx-auto my-8 rounded-2xl border border-border-subtle bg-surface-base p-8 space-y-4"
+          role="alert"
+        >
+          <h2 className="text-xl font-semibold">
+            {t('trade.connectionIssues.connectionIssue')}
+          </h2>
+          <p>{t('tradeMarketMaker.toast.initializationFailed')}</p>
+          <button
+            className="px-5 py-3 rounded-lg bg-primary text-primary-foreground"
+            onClick={async () => {
+              if (assetsLoadFailed) {
+                const result = await refetchAssets()
+                if (result.isError) return
+              }
+              setValidationError(null)
+              setLoadingPhase('initializing')
+            }}
+          >
+            {t('trade.connectionIssues.retryConnection')}
+          </button>
+        </div>
+      ) : shouldShowInsufficientBalance ? (
         <div className="flex justify-center items-center min-h-[60vh]">
           <div className="max-w-2xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
             <div className="flex flex-col items-center space-y-6">
@@ -3422,14 +3482,14 @@ export const Component = () => {
                 />
               </div>
             ) : (
-              <div className="flex justify-center items-start py-4">
+              <div className="flex justify-center items-start py-1">
                 <MarketMakerFormPanel
                   assets={assets}
                   bitcoinUnit={bitcoinUnit}
                   channels={channels}
                   currentPrice={currentPrice}
                   displayAsset={displayAsset}
-                  errorMessage={errorMessage}
+                  errorMessage={quoteFailureMessage || errorMessage}
                   fees={fees}
                   form={form}
                   formatAmount={formatAmount}
@@ -3464,6 +3524,7 @@ export const Component = () => {
                   onToAmountChange={handleToAmountChange}
                   onchainBtcBalance={onchainBtcBalance}
                   quoteResponse={quoteResponse}
+                  quoteUnavailable={!!quoteFailureMessage}
                   selectedPair={selectedPair}
                   selectedSize={selectedSize}
                   showConfirmation={showConfirmation}
@@ -3481,11 +3542,12 @@ export const Component = () => {
 
       <SwapConfirmation
         bitcoinUnit={bitcoinUnit}
+        canConfirm={canConfirmSwap}
         exchangeRate={currentPrice || 0}
         fromAmount={form.getValues().from}
         fromAsset={form.getValues().fromAsset}
         getAssetPrecision={getAssetPrecisionWrapper}
-        isLoading={isSwapInProgress}
+        isLoading={isSwapInProgress || isSubmittingSwap}
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
         onConfirm={() => handleExecuteSwap(form.getValues())}

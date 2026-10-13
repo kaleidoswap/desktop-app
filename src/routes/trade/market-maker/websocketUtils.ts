@@ -127,7 +127,8 @@ export const initializeWebSocketWithRetry = async (
   clientId: string,
   dispatch: Dispatch,
   maxRetries: number = 3,
-  timeout: number = 8000 // Reduced from 10000ms to 8000ms
+  timeout: number = 8000,
+  signal?: AbortSignal
 ): Promise<boolean> => {
   // First check if already connected and ready
   if (
@@ -140,6 +141,7 @@ export const initializeWebSocketWithRetry = async (
   }
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    if (signal?.aborted) return false
     try {
       logger.info(
         `WebSocket connection attempt ${attempt}/${maxRetries} to ${makerUrl}`

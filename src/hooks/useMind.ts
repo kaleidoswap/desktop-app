@@ -36,6 +36,7 @@ export interface UseMindResult {
   catalogLoading: boolean
   /** Last catalog fetch error, so the UI can offer a retry (null when ok). */
   catalogError: string | null
+  actionError: string | null
   /** A spend awaiting the user's approval (null when none). */
   pendingConfirm: ToolConfirmRequestEvent | null
   capabilities: CapabilityInfo | null
@@ -80,6 +81,7 @@ export interface UseMindResult {
   ) => Promise<ChatResult>
   /** Stop the in-flight chat turn (the stop button). */
   cancelChat: (chatId: string) => Promise<void>
+  clearChat: () => Promise<void>
   /** Approve or decline the pending spend. */
   respondConfirm: (approved: boolean, reason?: string) => Promise<void>
 }
@@ -96,6 +98,8 @@ export function useMind(): UseMindResult {
   const [catalog, setCatalog] = useState<CatalogModel[]>([])
   const [catalogLoading, setCatalogLoading] = useState(false)
   const [catalogError, setCatalogError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const loadingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [installed, setInstalled] = useState<InstalledModel[]>([])
   const [downloads, setDownloads] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState<ProviderLoadingEvent | null>(null)
@@ -183,10 +187,11 @@ export function useMind(): UseMindResult {
         case 'provider_loading':
           // The provider may still report its P2P phases; only local ones matter.
           if (!LOCAL_LOADING_PHASES.has(e.phase)) break
+          if (loadingTimer.current) clearTimeout(loadingTimer.current)
           setLoading(e)
           if (e.phase === 'ready' || e.phase === 'aborted') {
             // Clear the loading banner shortly after a terminal phase.
-            setTimeout(() => setLoading(null), 1500)
+            loadingTimer.current = setTimeout(() => setLoading(null), 1500)
           }
           break
         case 'download_progress':
@@ -224,7 +229,11 @@ export function useMind(): UseMindResult {
           break
       }
     })
-    return off
+    return () => {
+      off()
+      if (loadingTimer.current) clearTimeout(loadingTimer.current)
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+    }
   }, [])
 
   // Agent runtime: check if it's installed and stream download progress. The
@@ -271,41 +280,73 @@ export function useMind(): UseMindResult {
       phase: 'downloading',
       total: 0,
     })
-    await mindClient.installRuntime()
+    try {
+      await mindClient.installRuntime()
+    } catch (error) {
+      setRuntimeProgress({
+        downloaded: 0,
+        message: error instanceof Error ? error.message : String(error),
+        phase: 'error',
+        total: 0,
+      })
+    }
   }, [])
 
   const startProvider = useCallback(async (modelId: string) => {
     setStarting(true)
+    setActionError(null)
     try {
       const st = await mindClient.startProvider(modelId)
       setStatus(st)
       setCapabilities(await mindClient.listCapabilities())
+    } catch (err) {
+      setLoading(null)
+      if (loadingTimer.current) clearTimeout(loadingTimer.current)
+      await mindClient.getStatus().then(setStatus, () => {})
+      throw err
     } finally {
       setStarting(false)
     }
   }, [])
 
   const stopProvider = useCallback(async () => {
-    const st = await mindClient.stopProvider()
-    setStatus(st)
+    try {
+      setStatus(await mindClient.stopProvider())
+    } catch (err) {
+      // Resync so the UI reflects what the sidecar is actually doing.
+      await mindClient.getStatus().then(setStatus, () => {})
+      throw err
+    }
   }, [])
 
   const downloadModel = useCallback(
     async (modelId: string) => {
       setDownloads((d) => ({ ...d, [modelId]: 0 }))
-      const known = providerCatalog.current.some(
-        (model) => model.id === modelId
-      )
-      if (known) {
-        await mindClient.downloadModel(modelId)
-      } else {
-        const model = catalog.find((model) => model.id === modelId)
-        if (!model) throw new Error('Model not found in catalog')
-        await mindClient.addHuggingFaceModel(
-          `https://huggingface.co/${model.hfRepo}/blob/main/${encodeURIComponent(model.hfFile)}`,
-          model.displayName
+      setActionError(null)
+      try {
+        const known = providerCatalog.current.some(
+          (model) => model.id === modelId
         )
-        providerCatalog.current = await mindClient.listCatalogModels()
+        if (known) {
+          await mindClient.downloadModel(modelId)
+        } else {
+          const model = catalog.find((model) => model.id === modelId)
+          if (!model) throw new Error('Model not found in catalog')
+          await mindClient.addHuggingFaceModel(
+            `https://huggingface.co/${model.hfRepo}/blob/main/${encodeURIComponent(model.hfFile)}`,
+            model.displayName
+          )
+          providerCatalog.current = await mindClient.listCatalogModels()
+        }
+      } catch (error) {
+        setDownloads((current) => {
+          const next = { ...current }
+          delete next[modelId]
+          return next
+        })
+        setActionError(
+          `Could not start download: ${error instanceof Error ? error.message : String(error)}`
+        )
       }
     },
     [catalog]
@@ -377,6 +418,10 @@ export function useMind(): UseMindResult {
     []
   )
 
+  const clearChat = useCallback(async () => {
+    await mindClient.clearChat()
+  }, [])
+
   const cancelChat = useCallback(async (chatId: string) => {
     await mindClient.cancelChat(chatId)
   }, [])
@@ -394,6 +439,7 @@ export function useMind(): UseMindResult {
   )
 
   return {
+    actionError,
     addHuggingFaceModel,
     addMcpServer,
     addSkill,
@@ -404,6 +450,7 @@ export function useMind(): UseMindResult {
     catalogError,
     catalogLoading,
     chat,
+    clearChat,
     deleteModel,
     deleteSkill,
     downloadModel,

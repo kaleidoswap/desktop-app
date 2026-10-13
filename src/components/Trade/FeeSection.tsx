@@ -36,7 +36,8 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
   const { t } = useTranslation()
   const [isExpanded, setIsExpanded] = useState(false)
 
-  if (!fees.totalFee) return null
+  // A previous quote's fee cannot be labeled safely while its replacement loads.
+  if (!quoteResponse || !fees.totalFee) return null
 
   const formatFeeAmount = (amount: number) => {
     // Handle BTC differently

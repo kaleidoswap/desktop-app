@@ -23,6 +23,8 @@ import {
   startQuoteRequestTimer,
   stopQuoteRequestTimer,
   createAmountChangeQuoteHandler,
+  createQuoteRequestHandler,
+  createReverseQuoteRequestHandler,
 } from '../quoteUtils'
 
 beforeEach(() => {
@@ -202,4 +204,44 @@ describe('createAmountChangeQuoteHandler', () => {
     await vi.runAllTimersAsync()
     expect(requestQuote).toHaveBeenCalledOnce()
   })
+})
+
+describe('quote request failures', () => {
+  it.each(['from', 'to'] as const)(
+    'clears loading after a disconnected %s request',
+    async (direction) => {
+      const { webSocketService } =
+        await import('../../../../app/hubs/websocketService')
+      vi.mocked(webSocketService.requestQuote).mockResolvedValue(false)
+      vi.mocked(
+        webSocketService.isConnectionReadyForCommunication
+      ).mockReturnValue(false)
+      const form = {
+        getValues: () => ({
+          from: '1231',
+          fromAsset: 'BTC',
+          to: '1',
+          toAsset: 'USDT',
+        }),
+        setValue: vi.fn(),
+      } as any
+      const loading = vi.fn()
+      const amountLoading = vi.fn()
+      const factory =
+        direction === 'from'
+          ? createQuoteRequestHandler
+          : createReverseQuoteRequestHandler
+      const handler = factory(
+        form,
+        Number,
+        [],
+        [{ base: { ticker: 'BTC' }, quote: { ticker: 'USDT' } }] as any,
+        loading,
+        amountLoading
+      )
+      await handler()
+      expect(loading).toHaveBeenLastCalledWith(false)
+      expect(amountLoading).toHaveBeenLastCalledWith(false)
+    }
+  )
 })

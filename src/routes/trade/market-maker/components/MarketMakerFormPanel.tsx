@@ -37,6 +37,7 @@ interface MarketMakerFormPanelProps {
   channels: Channel[]
   currentPrice: number | null
   displayAsset: (asset: string) => string
+  quoteUnavailable?: boolean
   errorMessage: string | null
   fees: {
     baseFee: number
@@ -91,6 +92,7 @@ export const MarketMakerFormPanel = ({
   channels,
   currentPrice,
   displayAsset,
+  quoteUnavailable = false,
   errorMessage,
   fees,
   form,
@@ -327,7 +329,7 @@ export const MarketMakerFormPanel = ({
                 />
               </div>
 
-              <div className="flex justify-center my-2 relative z-10">
+              <div className="flex justify-center my-1 relative z-10">
                 <button
                   className={`p-2 rounded-xl border transition-all duration-300 ${
                     hasChannels && hasTradablePairs && !isSwapInProgress
@@ -445,7 +447,7 @@ export const MarketMakerFormPanel = ({
                 )}
             </div>
 
-            {selectedPair && (
+            {selectedPair && !quoteUnavailable && (
               <div className="mt-1 border-t border-border-default/15 pt-3 px-2">
                 <ExchangeRateSection
                   assets={assets}
@@ -474,7 +476,7 @@ export const MarketMakerFormPanel = ({
               />
             </div>
 
-            <div className="mt-2 pb-3 flex-shrink-0">
+            <div className="sticky bottom-0 z-20 bg-surface-overlay border-t border-border-default/40 pt-3 pb-2 flex-shrink-0">
               <SwapButton
                 errorMessage={errorMessage}
                 hasChannels={hasChannels}
@@ -485,6 +487,7 @@ export const MarketMakerFormPanel = ({
                 isSwapInProgress={isSwapInProgress}
                 isToAmountLoading={isToAmountLoading}
                 missingChannelAsset={missingChannelAsset}
+                quoteUnavailable={quoteUnavailable}
                 warningMessage={warningMessage}
                 wsConnected={wsConnected}
               />

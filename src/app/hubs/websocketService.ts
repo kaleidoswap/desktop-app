@@ -15,6 +15,7 @@ import {
   setWsConnected,
   updateQuote,
   clearQuote,
+  setQuoteError,
 } from '../../slices/makerApi/pairs.slice'
 import { logger } from '../../utils/logger'
 
@@ -62,6 +63,8 @@ export const onQuoteResponse = (
 class WebSocketService {
   private static instance: WebSocketService
   private socket: WebSocket | null = null
+  private quoteTimeout: ReturnType<typeof setTimeout> | null = null
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private url: string = ''
   private clientId: string = ''
   private dispatch: Dispatch | null = null
@@ -149,7 +152,7 @@ class WebSocketService {
       if (!this.isConnected() && this.connectionInitialized) {
         // Delay reconnection slightly to allow network to stabilize
         setTimeout(() => {
-          this.handleReconnect()
+          if (this.connectionInitialized) this.handleReconnect()
         }, 2000)
       }
     }
@@ -288,7 +291,7 @@ class WebSocketService {
       'Connection unstable, temporarily suspending reconnection attempts',
       {
         autoClose: 10000,
-        toastId: 'circuit-breaker-open',
+        toastId: 'maker-connection-status',
       }
     )
   }
@@ -301,7 +304,7 @@ class WebSocketService {
 
     if (oldState !== CircuitBreakerState.CLOSED) {
       logger.info('Circuit breaker reset to closed state')
-      toast.dismiss('circuit-breaker-open')
+      toast.dismiss('maker-connection-status')
     }
   }
 
@@ -607,6 +610,7 @@ class WebSocketService {
 
       if (this.socket) {
         this.close()
+        this.connectionInitialized = true
         return this.connect()
       }
     }
@@ -616,6 +620,13 @@ class WebSocketService {
 
   /** Internal method to establish WebSocket connection */
   private connect(): boolean {
+    if (
+      !this.connectionInitialized ||
+      window.location.pathname !== '/market-maker'
+    ) {
+      return false
+    }
+    this.startConnectionHealthMonitoring()
     if (!this.url || !this.clientId) {
       logger.error('WebSocketService connect: URL or client ID not set')
       this.connectionInitialized = false
@@ -651,13 +662,17 @@ class WebSocketService {
       )
 
       // Create new WebSocket
-      this.socket = new WebSocket(fullWsUrl)
+      const socket = new WebSocket(fullWsUrl)
+      this.socket = socket
 
       // Set up connection timeout to fail fast if server is not responding
       const connectionTimeout = setTimeout(() => {
-        if (this.socket && this.socket.readyState === WebSocket.CONNECTING) {
+        if (
+          this.socket === socket &&
+          socket.readyState === WebSocket.CONNECTING
+        ) {
           logger.warn('WebSocketService: Connection timeout - closing socket')
-          this.socket.close(1006, 'Connection timeout')
+          socket.close(4000, 'Connection timeout')
           this.recordConnectionFailure()
         }
       }, 5000) // 5 second timeout for initial connection
@@ -665,16 +680,18 @@ class WebSocketService {
       // Set up event handlers
       this.socket.onopen = () => {
         clearTimeout(connectionTimeout)
-        this.handleOpen()
+        if (this.socket === socket) this.handleOpen()
       }
-      this.socket.onmessage = this.handleMessage.bind(this)
+      this.socket.onmessage = (event) => {
+        if (this.socket === socket) this.handleMessage(event)
+      }
       this.socket.onclose = (event) => {
         clearTimeout(connectionTimeout)
-        this.handleClose(event)
+        if (this.socket === socket) this.handleClose(event)
       }
       this.socket.onerror = (event) => {
         clearTimeout(connectionTimeout)
-        this.handleError(event)
+        if (this.socket === socket) this.handleError(event)
       }
 
       return true
@@ -712,10 +729,17 @@ class WebSocketService {
     resetRateLimitBackoff()
 
     // Dismiss any circuit breaker notifications
-    toast.dismiss('circuit-breaker-open')
+    toast.dismiss('maker-connection-status')
 
     // Mark connection as ready after a short delay to ensure stability
+    const socket = this.socket
     setTimeout(() => {
+      if (
+        this.socket !== socket ||
+        !this.isConnected() ||
+        !this.connectionInitialized
+      )
+        return
       this.isConnectionReady = true
 
       // Resolve any pending connection ready promises
@@ -743,6 +767,8 @@ class WebSocketService {
 
       // Handle message based on action type
       if (data.action === 'quote_response') {
+        if (this.quoteTimeout) clearTimeout(this.quoteTimeout)
+        this.quoteTimeout = null
         if (this.dispatch) {
           if (data.data) {
             // Ensure data contains all required fields
@@ -805,6 +831,7 @@ class WebSocketService {
               `WebSocketService: Quote response error: ${data.error}`
             )
 
+            this.dispatch(setQuoteError(String(data.error)))
             // Clear the quote for the failed request
             if (this.lastQuoteRequest && this.dispatch) {
               this.dispatch(clearQuote(this.lastQuoteRequest))
@@ -844,10 +871,13 @@ class WebSocketService {
           data.error.includes('Failed to calculate quote') ||
           data.error.includes('equivalent base amount must be between') ||
           data.error.includes('No tradable pair found') ||
+          data.error.includes('Trading pair not found') ||
           data.error.includes('Invalid asset') ||
           data.error.includes('quote') // Generic quote error detection
 
         if (isQuoteError && this.lastQuoteRequest && this.dispatch) {
+          if (this.quoteTimeout) clearTimeout(this.quoteTimeout)
+          this.quoteTimeout = null
           this.dispatch(clearQuote(this.lastQuoteRequest))
           logger.debug(
             `WebSocketService: Cleared failed quote due to error for ${this.lastQuoteRequest.fromAsset}/${this.lastQuoteRequest.toAsset}/${this.lastQuoteRequest.fromAmount}`
@@ -897,14 +927,18 @@ class WebSocketService {
         logger.debug(
           'WebSocketService: Socket still connecting during error, waiting before close'
         )
+        const socket = this.socket
         setTimeout(() => {
-          if (this.socket && this.socket.readyState === WebSocket.CONNECTING) {
-            this.socket.close(1006, 'Error during connection')
+          if (
+            this.socket === socket &&
+            socket.readyState === WebSocket.CONNECTING
+          ) {
+            socket.close(4000, 'Error during connection')
           }
         }, 200)
       } else if (readyState === WebSocket.OPEN) {
         // For OPEN state, close immediately
-        this.socket.close(1006, 'Error event occurred')
+        this.socket.close(4000, 'Error event occurred')
       }
     } catch (err) {
       logger.warn('WebSocketService: Error during socket cleanup', err)
@@ -945,7 +979,7 @@ class WebSocketService {
       )
       toast.warning(i18n.t('websocket.connectionLost'), {
         autoClose: 5000,
-        toastId: 'websocket-lost-connection',
+        toastId: 'maker-connection-status',
       })
     } else if (event.code === 1011) {
       logger.error(
@@ -953,7 +987,7 @@ class WebSocketService {
       )
       toast.error(i18n.t('websocket.serverError'), {
         autoClose: 5000,
-        toastId: 'websocket-server-error',
+        toastId: 'maker-connection-status',
       })
     }
 
@@ -968,6 +1002,10 @@ class WebSocketService {
   /** Close the WebSocket connection and clean up resources */
   public close(): void {
     logger.info('WebSocketService: Closing connection')
+    if (this.quoteTimeout) clearTimeout(this.quoteTimeout)
+    this.quoteTimeout = null
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
+    this.reconnectTimer = null
 
     this.connectionInitialized = false
     this.isReconnecting = false
@@ -995,33 +1033,20 @@ class WebSocketService {
     // Clear subscribed pairs
     this.subscribedPairs.clear()
 
-    // Close socket connection with better state handling
-    if (this.socket) {
-      try {
-        const readyState = this.socket.readyState
-
-        if (readyState === WebSocket.OPEN) {
-          this.socket.close(1000, 'Connection closed by client')
-        } else if (readyState === WebSocket.CONNECTING) {
-          // For connecting sockets, wait a moment before forcing close
-          logger.debug(
-            'WebSocketService: Socket still connecting, waiting before close'
-          )
-          setTimeout(() => {
-            if (
-              this.socket &&
-              this.socket.readyState === WebSocket.CONNECTING
-            ) {
-              this.socket.close(1006, 'Connection timeout during close')
-            }
-          }, 100)
-        }
-        // For CLOSING or CLOSED states, don't attempt to close again
-      } catch (error) {
-        logger.debug('WebSocketService: Error closing socket', error)
+    // Detach the old socket before closing: late events must not restart it.
+    const socket = this.socket
+    this.socket = null
+    if (socket) {
+      socket.onopen = null
+      socket.onmessage = null
+      socket.onclose = null
+      socket.onerror = null
+      if (
+        socket.readyState === WebSocket.OPEN ||
+        socket.readyState === WebSocket.CONNECTING
+      ) {
+        socket.close(1000, 'Connection closed by client')
       }
-
-      this.socket = null
     }
 
     // Update Redux state
@@ -1030,10 +1055,7 @@ class WebSocketService {
     }
 
     // Clear all toasts related to websocket
-    toast.dismiss('websocket-lost-connection')
-    toast.dismiss('websocket-server-error')
-    toast.dismiss('circuit-breaker-open')
-    toast.dismiss('max-reconnect-attempts')
+    toast.dismiss('maker-connection-status')
 
     // Reset stability metrics
     this.stability = {
@@ -1089,8 +1111,10 @@ class WebSocketService {
       this.close()
 
       // Short delay before reconnecting
-      setTimeout(() => {
-        this.connectionInitialized = true
+      this.connectionInitialized = true
+      this.reconnectTimer = setTimeout(() => {
+        this.reconnectTimer = null
+        if (!this.connectionInitialized) return
         this.connect()
       }, 100)
 
@@ -1158,12 +1182,12 @@ class WebSocketService {
     }
 
     // If connecting, wait for connection to be established
-    if (this.socket.readyState === WebSocket.CONNECTING) {
+    if (!this.isConnectionReady) {
       return new Promise((resolve) => {
         const timeoutId = setTimeout(() => {
           // Remove this resolver from the list
           this.connectionReadyResolvers = this.connectionReadyResolvers.filter(
-            (r) => r !== resolve
+            (r) => r !== resolver
           )
           resolve(false)
         }, timeout)
@@ -1229,7 +1253,33 @@ class WebSocketService {
         ? { from_asset: fromAsset, to_amount: amount, to_asset: toAsset }
         : { from_amount: amount, from_asset: fromAsset, to_asset: toAsset }
 
-    return this.queueMessage('quote_request', payload, 4) // Higher priority than normal messages but lower than connection management
+    // Desktop atomic swaps settle through the connected Lightning channels.
+    // The maker otherwise defaults these legacy WebSocket requests to L1.
+    const queued = this.queueMessage(
+      'quote_request',
+      {
+        ...payload,
+        from_layer: fromAsset === 'BTC' ? 'BTC_LN' : 'RGB_LN',
+        to_layer: toAsset === 'BTC' ? 'BTC_LN' : 'RGB_LN',
+      },
+      4
+    )
+    if (queued) {
+      if (this.quoteTimeout) clearTimeout(this.quoteTimeout)
+      const request = this.lastQuoteRequest
+      this.quoteTimeout = setTimeout(() => {
+        this.quoteTimeout = null
+        if (this.lastQuoteRequest !== request || !this.connectionInitialized)
+          return
+        if (this.dispatch) {
+          this.dispatch(clearQuote(request))
+          this.dispatch(
+            setQuoteError(i18n.t('tradeMarketMaker.error.unableToGetQuote'))
+          )
+        }
+      }, 10000)
+    }
+    return queued
   }
 
   /**
@@ -1286,7 +1336,9 @@ class WebSocketService {
                       action: 'quote_request',
                       from_amount: 1000,
                       from_asset: fromAsset,
+                      from_layer: fromAsset === 'BTC' ? 'BTC_LN' : 'RGB_LN',
                       to_asset: toAsset,
+                      to_layer: toAsset === 'BTC' ? 'BTC_LN' : 'RGB_LN',
                     })
                   )
                 }
@@ -1298,7 +1350,9 @@ class WebSocketService {
           }
 
           // Give it one more chance with a shorter timeout
+          const socket = this.socket
           setTimeout(() => {
+            if (this.socket !== socket || !this.connectionInitialized) return
             const newElapsed = Date.now() - this.lastHeartbeatResponse
             if (newElapsed > this.heartbeatTimeout / 2) {
               logger.warn(
@@ -1337,6 +1391,11 @@ class WebSocketService {
    * Handle reconnection logic with exponential backoff and improved network checking
    */
   private handleReconnect(): void {
+    if (
+      !this.connectionInitialized ||
+      window.location.pathname !== '/market-maker'
+    )
+      return
     if (this.isReconnecting) {
       logger.info('WebSocketService: Already attempting to reconnect')
       return
@@ -1365,7 +1424,7 @@ class WebSocketService {
         'Could not establish a stable connection. Please try refreshing the connection.',
         {
           autoClose: false,
-          toastId: 'max-reconnect-attempts',
+          toastId: 'maker-connection-status',
         }
       )
 
@@ -1382,7 +1441,7 @@ class WebSocketService {
         'Network connection unavailable. Will reconnect when online.',
         {
           autoClose: 5000,
-          toastId: 'websocket-network-offline',
+          toastId: 'maker-connection-status',
         }
       )
       this.isReconnecting = false
@@ -1422,7 +1481,9 @@ class WebSocketService {
     }
 
     // Schedule reconnection attempt
-    setTimeout(() => {
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null
+      if (!this.connectionInitialized) return
       if (this.isConnected()) {
         logger.info('WebSocketService: Already reconnected, skipping')
         this.isReconnecting = false
@@ -1491,10 +1552,8 @@ class WebSocketService {
     // Clear subscribed pairs
     this.subscribedPairs.clear()
 
-    // Clear any existing connection
-    if (this.socket) {
-      this.close()
-    }
+    // Cancel pending reconnects even when no socket is currently open.
+    this.close()
 
     // Reset connection health
     resetConnectionHealth()

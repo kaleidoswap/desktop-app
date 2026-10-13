@@ -112,7 +112,7 @@ impl MindProcess {
         // Desktop defaults for local reasoning; the Agent tab changes them live.
         // The response cap is never removed so a turn cannot run away.
         if std::env::var_os("KALEIDO_MIND_MAX_THINKING_TOKENS").is_none() {
-            cmd.env("KALEIDO_MIND_MAX_THINKING_TOKENS", "1024");
+            cmd.env("KALEIDO_MIND_MAX_THINKING_TOKENS", "512");
         }
         if std::env::var_os("KALEIDO_MIND_MAX_TOKENS").is_none() {
             cmd.env("KALEIDO_MIND_MAX_TOKENS", "4096");
@@ -121,26 +121,10 @@ impl MindProcess {
             cmd.env("KALEIDO_MIND_MAX_TOKENS_CEILING", "8192");
         }
 
-        // Point the sidecar at kaleido-mcp so the agent gets real tools.
-        // Without KALEIDO_MCP_PATH the provider runs "tool-less" — the model
-        // narrates tool calls ("I'll check your balance…") it can never execute.
-        // The MCP server's node/maker/network env comes from apply_account_env.
-        match resolve_mcp_path(app) {
-            Some(mcp) => {
-                log::info!("[mind] KALEIDO_MCP_PATH={}", mcp.display());
-                cmd.env("KALEIDO_MCP_PATH", mcp);
-            }
-            None => log::warn!(
-                "[mind] kaleido-mcp not found — chat runs tool-less; set KALEIDO_MCP_PATH"
-            ),
-        }
-
         let account = app
             .try_state::<crate::CurrentAccount>()
             .and_then(|acc| acc.0.read().ok().and_then(|g| g.clone()));
-        if let Some(account) = account {
-            apply_account_env(&mut cmd, &account);
-        }
+        configure_account_tools(&mut cmd, account.as_ref(), resolve_mcp_path(app));
 
         let mut child = cmd
             .spawn()
@@ -220,20 +204,50 @@ impl MindProcess {
         Ok(())
     }
 
-    /// Kill the sidecar (best-effort) and drop the pipes.
-    pub fn stop(&self) {
+    /// Stop before changing account context. Keep the spawn lock until the
+    /// update completes, so a concurrent request cannot start with old URLs.
+    pub fn stop_with_update(&self, update: impl FnOnce()) {
+        let mut child_guard = self
+            .child
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         *self
             .stdin
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
-        if let Some(mut child) = self
-            .child
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .take()
-        {
+        if let Some(mut child) = child_guard.take() {
             let _ = child.kill();
             let _ = child.wait();
+        }
+        update();
+    }
+
+    pub fn stop(&self) {
+        self.stop_with_update(|| {});
+    }
+}
+
+/// No selected account means no implicit localhost wallet. Also clear inherited
+/// connection variables before applying the selected account's configuration.
+fn configure_account_tools(
+    cmd: &mut Command,
+    account: Option<&crate::db::Account>,
+    mcp: Option<PathBuf>,
+) {
+    for key in [
+        "KALEIDO_MCP_PATH",
+        "RLN_NODE_URL",
+        "RLN_BEARER_TOKEN",
+        "KALEIDOSWAP_API_URL",
+        "RGB_PROXY_ENDPOINT",
+        "KALEIDO_NETWORK",
+    ] {
+        cmd.env_remove(key);
+    }
+    if let Some(account) = account.filter(|a| !a.node_url.trim().is_empty()) {
+        apply_account_env(cmd, account);
+        if let Some(path) = mcp {
+            cmd.env("KALEIDO_MCP_PATH", path);
         }
     }
 }
@@ -433,9 +447,39 @@ fn resolve_mcp_path(app: &AppHandle) -> Option<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::{is_mock_status, mcp_network, pick_provider_dir};
+    use super::{
+        configure_account_tools, is_mock_status, mcp_network, pick_provider_dir, MindProcess,
+    };
     use std::fs;
     use std::path::{Path, PathBuf};
+
+    #[test]
+    fn no_account_cannot_inherit_a_wallet_connection() {
+        let mut cmd = std::process::Command::new("node");
+        cmd.env("KALEIDO_MCP_PATH", "old-mcp")
+            .env("RLN_NODE_URL", "http://old-node");
+        configure_account_tools(&mut cmd, None, Some(PathBuf::from("mcp.js")));
+        for key in [
+            "KALEIDO_MCP_PATH",
+            "RLN_NODE_URL",
+            "RLN_BEARER_TOKEN",
+            "KALEIDOSWAP_API_URL",
+        ] {
+            assert_eq!(cmd.get_envs().find(|(k, _)| *k == key).unwrap().1, None);
+        }
+    }
+
+    #[test]
+    fn account_update_runs_with_spawning_excluded() {
+        let process = MindProcess::new();
+        let mut updated = false;
+        process.stop_with_update(|| {
+            assert!(process.child.try_lock().is_err());
+            updated = true;
+        });
+        assert!(updated);
+        assert!(!process.is_running());
+    }
 
     fn tmp(name: &str) -> PathBuf {
         let d =

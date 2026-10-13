@@ -483,13 +483,16 @@ const LimitsCard: React.FC<{
       <div className="mb-3 flex items-center gap-2">
         <Gauge className="h-4 w-4 text-violet-400" />
         <h3 className="text-sm font-semibold text-white">Response limits</h3>
-        <span className="ml-auto text-xs text-gray-500">~30 tokens/sec</span>
+        <span className="ml-auto text-xs text-gray-500">
+          Speed varies by model and device
+        </span>
       </div>
       <label className="mb-3 flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2">
         <span>
           <span className="block text-sm text-gray-100">Thinking</span>
           <span className="block text-xs text-gray-500">
-            Reason before answering. Off is faster; on helps multi-step tasks.
+            Reason before answering. The default budget is 512 tokens. A larger
+            budget allows more reasoning but takes longer.
           </span>
         </span>
         <input

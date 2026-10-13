@@ -3289,5 +3289,20 @@
       "rln_list_channels": "Kanäle auflisten",
       "rln_get_address": "On-Chain-Adresse"
     }
+  },
+  "ux": {
+    "node": "Knoten",
+    "checking": "Wird geprüft…",
+    "channelPending": "Kanal wird geöffnet. Das Guthaben ist erst verfügbar, wenn der Knoten den Kanal als bereit meldet.",
+    "channelUnavailable": "Kanal nicht verfügbar. Prüfe die Peer-Verbindung und den Knotenstatus.",
+    "balanceHelp": "Die Salden enthalten Kanalgelder. Reserven und Zahlungslimits können den sendbaren Betrag verringern.",
+    "dataUnavailable": "Aktuelle Daten konnten nicht geladen werden. Angezeigte Werte sind möglicherweise veraltet. Prüfe den Knoten erneut.",
+    "canSend": "Sendbar",
+    "canReceive": "Empfangbar",
+    "lspRecovery": "Prüfe das Knotennetzwerk und die LSP-Adresse und versuche es erneut. Links kannst du einen anderen Anbieter eingeben.",
+    "paymentLimit": "Limit pro Zahlung",
+    "quoteUnavailable": "Kursangebot nicht verfügbar",
+    "lightningAvailable": "Lightning-Kanal verfügbar",
+    "checkSwapAvailability": "Prüfe vor dem Tausch die verfügbaren Handelspaare und Angebote."
   }
 }
