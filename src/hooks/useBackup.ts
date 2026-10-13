@@ -2,6 +2,7 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { exists } from '@tauri-apps/plugin-fs'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { buildUnlockRequest, DESKTOP_ANNOUNCE_ALIAS } from '../helpers/unlock'
@@ -40,6 +41,7 @@ interface UseBackupReturn {
 export const useBackup = ({
   nodeSettings,
 }: UseBackupProps): UseBackupReturn => {
+  const { t } = useTranslation()
   const [showBackupModal, setShowBackupModal] = useState(false)
   const [isBackupInProgress, setIsBackupInProgress] = useState(false)
 
@@ -97,12 +99,22 @@ export const useBackup = ({
     const { backupPath: pathToBackup } = data
 
     if (!pathToBackup.trim()) {
-      toast.error('Invalid backup path')
+      toast.error(
+        t(
+          'backupModal.toasts.invalidPath',
+          'Choose a valid folder for the backup'
+        )
+      )
       return
     }
 
     if (await exists(pathToBackup)) {
-      toast.error('Backup file already exists. Please choose a different path.')
+      toast.error(
+        t(
+          'backupModal.toasts.fileExists',
+          'A backup file already exists there. Choose a different folder.'
+        )
+      )
       return
     }
 
@@ -115,11 +127,16 @@ export const useBackup = ({
       } else if (lockResponse.status === 403) {
         await handleLockedBackup(data)
       } else {
-        toast.error('Lock unsuccessful')
+        toast.error(
+          t(
+            'backupModal.toasts.lockFailed',
+            'Could not lock the wallet for the backup'
+          )
+        )
       }
     } catch (err) {
       logger.error('Backup failed:', err)
-      toast.error('Backup error')
+      toast.error(t('backupModal.toasts.failed', 'Backup failed'))
     } finally {
       handleBackupCompletion(pathToBackup)
     }
@@ -133,9 +150,9 @@ export const useBackup = ({
     if (backupResponse.status === 200) {
       await handleSuccessfulBackup(data)
     } else if (backupResponse.status === 401) {
-      toast.error('Wrong password')
+      toast.error(t('backupModal.toasts.wrongPassword', 'Wrong password'))
     } else {
-      toast.error('Backup error')
+      toast.error(t('backupModal.toasts.failed', 'Backup failed'))
     }
   }
 
@@ -145,9 +162,14 @@ export const useBackup = ({
       await lock().unwrap()
       await performBackupSequence(data)
     } else if (unlockResponse.status === 401) {
-      toast.error('Wrong password')
+      toast.error(t('backupModal.toasts.wrongPassword', 'Wrong password'))
     } else {
-      toast.error('Unlock unsuccessful')
+      toast.error(
+        t(
+          'backupModal.toasts.unlockFailed',
+          'Could not unlock the wallet after the backup'
+        )
+      )
     }
   }
 
@@ -159,7 +181,7 @@ export const useBackup = ({
         password: data.nodePassword,
       })
     ).unwrap()
-    toast.success('Backup successful')
+    toast.success(t('backupModal.toasts.success', 'Backup saved'))
   }
 
   const handleBackupCompletion = (pathToBackup: string) => {

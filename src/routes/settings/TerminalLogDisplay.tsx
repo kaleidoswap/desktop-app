@@ -1,5 +1,4 @@
 import { CSSProperties, useEffect, useRef, memo, useMemo } from 'react'
-import { logger } from '../../utils/logger'
 
 // Move parseAnsi outside component to avoid recreating on every render
 const parseAnsi = (log: string) => {
@@ -81,66 +80,89 @@ const parseAnsi = (log: string) => {
   return segments
 }
 
-// Memoize individual log line to prevent unnecessary re-renders
-const LogLine = memo(
-  ({ log, style }: { log: string; style?: CSSProperties }) => {
-    const segments = useMemo(() => parseAnsi(log), [log])
+// Lines without ANSI colours still get a level tint so errors stand out.
+const levelColor = (log: string) => {
+  if (log.includes('\x1b[')) return '#94A3B8'
+  if (/\b(ERROR|FATAL|PANIC)\b/.test(log)) return '#FF6B6B'
+  if (/\bWARN(ING)?\b/.test(log)) return '#FFDC00'
+  return '#94A3B8'
+}
 
-    return (
-      <div
-        className="font-mono text-sm leading-5 whitespace-pre-wrap py-1"
-        style={style}
-      >
-        {segments.map((segment, segIndex) => (
-          <span
-            key={segIndex}
-            style={{
-              color: segment.color || '#94A3B8',
-              fontStyle: segment.fontStyle || 'normal',
-              fontWeight: segment.fontWeight || 'normal',
-              textDecoration: segment.textDecoration || 'none',
-            }}
-          >
-            {segment.text}
-          </span>
-        ))}
-      </div>
-    )
-  }
-)
+// Memoize individual log line to prevent unnecessary re-renders
+const LogLine = memo(({ log }: { log: string }) => {
+  const segments = useMemo(() => parseAnsi(log), [log])
+  const fallback = useMemo(() => levelColor(log), [log])
+
+  return (
+    <div className="whitespace-pre-wrap py-0.5 font-mono text-xs leading-5 [overflow-wrap:anywhere]">
+      {segments.map((segment, segIndex) => (
+        <span
+          key={segIndex}
+          style={{
+            color: segment.color || fallback,
+            fontStyle: segment.fontStyle || 'normal',
+            fontWeight: segment.fontWeight || 'normal',
+            textDecoration: segment.textDecoration || 'none',
+          }}
+        >
+          {segment.text}
+        </span>
+      ))}
+    </div>
+  )
+})
 
 LogLine.displayName = 'LogLine'
 
+// Within this distance of the bottom the view keeps following new lines.
+const STICK_THRESHOLD_PX = 40
+
 interface TerminalLogDisplayProps {
   logs: string[]
-  maxEntries: number
+  /** Follow new lines while the user is at the bottom. */
+  follow?: boolean
+  /** Called when the user scrolls away from / back to the bottom. */
+  onAtBottomChange?: (atBottom: boolean) => void
+  /** Bump to scroll to the bottom. */
+  scrollToBottomSignal?: number
   className?: string
 }
 
 const TerminalLogDisplay = memo(
-  ({ logs, className = '' }: TerminalLogDisplayProps) => {
-    const logsContainerRef = useRef<HTMLDivElement>(null)
+  ({
+    logs,
+    follow = true,
+    onAtBottomChange,
+    scrollToBottomSignal = 0,
+    className = '',
+  }: TerminalLogDisplayProps) => {
+    const containerRef = useRef<HTMLDivElement>(null)
+    const atBottom = useRef(true)
 
     useEffect(() => {
-      logger.debug('TerminalLogDisplay received logs:', logs)
-      if (logsContainerRef.current) {
-        logsContainerRef.current.scrollTop =
-          logsContainerRef.current.scrollHeight
-      }
-    }, [logs])
+      const el = containerRef.current
+      if (el && follow && atBottom.current) el.scrollTop = el.scrollHeight
+    }, [logs, follow])
 
-    if (!logs || logs.length === 0) {
-      return (
-        <div className={`h-full flex items-center justify-center ${className}`}>
-          <span className="text-content-tertiary">No logs available</span>
-        </div>
-      )
-    }
+    useEffect(() => {
+      const el = containerRef.current
+      if (el && scrollToBottomSignal > 0) el.scrollTop = el.scrollHeight
+    }, [scrollToBottomSignal])
 
     return (
       <div
-        className={`h-full overflow-y-auto px-3 py-2 ${className}`}
-        ref={logsContainerRef}
+        className={`h-full select-text overflow-y-auto px-4 py-3 ${className}`}
+        onScroll={(e) => {
+          const el = e.currentTarget
+          const next =
+            el.scrollHeight - el.scrollTop - el.clientHeight <
+            STICK_THRESHOLD_PX
+          if (next !== atBottom.current) {
+            atBottom.current = next
+            onAtBottomChange?.(next)
+          }
+        }}
+        ref={containerRef}
         style={{
           scrollbarColor: '#4B5563 transparent',
           scrollbarWidth: 'thin',

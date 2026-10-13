@@ -129,6 +129,20 @@
     outline: none;
   }
 
+  /* Keyboard navigation must remain visible even when mouse focus is quiet. */
+  :is(
+    button,
+    a,
+    input,
+    textarea,
+    select,
+    [role='button'],
+    [role='tab']
+  ):focus-visible {
+    outline: 2px solid rgb(var(--app-primary));
+    outline-offset: 3px;
+  }
+
   /* Ensure app fits on smaller screens */
   @media (max-height: 768px) {
     .compact-text {

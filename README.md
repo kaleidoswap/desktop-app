@@ -273,3 +273,13 @@ Kaleidoswap is licensed under the [MIT License](LICENSE).
 ---  
 
 *Thanks for using Kaleidoswap! We're excited to see what you build, and we appreciate your feedback and contributions.*
+
+### AI runtime baseline
+
+The next desktop build uses `mind-assets-v0.11.0`: Mind/provider `0.11.0`,
+MCP `0.5.0`, and QVAC `0.21.0`. Existing installations detect the runtime tag
+change and offer the new download instead of silently reusing an older runtime.
+Publish all platform archives and checksums before shipping the desktop build.
+Dataset collection is not enabled by this dependency update. The packaged runtime
+is LLM-only; the current bundle prunes speech engines, so this update does not
+add desktop voice support.

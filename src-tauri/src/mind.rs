@@ -12,7 +12,7 @@
 //!   3. `pnpm start` with cwd = `<dir>`
 //!
 //! `<dir>` is `$KALEIDO_MIND_PROVIDER_DIR`, the downloaded runtime
-//! (mind_runtime), or a dev sibling-path guess. Resolved at start time and
+//! (mind_runtime), or (debug builds) a dev sibling with @qvac/sdk. Resolved at start time and
 //! passed to the child via cmd.env — never by mutating our own environment.
 
 use std::io::{BufRead, BufReader, Write};
@@ -29,6 +29,9 @@ use std::os::windows::process::CommandExt;
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 pub const MIND_EVENT: &str = "mind-event";
+
+const DESKTOP_SKILLS: &str = "rgb-lightning-node,channel-manager,kaleido-trading,portfolio-manager";
+const DESKTOP_TOOL_PREFIXES: &str = "rln_,kaleidoswap_,get_price,get_market_data";
 
 /// Supervises the single Node sidecar child process + its stdin handle.
 #[derive(Default)]
@@ -100,41 +103,28 @@ impl MindProcess {
         // aliases out of the model's tool prompt so small local models do not
         // waste tokens choosing between duplicate wallet implementations.
         cmd.env("KALEIDO_MIND_RLN_ONLY", "1");
+        // Only the RGB, RGB Lightning and KaleidoSwap skills and tools; the
+        // Spark, Flashnet, Liquid, Bitrefill and paywall ones have no backing
+        // wallet here.
+        cmd.env("KALEIDO_MIND_SKILLS", DESKTOP_SKILLS);
+        cmd.env("KALEIDO_MIND_TOOL_PREFIXES", DESKTOP_TOOL_PREFIXES);
 
-        // Conservative desktop defaults for local reasoning. Users can still
-        // override these through the inherited environment or Agent settings.
+        // Desktop defaults for local reasoning; the Agent tab changes them live.
+        // The response cap is never removed so a turn cannot run away.
         if std::env::var_os("KALEIDO_MIND_MAX_THINKING_TOKENS").is_none() {
-            cmd.env("KALEIDO_MIND_MAX_THINKING_TOKENS", "128");
+            cmd.env("KALEIDO_MIND_MAX_THINKING_TOKENS", "512");
         }
         if std::env::var_os("KALEIDO_MIND_MAX_TOKENS").is_none() {
-            cmd.env("KALEIDO_MIND_MAX_TOKENS", "512");
+            cmd.env("KALEIDO_MIND_MAX_TOKENS", "4096");
         }
-        // Whisper/TTS are only loaded to serve paired phones, and phone pairing
-        // is paused (no P2P provider in @qvac/sdk >= 0.19): skip downloading them.
-        if std::env::var_os("KALEIDO_MIND_VOICE").is_none() {
-            cmd.env("KALEIDO_MIND_VOICE", "0");
-        }
-
-        // Point the sidecar at kaleido-mcp so the agent gets real tools.
-        // Without KALEIDO_MCP_PATH the provider runs "tool-less" — the model
-        // narrates tool calls ("I'll check your balance…") it can never execute.
-        // The MCP server's node/maker/network env comes from apply_account_env.
-        match resolve_mcp_path(app) {
-            Some(mcp) => {
-                log::info!("[mind] KALEIDO_MCP_PATH={}", mcp.display());
-                cmd.env("KALEIDO_MCP_PATH", mcp);
-            }
-            None => log::warn!(
-                "[mind] kaleido-mcp not found — chat runs tool-less; set KALEIDO_MCP_PATH"
-            ),
+        if std::env::var_os("KALEIDO_MIND_MAX_TOKENS_CEILING").is_none() {
+            cmd.env("KALEIDO_MIND_MAX_TOKENS_CEILING", "8192");
         }
 
         let account = app
             .try_state::<crate::CurrentAccount>()
             .and_then(|acc| acc.0.read().ok().and_then(|g| g.clone()));
-        if let Some(account) = account {
-            apply_account_env(&mut cmd, &account);
-        }
+        configure_account_tools(&mut cmd, account.as_ref(), resolve_mcp_path(app));
 
         let mut child = cmd
             .spawn()
@@ -156,6 +146,7 @@ impl MindProcess {
         let app_out = app.clone();
         thread::spawn(move || {
             let reader = BufReader::new(stdout);
+            let mut warned_mock = false;
             for line in reader.lines() {
                 let line = match line {
                     Ok(l) => l,
@@ -167,6 +158,12 @@ impl MindProcess {
                 }
                 match serde_json::from_str::<serde_json::Value>(trimmed) {
                     Ok(value) => {
+                        if !warned_mock && is_mock_status(&value) {
+                            warned_mock = true;
+                            log::warn!(
+                                "[mind] sidecar is in MOCK mode (no @qvac/sdk) — chat replies are fake"
+                            );
+                        }
                         let _ = app_out.emit(MIND_EVENT, value);
                     }
                     Err(e) => {
@@ -207,20 +204,50 @@ impl MindProcess {
         Ok(())
     }
 
-    /// Kill the sidecar (best-effort) and drop the pipes.
-    pub fn stop(&self) {
+    /// Stop before changing account context. Keep the spawn lock until the
+    /// update completes, so a concurrent request cannot start with old URLs.
+    pub fn stop_with_update(&self, update: impl FnOnce()) {
+        let mut child_guard = self
+            .child
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         *self
             .stdin
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
-        if let Some(mut child) = self
-            .child
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .take()
-        {
+        if let Some(mut child) = child_guard.take() {
             let _ = child.kill();
             let _ = child.wait();
+        }
+        update();
+    }
+
+    pub fn stop(&self) {
+        self.stop_with_update(|| {});
+    }
+}
+
+/// No selected account means no implicit localhost wallet. Also clear inherited
+/// connection variables before applying the selected account's configuration.
+fn configure_account_tools(
+    cmd: &mut Command,
+    account: Option<&crate::db::Account>,
+    mcp: Option<PathBuf>,
+) {
+    for key in [
+        "KALEIDO_MCP_PATH",
+        "RLN_NODE_URL",
+        "RLN_BEARER_TOKEN",
+        "KALEIDOSWAP_API_URL",
+        "RGB_PROXY_ENDPOINT",
+        "KALEIDO_NETWORK",
+    ] {
+        cmd.env_remove(key);
+    }
+    if let Some(account) = account.filter(|a| !a.node_url.trim().is_empty()) {
+        apply_account_env(cmd, account);
+        if let Some(path) = mcp {
+            cmd.env("KALEIDO_MCP_PATH", path);
         }
     }
 }
@@ -313,42 +340,79 @@ fn resolve_sidecar_command(
     Ok(("pnpm".to_string(), vec!["start".to_string()], Some(dir)))
 }
 
-/// Whether the sidecar can resolve a provider to run — true if a runtime has
-/// been downloaded OR the dev sibling repos are present. Used by the UI to
-/// decide whether the on-demand download is needed before showing KaleidoMind.
+/// Whether the sidecar can resolve a provider to run — true if a current
+/// runtime has been downloaded, or (debug builds only) a dev sibling checkout
+/// that can actually load @qvac/sdk is present. Used by the UI to decide
+/// whether the on-demand download is needed before showing KaleidoMind.
 pub fn provider_available(app: &AppHandle) -> bool {
     resolve_provider_dir(app).is_some()
 }
 
-/// Find the provider dir: `KALEIDO_MIND_PROVIDER_DIR` override (read-only) → a
-/// downloaded runtime in app data → dev sibling repos relative to the cwd.
+/// Find the provider dir: `KALEIDO_MIND_PROVIDER_DIR` override → the current
+/// downloaded runtime → (debug builds only, no stale runtime) a dev sibling
+/// `../kaleido-mind/apps/provider` that has @qvac/sdk installed.
 fn resolve_provider_dir(app: &AppHandle) -> Option<PathBuf> {
-    if let Ok(d) = std::env::var("KALEIDO_MIND_PROVIDER_DIR") {
-        let p = PathBuf::from(d);
+    pick_provider_dir(
+        std::env::var("KALEIDO_MIND_PROVIDER_DIR")
+            .ok()
+            .map(PathBuf::from),
+        crate::mind_runtime::provider_dir(app),
+        crate::mind_runtime::is_stale(app),
+        cfg!(debug_assertions),
+        std::env::current_dir().ok(),
+    )
+}
+
+fn pick_provider_dir(
+    override_dir: Option<PathBuf>,
+    runtime_dir: Option<PathBuf>,
+    runtime_stale: bool,
+    allow_dev_sibling: bool,
+    cwd: Option<PathBuf>,
+) -> Option<PathBuf> {
+    if let Some(p) = override_dir {
         if p.join("package.json").exists() {
             return Some(p);
         }
     }
-    if let Some(p) = crate::mind_runtime::provider_dir(app) {
-        return Some(p);
+    if runtime_dir.is_some() {
+        return runtime_dir;
     }
-    let rel = ["apps", "provider"];
-    let cwd = std::env::current_dir().ok()?;
-    // Candidate roots: cwd, parent, grandparent — each + ../kaleido-mind.
-    for base in [
+    if !allow_dev_sibling || runtime_stale {
+        return None;
+    }
+    let cwd = cwd?;
+    [
         Some(cwd.clone()),
         cwd.parent().map(PathBuf::from),
         cwd.parent().and_then(|p| p.parent()).map(PathBuf::from),
     ]
     .into_iter()
     .flatten()
-    {
-        let candidate = base.join("kaleido-mind").join(rel[0]).join(rel[1]);
-        if candidate.join("package.json").exists() {
-            return Some(candidate);
-        }
-    }
-    None
+    .map(|base| base.join("kaleido-mind").join("apps").join("provider"))
+    .find(|c| c.join("package.json").exists() && has_qvac_sdk(c))
+}
+
+/// Without @qvac/sdk the provider silently falls back to MOCK mode, so a dev
+/// sibling only counts if pnpm installed it (package-local or hoisted to the
+/// workspace root).
+fn has_qvac_sdk(provider_dir: &std::path::Path) -> bool {
+    let rel = ["node_modules", "@qvac", "sdk", "package.json"];
+    let local = rel
+        .iter()
+        .fold(provider_dir.to_path_buf(), |p, s| p.join(s));
+    let hoisted = provider_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .map(|root| rel.iter().fold(root.to_path_buf(), |p, s| p.join(s)));
+    local.exists() || hoisted.is_some_and(|h| h.exists())
+}
+
+/// True for a `status` event whose inference backend is the provider's MOCK
+/// fallback (no @qvac/sdk — every reply is fake).
+fn is_mock_status(value: &serde_json::Value) -> bool {
+    value.get("type").and_then(|t| t.as_str()) == Some("status")
+        && value.get("inferenceDevice").and_then(|d| d.as_str()) == Some("mock")
 }
 
 /// Resolve the kaleido-mcp entry (`dist/index.js`) passed to the sidecar child:
@@ -383,7 +447,157 @@ fn resolve_mcp_path(app: &AppHandle) -> Option<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::mcp_network;
+    use super::{
+        configure_account_tools, is_mock_status, mcp_network, pick_provider_dir, MindProcess,
+    };
+    use std::fs;
+    use std::path::{Path, PathBuf};
+
+    #[test]
+    fn no_account_cannot_inherit_a_wallet_connection() {
+        let mut cmd = std::process::Command::new("node");
+        cmd.env("KALEIDO_MCP_PATH", "old-mcp")
+            .env("RLN_NODE_URL", "http://old-node");
+        configure_account_tools(&mut cmd, None, Some(PathBuf::from("mcp.js")));
+        for key in [
+            "KALEIDO_MCP_PATH",
+            "RLN_NODE_URL",
+            "RLN_BEARER_TOKEN",
+            "KALEIDOSWAP_API_URL",
+        ] {
+            assert_eq!(cmd.get_envs().find(|(k, _)| *k == key).unwrap().1, None);
+        }
+    }
+
+    #[test]
+    fn account_update_runs_with_spawning_excluded() {
+        let process = MindProcess::new();
+        let mut updated = false;
+        process.stop_with_update(|| {
+            assert!(process.child.try_lock().is_err());
+            updated = true;
+        });
+        assert!(updated);
+        assert!(!process.is_running());
+    }
+
+    fn tmp(name: &str) -> PathBuf {
+        let d =
+            std::env::temp_dir().join(format!("kaleido-mind-test-{}-{}", name, std::process::id()));
+        let _ = fs::remove_dir_all(&d);
+        fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    fn touch(p: &Path) {
+        fs::create_dir_all(p.parent().unwrap()).unwrap();
+        fs::write(p, "{}").unwrap();
+    }
+
+    /// `<root>/app` is the cwd; `<root>/kaleido-mind/apps/provider` the sibling.
+    fn sibling(root: &Path, with_qvac: bool) -> PathBuf {
+        let provider = root.join("kaleido-mind").join("apps").join("provider");
+        touch(&provider.join("package.json"));
+        if with_qvac {
+            touch(&provider.join("node_modules/@qvac/sdk/package.json"));
+        }
+        fs::create_dir_all(root.join("app")).unwrap();
+        provider
+    }
+
+    #[test]
+    fn sibling_without_qvac_is_ignored() {
+        let root = tmp("no-qvac");
+        sibling(&root, false);
+        assert_eq!(
+            pick_provider_dir(None, None, false, true, Some(root.join("app"))),
+            None
+        );
+    }
+
+    #[test]
+    fn stale_runtime_never_falls_back_to_sibling() {
+        let root = tmp("stale");
+        sibling(&root, true);
+        assert_eq!(
+            pick_provider_dir(None, None, true, true, Some(root.join("app"))),
+            None
+        );
+    }
+
+    #[test]
+    fn sibling_requires_debug_build() {
+        let root = tmp("release");
+        sibling(&root, true);
+        assert_eq!(
+            pick_provider_dir(None, None, false, false, Some(root.join("app"))),
+            None
+        );
+    }
+
+    #[test]
+    fn sibling_with_qvac_is_used_in_debug() {
+        let root = tmp("qvac");
+        let provider = sibling(&root, true);
+        assert_eq!(
+            pick_provider_dir(None, None, false, true, Some(root.join("app"))),
+            Some(provider)
+        );
+    }
+
+    #[test]
+    fn sibling_with_hoisted_qvac_is_used_in_debug() {
+        let root = tmp("hoisted");
+        let provider = sibling(&root, false);
+        touch(&root.join("kaleido-mind/node_modules/@qvac/sdk/package.json"));
+        assert_eq!(
+            pick_provider_dir(None, None, false, true, Some(root.join("app"))),
+            Some(provider)
+        );
+    }
+
+    #[test]
+    fn override_dir_wins() {
+        let root = tmp("override");
+        let over = root.join("custom");
+        touch(&over.join("package.json"));
+        let runtime = root.join("runtime");
+        assert_eq!(
+            pick_provider_dir(
+                Some(over.clone()),
+                Some(runtime),
+                true,
+                false,
+                Some(root.join("app"))
+            ),
+            Some(over)
+        );
+    }
+
+    #[test]
+    fn current_runtime_beats_sibling() {
+        let root = tmp("runtime");
+        sibling(&root, true);
+        let runtime = root.join("runtime");
+        assert_eq!(
+            pick_provider_dir(
+                None,
+                Some(runtime.clone()),
+                false,
+                true,
+                Some(root.join("app"))
+            ),
+            Some(runtime)
+        );
+    }
+
+    #[test]
+    fn detects_mock_status() {
+        let mock = serde_json::json!({"type": "status", "inferenceDevice": "mock"});
+        let gpu = serde_json::json!({"type": "status", "inferenceDevice": "gpu"});
+        assert!(is_mock_status(&mock));
+        assert!(!is_mock_status(&gpu));
+    }
 
     #[test]
     fn maps_app_networks_to_mcp_presets() {

@@ -47,7 +47,7 @@ export const NoChannelsMessage: React.FC<NoChannelsMessageProps> = ({
 
   if (!hasEnoughBalance) {
     return (
-      <div className="max-w-2xl w-full bg-surface-base/80 backdrop-blur-sm rounded-xl border border-border-default/50 p-8 shadow-lg">
+      <div className="max-w-2xl w-full bg-surface-base/80 backdrop-blur-sm rounded-xl border border-border-default/50 p-5 shadow-lg">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center">
             <Wallet className="w-8 h-8 text-emerald-500" />
@@ -194,14 +194,14 @@ export const NoTradingChannelsMessage: React.FC<
   }
 
   return (
-    <div className="w-full h-full min-h-[calc(100vh-120px)] bg-surface-base relative flex flex-col">
+    <div className="w-full h-full min-h-0 bg-surface-base relative flex flex-col">
       {/* Background accents removed - using app surface-base */}
 
       {/* Main Content Area */}
       <div className="flex-1 relative z-10 flex flex-col items-center justify-start p-6">
         <div className="w-full max-w-6xl">
           {/* Market Maker Selector */}
-          <div className="relative z-50 mb-8">
+          <div className="relative z-50 mb-4">
             <div className="bg-surface-overlay rounded-2xl border border-border-default/50 p-5 shadow-lg max-w-md mx-auto">
               <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
                 <div className="flex items-center gap-3">
@@ -230,16 +230,16 @@ export const NoTradingChannelsMessage: React.FC<
                 </div>
               </div>
 
-              <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent leading-tight mb-4 px-4 max-w-4xl mx-auto break-words">
+              <h1 className="text-2xl lg:text-xl font-semibold bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent leading-tight mb-4 px-4 max-w-4xl mx-auto break-words">
                 {t('trade.noChannels.noTradingChannels')}
               </h1>
 
-              <p className="text-xl text-content-secondary leading-relaxed max-w-3xl mx-auto mb-8 px-4">
+              <p className="text-sm text-content-secondary leading-relaxed max-w-3xl mx-auto mb-4 px-4">
                 {getRecommendationMessage()}
               </p>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-4">
                 {primaryAction === 'buy' ? (
                   <>
                     <button
@@ -288,7 +288,7 @@ export const NoTradingChannelsMessage: React.FC<
               </div>
 
               {/* Information Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mt-12 px-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-5xl mx-auto mt-6 px-4">
                 {tradingPairs.length > 0 ? (
                   <>
                     <div className="bg-surface-overlay rounded-2xl border border-border-default/40 p-5 shadow-lg">
@@ -314,11 +314,11 @@ export const NoTradingChannelsMessage: React.FC<
                   <div className="lg:col-span-2">
                     <div className="bg-surface-overlay rounded-2xl border border-border-default/40 p-6 shadow-lg">
                       <div className="relative">
-                        <div className="text-center mb-8">
+                        <div className="text-center mb-4">
                           <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 via-cyan-500/15 to-blue-500/20 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-blue-500/30 shadow-2xl">
                             <HelpCircle className="w-8 h-8 text-blue-400" />
                           </div>
-                          <h3 className="text-3xl font-bold text-white mb-3 bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent">
+                          <h3 className="text-xl font-semibold text-white mb-3 bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent">
                             {t('trade.noChannels.quickStartGuide')}
                           </h3>
                           <p className="text-content-secondary text-lg leading-relaxed">
@@ -436,7 +436,7 @@ export const ChannelsNotReadyMessage: React.FC<
   const { t } = useTranslation()
 
   return (
-    <div className="max-w-2xl w-full bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-8">
+    <div className="max-w-2xl w-full bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-5">
       <div className="flex flex-col items-center space-y-4">
         <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center">
           <Clock className="w-8 h-8 text-yellow-500" />
@@ -768,7 +768,7 @@ export const ConnectionTimeoutMessage: React.FC<
 
           <div className="flex flex-col sm:flex-row gap-3">
             <button
-              className={`px-6 py-3 ${isConnecting ? 'bg-primary hover:bg-primary-emphasis text-[#12131C]' : 'bg-orange-600 hover:bg-orange-700 text-white'} rounded-lg transition-colors font-medium flex items-center gap-2`}
+              className={`px-6 py-3 ${isConnecting ? 'bg-primary hover:bg-primary-emphasis text-primary-foreground' : 'bg-orange-600 hover:bg-orange-700 text-white'} rounded-lg transition-colors font-medium flex items-center gap-2`}
               onClick={onRetry}
             >
               <RefreshCcw className="w-5 h-5" />

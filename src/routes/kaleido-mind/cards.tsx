@@ -98,8 +98,10 @@ export function humanizeToolName(name: string): string {
     kaleidoswap_atomic_status: 'Checking the swap',
     kaleidoswap_get_quote: 'Getting a quote',
     kaleidoswap_lsp_create_asset_channel: 'Buying a channel',
+    kaleidoswap_lsp_create_order: 'Ordering a channel',
     kaleidoswap_lsp_estimate_fees: 'Estimating channel fees',
     kaleidoswap_lsp_get_info: 'Checking the LSP',
+    kaleidoswap_lsp_get_order: 'Checking the channel order',
     kaleidoswap_lsp_quote_asset_channel: 'Quoting a channel',
     rln_atomic_taker: 'Accepting the swap',
     rln_close_channel: 'Closing a channel',
@@ -545,13 +547,9 @@ const ChannelBuyCard: React.FC<CardProps> = ({ data, args }) => {
   const o = asObj(data) ?? {}
   const asset = String(args?.asset ?? o.asset ?? '')
   const amount = args?.asset_amount ?? o.asset_amount
-  const total = fmtSats(
-    o.total_sat ?? o.order_total_sat ?? o.onchain_amount_sat ?? args?.total_sat
-  )
-  const fee = fmtSats(
-    o.channel_fee_sat ?? o.fee_total_sat ?? o.total_fee ?? o.fee_sat
-  )
-  const price = fmtSats(o.btc_amount_sat)
+  const total = fmtSats(o.amount_due_sat ?? o.total_sat ?? args?.total_sat)
+  const fee = fmtSats(o.fee_sat ?? o.channel_fee_sat ?? o.total_fee)
+  const price = fmtSats(o.asset_price_sat ?? o.btc_amount_sat)
   const state =
     (typeof o.order_state === 'string' && o.order_state) ||
     (typeof o.status === 'string' && o.status) ||
@@ -764,7 +762,9 @@ function cardFor(name: string): CardComponent {
   const registry: Record<string, CardComponent> = {
     find_merchant_locations: MerchantCard,
     kaleidoswap_lsp_create_asset_channel: ChannelBuyCard,
+    kaleidoswap_lsp_create_order: ChannelBuyCard,
     kaleidoswap_lsp_estimate_fees: ChannelBuyCard,
+    kaleidoswap_lsp_get_order: ChannelBuyCard,
     kaleidoswap_lsp_quote_asset_channel: ChannelBuyCard,
     rln_create_ln_invoice: InvoiceCard,
     rln_create_rgb_invoice: InvoiceCard,

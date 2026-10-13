@@ -37,6 +37,8 @@ import {
 } from '../../components/wallet-setup'
 import { setAppMode, type AppMode } from '../../slices/settings/settings.slice'
 import { logger } from '../../utils/logger'
+import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
+import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 const MODE_OPTIONS: {
   mode: AppMode
@@ -161,9 +163,20 @@ export const Component = () => {
     }
   }
 
-  const openMindOnly = () => {
-    dispatch(setAppMode('mind'))
-    navigate(KALEIDO_MIND_PATH)
+  const [mindLaunchError, setMindLaunchError] = useState<string | null>(null)
+  const openMindOnly = async () => {
+    setMindLaunchError(null)
+    try {
+      await invoke('set_current_account', { accountName: null })
+      dispatch(nodeSettingsActions.resetNodeSettings())
+      dispatch(nodeApi.util.resetApiState())
+      dispatch(setAppMode('mind'))
+      navigate(KALEIDO_MIND_PATH)
+    } catch {
+      setMindLaunchError(
+        'Could not disconnect the node from Mind. Please try again.'
+      )
+    }
   }
 
   const navigateToWalletInit = (path: string) => {
@@ -242,9 +255,9 @@ export const Component = () => {
                     <div className="text-center mb-12 slide-in">
                       <div className="relative inline-flex mb-6">
                         {/* Purple ripple rings */}
-                        <div className="absolute inset-0 rounded-2xl bg-[#9365FF]/15 animate-ripple-1 pointer-events-none" />
-                        <div className="absolute inset-0 rounded-2xl bg-[#9365FF]/10 animate-ripple-2 pointer-events-none" />
-                        <div className="absolute inset-0 rounded-2xl bg-[#9365FF]/8 animate-ripple-3 pointer-events-none" />
+                        <div className="absolute inset-0 rounded-2xl bg-purple/15 animate-ripple-1 pointer-events-none" />
+                        <div className="absolute inset-0 rounded-2xl bg-purple/10 animate-ripple-2 pointer-events-none" />
+                        <div className="absolute inset-0 rounded-2xl bg-purple/8 animate-ripple-3 pointer-events-none" />
                         <div
                           className={`${IconWrapper} bg-gradient-to-br from-primary/20 via-primary/10 to-purple/10 border-2 border-primary/40
                           rounded-2xl shadow-2xl shadow-primary/20
@@ -261,7 +274,7 @@ export const Component = () => {
                       </div>
                       <h1 className="text-3xl md:text-5xl font-bold mb-4 text-white tracking-tight leading-tight py-2">
                         {t('walletSetup.welcomeTo')}{' '}
-                        <span className="bg-gradient-to-r from-[#15E99A] to-[#9365FF] bg-clip-text text-transparent">
+                        <span className="bg-gradient-to-r from-primary to-purple bg-clip-text text-transparent">
                           KaleidoSwap
                         </span>
                       </h1>
@@ -293,13 +306,18 @@ export const Component = () => {
                       </div>
                     </div>
 
+                    {mindLaunchError && (
+                      <p className="text-sm text-red-400" role="alert">
+                        {mindLaunchError}
+                      </p>
+                    )}
                     {selectedMode === 'mind' ? (
                       <div className="flex justify-center slide-in">
                         <div
                           className="relative overflow-hidden transition-all duration-300 border-2 rounded-2xl backdrop-blur-sm
                             hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 cursor-pointer fade-in
                             bg-surface-elevated/40 hover:bg-surface-elevated/60 border-divider/20 w-full max-w-sm"
-                          onClick={openMindOnly}
+                          onClick={() => void openMindOnly()}
                         >
                           <div className="p-6">
                             <div className="flex items-center gap-4 mb-4">

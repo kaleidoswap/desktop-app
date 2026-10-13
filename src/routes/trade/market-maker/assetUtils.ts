@@ -643,13 +643,13 @@ export const createFetchAndSetPairsHandler = (
   // Add a static flag to prevent multiple simultaneous calls
   let isCurrentlyFetching = false
 
-  return async (): Promise<boolean> => {
+  return async (): Promise<boolean | null> => {
     // Prevent multiple simultaneous calls
     if (isCurrentlyFetching) {
       logger.debug(
         'fetchAndSetPairs already in progress, skipping duplicate call'
       )
-      return false
+      return null
     }
 
     isCurrentlyFetching = true
@@ -747,7 +747,14 @@ export const createFetchAndSetPairsHandler = (
           pair.base_asset === 'BTC' || pair.quote_asset === 'BTC'
       )
 
-      const selectedPair = btcPair || validatedPairs[0]
+      // Prefer a pair supported by the user's ready channels before proposing
+      // an asset that requires buying another channel.
+      const channelPair = validatedPairs.find((pair) =>
+        [pair.base_asset_id, pair.quote_asset_id].every(
+          (id) => typeof id === 'string' && availableAssetIds.includes(id)
+        )
+      )
+      const selectedPair = channelPair || btcPair || validatedPairs[0]
       setSelectedPair(selectedPair)
 
       // Set initial assets based on the selected pair
@@ -788,8 +795,8 @@ export const createFetchAndSetPairsHandler = (
           : 'Network error while fetching trading pairs. Please check your connection.'
       }
 
-      toast.error(errorMessage)
-      return false
+      toast.error(errorMessage, { toastId: 'maker-pairs-error' })
+      return null
     } finally {
       isCurrentlyFetching = false
       if (setIsPairsLoading) {

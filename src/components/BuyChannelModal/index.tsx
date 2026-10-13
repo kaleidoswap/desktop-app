@@ -1168,9 +1168,9 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                   onChange={(val) =>
                     setValue('clientBalanceSat', Math.round(val).toString())
                   }
-                  outboundColor="bg-[#9365FF]"
+                  outboundColor="bg-purple"
                   outboundLabel={formatNumberWithCommas(btcOut) + ' sats'}
-                  thumbBorderClass="border-[#9365FF]"
+                  thumbBorderClass="border-purple"
                   unit="sats"
                   value={btcOut}
                 />
@@ -1362,7 +1362,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                   {t('components.buyChannelModal.cancel')}
                 </button>
                 <button
-                  className="flex-1 px-4 py-2.5 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-lg font-medium transition-colors text-sm disabled:bg-content-tertiary disabled:text-content-primary/70 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg font-medium transition-colors text-sm disabled:bg-content-tertiary disabled:text-content-primary/70 disabled:cursor-not-allowed"
                   disabled={
                     loading ||
                     (shouldFetchQuote &&

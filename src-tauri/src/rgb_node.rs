@@ -7,7 +7,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex, RwLock};
@@ -18,7 +18,10 @@ use tauri::{AppHandle, Emitter, WebviewWindow};
 
 const SHUTDOWN_TIMEOUT_SECS: u64 = 5;
 const STARTUP_TIMEOUT_SECS: u64 = 30;
-const MAX_LOGS_IN_MEMORY: usize = 1000;
+const MAX_LOGS_IN_MEMORY: usize = 2000;
+const LOG_FILE_NAME: &str = "rgb-lightning-node.log";
+/// Earlier node sessions kept next to the current log file.
+const PREVIOUS_LOG_SESSIONS: usize = 3;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "status", content = "message")]
@@ -911,58 +914,24 @@ impl NodeProcess {
             .and_then(|guard| guard.clone())
     }
 
-    /// Returns the path to the log file
-    fn get_log_file_path(&self) -> Result<PathBuf, String> {
-        let log_dir = if cfg!(debug_assertions) {
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("logs")
-        } else if cfg!(target_os = "macos") {
-            // macOS: ~/Library/Logs/com.kaleidoswap.dev/
-            let home =
-                env::var("HOME").map_err(|e| format!("Failed to get HOME directory: {}", e))?;
-            PathBuf::from(home).join("Library/Logs/com.kaleidoswap.dev")
-        } else if cfg!(target_os = "windows") {
-            // Windows: %APPDATA%\com.kaleidoswap.dev\logs
-            let app_data = env::var("APPDATA")
-                .map_err(|e| format!("Failed to get APPDATA directory: {}", e))?;
-            PathBuf::from(app_data)
-                .join("com.kaleidoswap.dev")
-                .join("logs")
-        } else {
-            // Linux: ~/.local/share/com.kaleidoswap.dev/logs
-            let home =
-                env::var("HOME").map_err(|e| format!("Failed to get HOME directory: {}", e))?;
-            PathBuf::from(home).join(".local/share/com.kaleidoswap.dev/logs")
-        };
-
-        Ok(log_dir.join("rgb-lightning-node.log"))
-    }
-
-    /// Returns any logs captured so far, including those from the log file
+    /// Recent output of this session (bounded in-memory buffer). The full
+    /// output is in the log file; see `save_logs_to_file`.
     pub fn get_logs(&self) -> Vec<String> {
-        let mut logs = Vec::new();
-
-        // First get any in-memory logs
-        if let Ok(logs_guard) = self.logs.lock() {
-            logs.extend(logs_guard.clone());
-        }
-
-        // Then try to read from the log file
-        if let Ok(log_path) = self.get_log_file_path() {
-            if let Ok(file) = File::open(log_path) {
-                let reader = BufReader::new(file);
-                for line in reader.lines().map_while(Result::ok) {
-                    logs.push(line);
-                }
-            }
-        }
-
-        logs
+        self.logs
+            .lock()
+            .map(|guard| guard.clone())
+            .unwrap_or_default()
     }
 
     /// Save logs to a specific file
+    /// Export the full log of this session and the previous ones (oldest
+    /// first), falling back to the in-memory buffer when no file exists.
     pub fn save_logs_to_file(&self, file_path: &str) -> Result<(), String> {
-        let logs = self.get_logs();
-        std::fs::write(file_path, logs.join("\n"))
+        let content = node_log_dir()
+            .ok()
+            .and_then(|dir| collect_session_logs(&dir))
+            .unwrap_or_else(|| self.get_logs().join("\n"));
+        std::fs::write(file_path, content)
             .map_err(|e| format!("Failed to write logs to file: {}", e))
     }
 
@@ -1140,33 +1109,15 @@ impl NodeProcess {
             ));
         }
 
-        // Set up logging directory
-        let log_dir = if cfg!(debug_assertions) {
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("logs")
-        } else if cfg!(target_os = "macos") {
-            // macOS: ~/Library/Logs/com.kaleidoswap.dev/
-            let home =
-                env::var("HOME").map_err(|e| format!("Failed to get HOME directory: {}", e))?;
-            PathBuf::from(home).join("Library/Logs/com.kaleidoswap.dev")
-        } else if cfg!(target_os = "windows") {
-            // Windows: %APPDATA%\com.kaleidoswap.dev\logs
-            let app_data = env::var("APPDATA")
-                .map_err(|e| format!("Failed to get APPDATA directory: {}", e))?;
-            PathBuf::from(app_data)
-                .join("com.kaleidoswap.dev")
-                .join("logs")
-        } else {
-            // Linux: ~/.local/share/com.kaleidoswap.dev/logs
-            let home =
-                env::var("HOME").map_err(|e| format!("Failed to get HOME directory: {}", e))?;
-            PathBuf::from(home).join(".local/share/com.kaleidoswap.dev/logs")
-        };
+        let log_dir = node_log_dir()?;
 
         // Ensure log directory exists
         std::fs::create_dir_all(&log_dir)
             .map_err(|e| format!("Failed to create log directory: {}", e))?;
 
-        let log_file = log_dir.join("rgb-lightning-node.log");
+        // Keep the previous sessions instead of overwriting them.
+        rotate_session_logs(&log_dir);
+        let log_file = log_dir.join(LOG_FILE_NAME);
         println!("Log file path: {:?}", log_file);
 
         // Open log file for writing
@@ -1233,5 +1184,110 @@ impl NodeProcess {
                 Err(err)
             }
         }
+    }
+}
+
+/// Directory holding the bundled node's log files.
+fn node_log_dir() -> Result<PathBuf, String> {
+    if cfg!(debug_assertions) {
+        Ok(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("logs"))
+    } else if cfg!(target_os = "macos") {
+        // macOS: ~/Library/Logs/com.kaleidoswap.dev/
+        let home = env::var("HOME").map_err(|e| format!("Failed to get HOME directory: {}", e))?;
+        Ok(PathBuf::from(home).join("Library/Logs/com.kaleidoswap.dev"))
+    } else if cfg!(target_os = "windows") {
+        // Windows: %APPDATA%\com.kaleidoswap.dev\logs
+        let app_data =
+            env::var("APPDATA").map_err(|e| format!("Failed to get APPDATA directory: {}", e))?;
+        Ok(PathBuf::from(app_data)
+            .join("com.kaleidoswap.dev")
+            .join("logs"))
+    } else {
+        // Linux: ~/.local/share/com.kaleidoswap.dev/logs
+        let home = env::var("HOME").map_err(|e| format!("Failed to get HOME directory: {}", e))?;
+        Ok(PathBuf::from(home).join(".local/share/com.kaleidoswap.dev/logs"))
+    }
+}
+
+fn session_log_path(dir: &Path, age: usize) -> PathBuf {
+    if age == 0 {
+        dir.join(LOG_FILE_NAME)
+    } else {
+        dir.join(format!("rgb-lightning-node.{}.log", age))
+    }
+}
+
+/// Shift `rgb-lightning-node.log` to `.1.log`, `.1` to `.2`, … dropping the
+/// oldest, so a new session starts with an empty file.
+fn rotate_session_logs(dir: &Path) {
+    let _ = std::fs::remove_file(session_log_path(dir, PREVIOUS_LOG_SESSIONS));
+    for age in (0..PREVIOUS_LOG_SESSIONS).rev() {
+        let from = session_log_path(dir, age);
+        if from.exists() {
+            let _ = std::fs::rename(&from, session_log_path(dir, age + 1));
+        }
+    }
+}
+
+/// All session logs in `dir`, oldest first, each under a header line.
+fn collect_session_logs(dir: &Path) -> Option<String> {
+    let mut out = String::new();
+    for age in (0..=PREVIOUS_LOG_SESSIONS).rev() {
+        let Ok(content) = std::fs::read_to_string(session_log_path(dir, age)) else {
+            continue;
+        };
+        let title = if age == 0 {
+            "current session".to_string()
+        } else {
+            format!("previous session -{}", age)
+        };
+        out.push_str(&format!("===== {} =====\n", title));
+        out.push_str(&content);
+        if !content.ends_with('\n') {
+            out.push('\n');
+        }
+    }
+    (!out.is_empty()).then_some(out)
+}
+
+#[cfg(test)]
+mod session_log_tests {
+    use super::{collect_session_logs, rotate_session_logs, session_log_path};
+
+    fn temp_dir(name: &str) -> std::path::PathBuf {
+        let dir =
+            std::env::temp_dir().join(format!("kaleido-log-test-{}-{}", name, std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn rotation_keeps_previous_sessions_and_drops_the_oldest() {
+        let dir = temp_dir("rotate");
+        for session in 1..=5 {
+            rotate_session_logs(&dir);
+            std::fs::write(session_log_path(&dir, 0), format!("session {}\n", session)).unwrap();
+        }
+        let read = |age| std::fs::read_to_string(session_log_path(&dir, age)).unwrap();
+        assert_eq!(read(0), "session 5\n");
+        assert_eq!(read(1), "session 4\n");
+        assert_eq!(read(3), "session 2\n");
+        assert!(!session_log_path(&dir, 4).exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn export_lists_sessions_oldest_first() {
+        let dir = temp_dir("collect");
+        std::fs::write(session_log_path(&dir, 1), "old").unwrap();
+        std::fs::write(session_log_path(&dir, 0), "new\n").unwrap();
+        let out = collect_session_logs(&dir).unwrap();
+        assert_eq!(
+            out,
+            "===== previous session -1 =====\nold\n===== current session =====\nnew\n"
+        );
+        assert!(collect_session_logs(&temp_dir("empty")).is_none());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

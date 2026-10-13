@@ -2,10 +2,10 @@
 //
 // The MindLayout (./index.tsx) owns a single `useMind()` instance and exposes
 // it to every child page via React Router's Outlet context, so the sidecar
-// subscription and provider status are shared across Brain/Pairing/Models/
-// Skills/Chat instead of being re-created per page.
+// subscription and provider status are shared across Brain/Models/Skills/Chat
+// instead of being re-created per page.
 
-import type { Dispatch, SetStateAction } from 'react'
+import type { Dispatch, MutableRefObject, SetStateAction } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
 import type { SuggestedAction } from '../../api/mind'
@@ -53,8 +53,12 @@ export interface ChatMsg {
 }
 
 // Chat state is owned by the layout so the conversation survives navigating
-// between Mind sub-tabs (Brain / Pairing / Models / Skills / Chat).
+// between Mind sub-tabs (Brain / Models / Skills / Chat).
 export interface MindChatState {
+  sending: boolean
+  setSending: Dispatch<SetStateAction<boolean>>
+  activeChatRef: MutableRefObject<string | null>
+  stoppedRef: MutableRefObject<boolean>
   messages: ChatMsg[]
   setMessages: Dispatch<SetStateAction<ChatMsg[]>>
   input: string
@@ -86,12 +90,8 @@ export function labelForPhase(phase: string): string {
       return 'Loading model'
     case 'model_loaded':
       return 'Model loaded'
-    case 'starting_p2p':
-      return 'Connecting P2P'
     case 'ready':
       return 'Ready'
-    case 'p2p_failed':
-      return 'P2P unavailable (desktop-only)'
     case 'aborted':
       return 'Aborted'
     default:

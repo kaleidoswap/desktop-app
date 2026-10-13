@@ -173,7 +173,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                   {t('common.cancel')}
                 </button>
                 <button
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#15E99A] hover:bg-[#12C97E] text-gray-900 rounded-xl font-semibold transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-emphasis text-gray-900 rounded-xl font-semibold transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                   disabled={isLoading || !password}
                   type="submit"
                 >
@@ -238,7 +238,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                   {t('mnemonicViewer.closeButton')}
                 </button>
                 <button
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#15E99A] hover:bg-[#12C97E] text-gray-900 rounded-xl font-semibold transition-colors text-sm"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-emphasis text-gray-900 rounded-xl font-semibold transition-colors text-sm"
                   onClick={handleCopy}
                   type="button"
                 >

@@ -1,6 +1,10 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
-import { getNodeApiWrapper, MinimalState } from '../../api/client'
+import {
+  getNodeApiWrapper,
+  getNodeHealthApiWrapper,
+  MinimalState,
+} from '../../api/client'
 import type { NodeApiWrapper, ApiResult } from '../../api/node-api-wrapper'
 import type {
   CreateUtxosInput,
@@ -110,14 +114,17 @@ type ApiState = { getState: () => unknown }
  * All error handling is delegated to NodeApiWrapper.execute().
  */
 function queryFn<TArgs, TResult>(
-  call: (wrapper: NodeApiWrapper, args: TArgs) => Promise<ApiResult<TResult>>
+  call: (wrapper: NodeApiWrapper, args: TArgs) => Promise<ApiResult<TResult>>,
+  getWrapper: (
+    state: MinimalState
+  ) => NodeApiWrapper | Promise<NodeApiWrapper> = getNodeApiWrapper
 ) {
   return async (
     args: TArgs,
     api: ApiState
   ): Promise<{ data: TResult } | { error: FetchBaseQueryError }> => {
     try {
-      const wrapper = await getNodeApiWrapper(api.getState() as MinimalState)
+      const wrapper = await getWrapper(api.getState() as MinimalState)
       const result = await call(wrapper, args)
       if ('error' in result && result.error) return { error: result.error }
       return { data: (result.data ?? null) as TResult }
@@ -268,7 +275,10 @@ export const nodeApi = createApi({
 
     // Wallet Management
     nodeInfo: builder.query<NodeInfoResponse, void>({
-      queryFn: queryFn((w, _: void) => w.getNodeInfo()),
+      queryFn: queryFn(
+        (w, _: void) => w.getNodeInfo(),
+        getNodeHealthApiWrapper
+      ),
     }),
 
     openChannel: builder.mutation<OpenChannelResponse, OpenChannelInput>({
@@ -289,7 +299,7 @@ export const nodeApi = createApi({
       queryFn: queryFn((w, args) => w.createRgbInvoice(args)),
     }),
 
-    sendBtc: builder.mutation<void, SendBtcInput>({
+    sendBtc: builder.mutation<{ txid?: string } | void, SendBtcInput>({
       queryFn: queryFn((w, args) => w.sendBtc(args)),
     }),
 

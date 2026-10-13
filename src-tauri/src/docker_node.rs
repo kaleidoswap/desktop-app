@@ -257,6 +257,61 @@ impl DockerNodeManager {
         message
     }
 
+    /// The running container that publishes `host_port` on this machine, as
+    /// `(id, name)`. Used to show logs for a "remote" node that is really a
+    /// Docker container on localhost.
+    pub fn find_container_for_port(host_port: u16) -> Option<(String, String)> {
+        let mut cmd = Self::docker_command();
+        cmd.args(["ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Ports}}"]);
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000);
+        }
+        let out = cmd.output().ok()?;
+        if !out.status.success() {
+            return None;
+        }
+        String::from_utf8_lossy(&out.stdout)
+            .lines()
+            .find_map(|line| {
+                let mut parts = line.splitn(3, '\t');
+                let id = parts.next()?;
+                let name = parts.next()?;
+                let ports = parts.next().unwrap_or("");
+                publishes_host_port(ports, host_port).then(|| (id.to_string(), name.to_string()))
+            })
+    }
+
+    /// The last `tail` lines of a container's output (stdout and stderr merged
+    /// in time order).
+    pub fn container_logs(container: &str, tail: usize) -> Result<Vec<String>, String> {
+        let mut cmd = Self::docker_command();
+        cmd.args([
+            "logs",
+            "--timestamps",
+            "--tail",
+            &tail.to_string(),
+            container,
+        ]);
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000);
+        }
+        let out = cmd
+            .output()
+            .map_err(|e| format!("Failed to run docker logs: {}", e))?;
+        if !out.status.success() {
+            return Err(String::from_utf8_lossy(&out.stderr).trim().to_string());
+        }
+        Ok(merge_timestamped_streams(
+            &String::from_utf8_lossy(&out.stdout),
+            &String::from_utf8_lossy(&out.stderr),
+            tail,
+        ))
+    }
+
     /// Check if Docker is installed and available
     pub fn is_docker_available() -> bool {
         let mut cmd = Self::docker_command();
@@ -1059,5 +1114,66 @@ impl DockerNodeManager {
 
             thread::sleep(Duration::from_secs(MONITOR_INTERVAL_SECS));
         }
+    }
+}
+
+/// Whether a `docker ps` Ports column (e.g.
+/// `0.0.0.0:3001->3001/tcp, :::3001->3001/tcp`) publishes `host_port`.
+fn publishes_host_port(ports: &str, host_port: u16) -> bool {
+    ports.split(',').any(|entry| {
+        let Some((host, _)) = entry.trim().split_once("->") else {
+            return false;
+        };
+        let spec = host.rsplit(':').next().unwrap_or(host);
+        match spec.split_once('-') {
+            Some((lo, hi)) => match (lo.parse::<u16>(), hi.parse::<u16>()) {
+                (Ok(lo), Ok(hi)) => (lo..=hi).contains(&host_port),
+                _ => false,
+            },
+            None => spec.parse::<u16>() == Ok(host_port),
+        }
+    })
+}
+
+/// Merge `docker logs --timestamps` stdout and stderr by their RFC 3339
+/// prefix, drop the prefix, and keep the last `tail` lines.
+fn merge_timestamped_streams(stdout: &str, stderr: &str, tail: usize) -> Vec<String> {
+    let mut lines: Vec<&str> = stdout.lines().chain(stderr.lines()).collect();
+    lines.sort_by(|a, b| {
+        let ta = a.split_once(' ').map_or(*a, |(t, _)| t);
+        let tb = b.split_once(' ').map_or(*b, |(t, _)| t);
+        ta.cmp(tb)
+    });
+    let start = lines.len().saturating_sub(tail);
+    lines[start..]
+        .iter()
+        .map(|l| l.split_once(' ').map_or(*l, |(_, rest)| rest).to_string())
+        .collect()
+}
+
+#[cfg(test)]
+mod container_log_tests {
+    use super::{merge_timestamped_streams, publishes_host_port};
+
+    #[test]
+    fn matches_published_host_ports() {
+        let ports = "0.0.0.0:3001->3001/tcp, :::3001->3001/tcp, 0.0.0.0:9735->9735/tcp";
+        assert!(publishes_host_port(ports, 3001));
+        assert!(publishes_host_port(ports, 9735));
+        assert!(!publishes_host_port(ports, 3000));
+        assert!(publishes_host_port(
+            "0.0.0.0:3000-3005->3000-3005/tcp",
+            3002
+        ));
+        assert!(!publishes_host_port("3001/tcp", 3001));
+        assert!(!publishes_host_port("", 3001));
+    }
+
+    #[test]
+    fn merges_streams_in_time_order_and_strips_prefix() {
+        let out = "2026-10-07T10:00:01.000Z a\n2026-10-07T10:00:03.000Z c\n";
+        let err = "2026-10-07T10:00:02.000Z b\n";
+        assert_eq!(merge_timestamped_streams(out, err, 10), vec!["a", "b", "c"]);
+        assert_eq!(merge_timestamped_streams(out, err, 2), vec!["b", "c"]);
     }
 }

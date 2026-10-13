@@ -44,7 +44,7 @@ const FEATURES: Array<{
     title: 'Get things done',
   },
   {
-    body: 'Find nearby merchants, check prices, and explore RGB assets.',
+    body: 'Check prices, explore RGB assets and quote KaleidoSwap swaps.',
     icon: Sparkles,
     title: 'Explore',
   },
@@ -53,6 +53,7 @@ const FEATURES: Array<{
 export const RuntimeInstall: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
   const p = mind.runtimeProgress
   const busy = p !== null && p.phase !== 'error'
+  const update = mind.runtimeStale
   const pct =
     p && p.total > 0
       ? Math.min(100, Math.round((p.downloaded / p.total) * 100))
@@ -61,7 +62,15 @@ export const RuntimeInstall: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
   return (
     <div className="flex flex-1 items-center justify-center">
       <div className="w-full max-w-lg rounded-2xl border border-violet-700/40 bg-violet-900/10 p-8">
-        <h2 className="text-xl font-bold text-white">Meet KaleidoMind</h2>
+        <h2 className="text-xl font-bold text-white">
+          {update ? 'Update KaleidoMind runtime' : 'Meet KaleidoMind'}
+        </h2>
+        {update && (
+          <p className="mt-2 rounded-lg border border-amber-600/40 bg-amber-900/20 px-3 py-2 text-xs text-amber-200">
+            The installed runtime is out of date and won&apos;t be used. Update
+            it to keep using KaleidoMind.
+          </p>
+        )}
         <p className="mt-2 text-sm text-gray-400">
           A private AI assistant that runs{' '}
           <strong>entirely on this device</strong>. It understands your wallet
@@ -143,7 +152,11 @@ export const RuntimeInstall: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
           ) : (
             <>
               <Download className="h-4 w-4" />
-              {p?.phase === 'error' ? 'Retry download' : 'Download KaleidoMind'}
+              {p?.phase === 'error'
+                ? 'Retry download'
+                : update
+                  ? 'Update KaleidoMind runtime'
+                  : 'Download KaleidoMind'}
             </>
           )}
         </button>

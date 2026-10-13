@@ -37,7 +37,9 @@ import {
   getDisplayAsset,
 } from '../../../../helpers/number'
 import { formatAssetAmount } from '../../../../helpers/walletHistoryUtils'
+import { SATS_PER_BTC, toMsat, toSats } from '../../../../helpers/btcUnits'
 import { useUtxoErrorHandler } from '../../../../hooks/useUtxoErrorHandler'
+import { getAllRgbAssets } from '../../../../utils/rgbUtils'
 import {
   nodeApi,
   Network,
@@ -60,7 +62,6 @@ interface Props {
 }
 
 const MSATS_PER_SAT = 1000
-const SATOSHIS_PER_BTC = 100_000_000
 
 export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const isBtc = assetId === BTC_ASSET_ID
@@ -106,8 +107,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
     // Convert to BTC for BIP21
     let amountBTC = 0
     if (hasAmount) {
-      amountBTC =
-        bitcoinUnit === 'SAT' ? numericAmount / SATOSHIS_PER_BTC : numericAmount
+      amountBTC = toSats(numericAmount, bitcoinUnit) / SATS_PER_BTC
     }
 
     if (onchainAddress && lnInvoiceStr) {
@@ -177,10 +177,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         const res = await lnInvoice(
           hasAmount
             ? {
-                amt_msat:
-                  bitcoinUnit === 'SAT'
-                    ? numericAmount * 1000
-                    : numericAmount * SATOSHIS_PER_BTC * 1000,
+                amt_msat: toMsat(numericAmount, bitcoinUnit),
               }
             : {}
         )
@@ -199,12 +196,15 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
 
   // Poll invoice status for Lightning payments (BTC unified + RGB lightning)
   const activeInvoice = isBtc ? lnInvoiceStr : address
+  const [lnReceived, setLnReceived] = useState(false)
   const { data: invoiceStatus } = nodeApi.useInvoiceStatusQuery(
     { invoice: activeInvoice as string },
     {
       pollingInterval: 1000,
       skip:
-        !activeInvoice?.startsWith('ln') || (!isBtc && network !== 'lightning'),
+        lnReceived ||
+        !activeInvoice?.startsWith('ln') ||
+        (!isBtc && network !== 'lightning'),
     }
   )
 
@@ -233,7 +233,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
 
   // Fetch channels data to calculate HTLC limits
   const { data: channelsData } = nodeApi.useListChannelsQuery(undefined, {
-    pollingInterval: 3000,
+    pollingInterval: 10_000,
     refetchOnFocus: false,
     refetchOnMountOrArgChange: true,
   })
@@ -327,19 +327,14 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
 
   const [recipientId, setRecipientId] = useState<string>()
 
-  const [assetTicker, setAssetTicker] = useState<string>('')
   const { data: assetList } = nodeApi.endpoints.listAssets.useQuery()
-
-  useEffect(() => {
-    if (assetList?.nia && assetId !== BTC_ASSET_ID && assetId) {
-      const asset = assetList.nia.find((a: any) => a.asset_id === assetId)
-      if (asset) {
-        setAssetTicker(asset.ticker ?? '')
-      }
-    } else if (assetId === BTC_ASSET_ID) {
-      setAssetTicker('BTC')
-    }
-  }, [assetList, assetId])
+  // Every RGB schema (NIA, CFA, UDA, IFA), not only NIA, so tickers and
+  // precision resolve for collectibles and inflatable assets too.
+  const allRgbAssets = useMemo(() => getAllRgbAssets(assetList), [assetList])
+  const assetTicker =
+    assetId === BTC_ASSET_ID
+      ? 'BTC'
+      : (allRgbAssets.find((a) => a.asset_id === assetId)?.ticker ?? '')
 
   // Add network info query
   const { data: networkInfoData } = nodeApi.useNodeInfoQuery()
@@ -352,10 +347,10 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         amount,
         asset,
         bitcoinUnit,
-        assetList?.nia
+        allRgbAssets
       )
     },
-    [bitcoinUnit, assetList?.nia]
+    [bitcoinUnit, allRgbAssets]
   )
 
   // Parse amount helper
@@ -365,10 +360,10 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         amount,
         asset,
         bitcoinUnit,
-        assetList?.nia
+        allRgbAssets
       )
     },
-    [bitcoinUnit, assetList?.nia]
+    [bitcoinUnit, allRgbAssets]
   )
 
   const titleText = assetId
@@ -392,7 +387,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
     }
 
     const asset = isBtc ? 'BTC' : assetTicker
-    const precision = getAssetPrecision(asset, bitcoinUnit, assetList?.nia)
+    const precision = getAssetPrecision(asset, bitcoinUnit, allRgbAssets)
 
     const decimalParts = value.split('.')
     if (decimalParts.length === 2 && decimalParts[1].length > precision) {
@@ -515,10 +510,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
           res = await lnInvoice(
             assetId === BTC_ASSET_ID
               ? {
-                  amt_msat:
-                    bitcoinUnit === 'SAT'
-                      ? numericAmount * 1000
-                      : numericAmount * SATOSHIS_PER_BTC * 1000,
+                  amt_msat: toMsat(numericAmount, bitcoinUnit),
                 }
               : {
                   asset_amount: parseAmount(cleanAmount, assetTicker),
@@ -566,10 +558,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         lnInvoice(
           hasAmount
             ? {
-                amt_msat:
-                  bitcoinUnit === 'SAT'
-                    ? numericAmount * 1000
-                    : numericAmount * SATOSHIS_PER_BTC * 1000,
+                amt_msat: toMsat(numericAmount, bitcoinUnit),
               }
             : {}
         ),
@@ -600,7 +589,6 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const btcUnitLabel = bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit
 
   // --- Payment detection ---------------------------------------------------
-  const [lnReceived, setLnReceived] = useState(false)
   const btcDeposit = useOnchainDepositWatcher(
     isBtc && !!onchainAddress && !lnReceived
   )
@@ -649,7 +637,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                   detected.amount,
                   isBtc,
                   bitcoinUnit,
-                  getAssetPrecision(assetTicker, bitcoinUnit, assetList?.nia)
+                  getAssetPrecision(assetTicker, bitcoinUnit, allRgbAssets)
                 )} ${displayTicker}`
               : undefined,
           confirmed: detected.confirmed,
@@ -834,7 +822,10 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                 className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full
                   transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40
                   ${usePrivacy ? 'bg-primary' : 'bg-surface-elevated'}`}
+                aria-checked={usePrivacy}
+                aria-label={t('depositModal.step2.privacy.title')}
                 onClick={() => setUsePrivacy(!usePrivacy)}
+                role="switch"
                 type="button"
               >
                 <span

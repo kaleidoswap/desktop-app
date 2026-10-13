@@ -1,6 +1,5 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 
-import { MIND_PHONE_PAIRING_ENABLED } from '../../constants'
 import { RootRoute } from '../../routes/root'
 
 import {
@@ -31,7 +30,6 @@ import {
   CREATEUTXOS_PATH,
   KALEIDO_MIND_PATH,
   KALEIDO_MIND_BRAIN_PATH,
-  KALEIDO_MIND_PAIRING_PATH,
   KALEIDO_MIND_MODELS_PATH,
   KALEIDO_MIND_SKILLS_PATH,
   KALEIDO_MIND_CHAT_PATH,
@@ -149,14 +147,6 @@ export const router = createBrowserRouter([
             lazy: () => import('../../routes/kaleido-mind/brain'),
             path: KALEIDO_MIND_BRAIN_PATH,
           },
-          ...(MIND_PHONE_PAIRING_ENABLED
-            ? [
-                {
-                  lazy: () => import('../../routes/kaleido-mind/pairing'),
-                  path: KALEIDO_MIND_PAIRING_PATH,
-                },
-              ]
-            : []),
           {
             lazy: () => import('../../routes/kaleido-mind/models'),
             path: KALEIDO_MIND_MODELS_PATH,

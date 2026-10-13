@@ -67,6 +67,7 @@ export const useNodeReachabilityMonitor = ({
   const { addNotification, removeNotification } = useNotification()
   const reachability = useAppSelector((state) => state.node.reachability)
   const notificationIdRef = useRef<string | null>(null)
+  const handledRequestRef = useRef<string | undefined>(undefined)
   const consecutiveFailuresRef = useRef(0)
   const wasUnreachableRef = useRef(false)
   const addNotificationRef = useRef(addNotification)
@@ -94,6 +95,7 @@ export const useNodeReachabilityMonitor = ({
 
   useEffect(() => {
     consecutiveFailuresRef.current = 0
+    handledRequestRef.current = undefined
     wasUnreachableRef.current = false
 
     if (notificationIdRef.current) {
@@ -122,7 +124,10 @@ export const useNodeReachabilityMonitor = ({
   }, [reachability])
 
   useEffect(() => {
-    if (skip) return
+    if (skip || nodeInfo.isFetching || !nodeInfo.requestId) return
+    if (handledRequestRef.current === nodeInfo.requestId) return
+    if (!nodeInfo.isSuccess && !nodeInfo.isError) return
+    handledRequestRef.current = nodeInfo.requestId
 
     if (nodeInfo.isSuccess) {
       consecutiveFailuresRef.current = 0
@@ -196,7 +201,8 @@ export const useNodeReachabilityMonitor = ({
     nodeInfo.error,
     nodeInfo.isError,
     nodeInfo.isSuccess,
-    nodeInfo.startedTimeStamp,
+    nodeInfo.requestId,
+    nodeInfo.isFetching,
     skip,
     t,
   ])

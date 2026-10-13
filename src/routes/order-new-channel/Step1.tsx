@@ -62,6 +62,8 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
   const lspUrl =
     currentAccount.default_maker_url || currentAccount.default_lsp_url
 
+  const [retryAttempt, setRetryAttempt] = useState(0)
+
   // Auto-load KaleidoSwap LSP on mount
   useEffect(() => {
     const initKaleido = async () => {
@@ -134,7 +136,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
 
     initKaleido()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [retryAttempt])
 
   const fetchManualLspInfo = useCallback(async () => {
     if (!tempLspUrl.trim()) return
@@ -263,8 +265,8 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
     <button
       className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md font-semibold transition-all duration-200 text-sm ${className} ${
         enabled
-          ? 'bg-primary hover:bg-primary-emphasis text-[#12131C] active:scale-95'
-          : 'bg-primary/30 text-[#12131C]/50 cursor-not-allowed'
+          ? 'bg-primary hover:bg-primary-emphasis text-primary-foreground active:scale-95'
+          : 'bg-primary/30 text-primary-foreground/50 cursor-not-allowed'
       }`}
       disabled={!enabled}
       onClick={onClick}
@@ -372,7 +374,22 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
               </div>
             ) : kaleidoError ? (
               <div className="flex-1 flex flex-col gap-4">
-                <p className="text-sm text-red-400">{kaleidoError}</p>
+                <p className="text-sm text-red-400" role="alert">
+                  {kaleidoError}
+                </p>
+                <p className="text-sm text-content-secondary">
+                  {t('ux.lspRecovery')}
+                </p>
+                <p className="text-xs font-mono break-all">
+                  {kaleidoApiUrl || lspUrl}
+                </p>
+                <Button
+                  onClick={() => setRetryAttempt((attempt) => attempt + 1)}
+                  size="sm"
+                  variant="outline"
+                >
+                  {t('trade.connectionIssues.retryConnection')}
+                </Button>
                 <ContinueButton enabled={false} onClick={() => {}} />
               </div>
             ) : (

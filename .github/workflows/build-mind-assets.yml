@@ -98,6 +98,7 @@ jobs:
           name="kaleidomind-${PLATFORM}-${ARCH}.tar.gz"
           # Tolerate the create race across the 3 matrix jobs (first wins).
           gh release create "$TAG" --repo "$GH_REPO" \
+            --target "$GITHUB_SHA" \
             --title "KaleidoMind assets $TAG" \
             --notes "Per-platform KaleidoMind agent runtime, downloaded on-demand by the desktop app." \
             --prerelease || true

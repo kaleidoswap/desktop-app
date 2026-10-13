@@ -257,7 +257,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
                     ? 'bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white'
                     : forceClose
                       ? 'bg-red-600/80 hover:bg-red-600 text-white'
-                      : 'bg-[#15E99A] hover:bg-[#12C97E] text-gray-900'
+                      : 'bg-primary hover:bg-primary-emphasis text-gray-900'
                 }`}
               disabled={isClosing}
               onClick={(e) => {

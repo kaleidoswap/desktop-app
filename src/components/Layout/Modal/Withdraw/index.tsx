@@ -8,7 +8,7 @@ import {
   X,
   Zap,
 } from 'lucide-react'
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
@@ -34,8 +34,12 @@ import type {
   DecodeRGBInvoiceResponse,
 } from 'kaleido-sdk/rln'
 import { uiSliceActions } from '../../../../slices/ui/ui.slice'
+import { findNewOutgoingTxid } from '../../../../helpers/sentTxid'
+import { toMsat } from '../../../../helpers/btcUnits'
 
 import { WithdrawForm, ConfirmationModal } from './components'
+import { SentPanel, type SentSummary } from './components/SentPanel'
+import { buildSentSummary } from './sentSummary'
 import {
   AddressType,
   FeeEstimations,
@@ -45,7 +49,10 @@ import {
   HTLCStatus,
   ValidationMessage,
 } from './types'
-import { getAssignmentAmount } from '../../../../utils/rgbUtils'
+import {
+  getAllRgbAssets,
+  getAssignmentAmount,
+} from '../../../../utils/rgbUtils'
 import { resolveRgbPaymentErrorKey } from '../../../../utils/rgbPaymentErrors'
 import { logger } from '../../../../utils/logger'
 
@@ -91,6 +98,10 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
   const [isDecodingInvoice, setIsDecodingInvoice] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [pendingData, setPendingData] = useState<Fields | null>(null)
+  // The status poller runs in an effect closure; read the latest data here.
+  const pendingRef = useRef<Fields | null>(null)
+  pendingRef.current = pendingData ?? pendingRef.current
+  const [sent, setSent] = useState<SentSummary | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
   const [addressType, setAddressType] = useState<AddressType>('unknown')
   const [validationMessage, setValidationMessage] =
@@ -114,7 +125,23 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
   const [decodeInvoice] = nodeApi.useLazyDecodeInvoiceQuery()
   const [decodeRgbInvoice] = nodeApi.useLazyDecodeRgbInvoiceQuery()
 
-  const assets = nodeApi.endpoints.listAssets.useQuery()
+  const assetsQuery = nodeApi.endpoints.listAssets.useQuery()
+  // This flow and its children look assets up in `data.nia`; expose every RGB
+  // schema (NIA, CFA, UDA, IFA) there so tickers and precision resolve for
+  // all of them, not only NIA.
+  const assets = useMemo(
+    () =>
+      assetsQuery.data
+        ? {
+            ...assetsQuery,
+            data: {
+              ...assetsQuery.data,
+              nia: getAllRgbAssets(assetsQuery.data),
+            },
+          }
+        : assetsQuery,
+    [assetsQuery]
+  )
   const channelsQuery = nodeApi.endpoints.listChannels.useQuery(undefined, {
     pollingInterval: 3000,
   })
@@ -364,18 +391,11 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
             if (currentStatus === HTLCStatus.Succeeded) {
               logger.debug(`Payment status changed to: ${currentStatus}`)
 
-              // Show success toast and close modal immediately
-              toast.success(t('withdrawModal.main.toasts.lightningSuccess'), {
-                autoClose: 5000,
-                progressStyle: { background: '#3B82F6' },
-              })
-
-              // Close the modal immediately
               setIsPollingStatus(false)
               setIsConfirming(false)
               setShowConfirmation(false)
+              setSent(describeSent('lightning', paymentHash))
               setPendingData(null)
-              dispatch(uiSliceActions.setModal({ type: 'none' }))
 
               return // Exit early to prevent further status changes
             } else {
@@ -976,6 +996,34 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
     ]
   )
 
+  // Wallet transactions right now (fresh from the node), or null on error.
+  const snapshotTransactions = async () => {
+    const query = dispatch(
+      nodeApi.endpoints.listTransactions.initiate(undefined, {
+        forceRefetch: true,
+      })
+    )
+    try {
+      return (await query.unwrap())?.transactions ?? []
+    } catch {
+      return null
+    } finally {
+      query.unsubscribe()
+    }
+  }
+
+  const describeSent = (
+    kind: SentSummary['kind'],
+    reference?: string | null
+  ): SentSummary =>
+    buildSentSummary(
+      pendingRef.current,
+      kind,
+      reference,
+      bitcoinUnit,
+      assets.data?.nia ?? []
+    )
+
   const handleConfirmedSubmit = useCallback(async () => {
     if (!pendingData) return
 
@@ -1045,13 +1093,10 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
               pendingData.decodedInvoice.amt_msat === 0)
           ) {
             // Zero-amount BTC invoice: convert user-entered amount to msat
-            const userAmount = Number(pendingData.amount)
-            if (bitcoinUnit === 'SAT') {
-              paymentParams.amt_msat = userAmount * 1000
-            } else {
-              // BTC to msat
-              paymentParams.amt_msat = userAmount * 100000000 * 1000
-            }
+            paymentParams.amt_msat = toMsat(
+              Number(pendingData.amount),
+              bitcoinUnit
+            )
           }
 
           const res = await sendPayment(paymentParams).unwrap()
@@ -1074,18 +1119,16 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
           } else if (res.status === HTLCStatus.Succeeded) {
             logger.debug('Payment succeeded immediately')
 
-            // Show success toast and close modal immediately
-            toast.success(t('withdrawModal.main.toasts.lightningSuccess'), {
-              autoClose: 5000,
-              progressStyle: { background: '#3B82F6' },
-            })
-
-            // Close the modal immediately
             setIsPollingStatus(false)
             setIsConfirming(false)
             setShowConfirmation(false)
+            setSent(
+              describeSent(
+                'lightning',
+                res.payment_hash ?? pendingData.decodedInvoice?.payment_hash
+              )
+            )
             setPendingData(null)
-            dispatch(uiSliceActions.setModal({ type: 'none' }))
           } else {
             logger.debug('Payment failed immediately:', res.status)
             const failureMsg = t(
@@ -1147,7 +1190,8 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
               ? Math.round(Number(pendingData.amount))
               : BTCtoSatoshi(Number(pendingData.amount))
 
-          await sendBtc({
+          const before = await snapshotTransactions()
+          const btcRes = await sendBtc({
             address: pendingData.address ?? '',
             amount: amountInSats,
             fee_rate:
@@ -1158,9 +1202,16 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
                 : Math.round(customFee),
           }).unwrap()
 
-          toast.success(t('withdrawModal.main.toasts.btcSuccess'), {
-            progressStyle: { background: '#3B82F6' },
-          })
+          let txid = (btcRes as { txid?: string } | undefined)?.txid
+          if (!txid && before) {
+            const after = await snapshotTransactions()
+            if (after)
+              txid = findNewOutgoingTxid(
+                before.map((tx) => tx.txid),
+                after
+              )
+          }
+          setSent(describeSent('onchain', txid))
         } else {
           const assetInfo = (assets.data?.nia || []).find(
             (a: any) => a.asset_id === pendingData.asset_id
@@ -1280,19 +1331,14 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
                 t('withdrawModal.main.errors.rgbPaymentFailed')
             )
           }
-          toast.success(t('withdrawModal.main.toasts.rgbSuccess'), {
-            progressStyle: { background: '#3B82F6' },
-          })
+          setSent(
+            describeSent('rgb', (res as { txid?: string } | undefined)?.txid)
+          )
         }
 
-        // Only close modal on successful withdrawal
         setShowConfirmation(false)
         setPendingData(null)
         setIsConfirming(false)
-
-        setTimeout(() => {
-          dispatch(uiSliceActions.setModal({ type: 'none' }))
-        }, 1500)
       }
     } catch (error: any) {
       logger.error('Withdrawal error:', error)
@@ -1422,9 +1468,11 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
         <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
           <Upload className="w-6 h-6 text-primary" />
           <h3 className="text-xl font-bold text-white flex-1">
-            {showConfirmation
-              ? t('withdrawModal.main.title.confirm')
-              : t('withdrawModal.main.title.form')}
+            {sent
+              ? t('withdrawModal.sent.title', 'Payment sent')
+              : showConfirmation
+                ? t('withdrawModal.main.title.confirm')
+                : t('withdrawModal.main.title.form')}
           </h3>
           <button
             className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
@@ -1436,7 +1484,12 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
         </div>
 
         <div className="overflow-y-auto flex-1 pr-1 custom-scrollbar">
-          {showConfirmation ? (
+          {sent ? (
+            <SentPanel
+              onDone={() => dispatch(uiSliceActions.setModal({ type: 'none' }))}
+              summary={sent}
+            />
+          ) : showConfirmation ? (
             <ConfirmationModal
               assets={assets}
               availableAssets={availableAssets}

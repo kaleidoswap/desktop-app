@@ -68,7 +68,7 @@ export const WalletFundsCard = ({
           )}
 
           <button
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-[#12131C] transition-colors hover:bg-primary-emphasis"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-emphasis"
             onClick={onAction}
             type="button"
           >

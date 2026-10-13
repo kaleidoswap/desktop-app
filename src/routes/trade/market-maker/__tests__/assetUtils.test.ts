@@ -13,6 +13,7 @@ vi.mock('../../../../slices/makerApi/makerApi.slice', () => ({
 vi.mock('i18next', () => ({ default: { language: 'en' } }))
 
 import {
+  createFetchAndSetPairsHandler,
   findComplementaryAsset,
   getAvailableAssets,
   getUnconfirmedAssets,
@@ -375,4 +376,50 @@ describe('getDefaultMakerUrls', () => {
     const unique = new Set(result)
     expect(unique.size).toBe(result.length)
   })
+})
+
+describe('trading pair availability', () => {
+  const handler = (listPairs: () => Promise<unknown>) =>
+    createFetchAndSetPairsHandler(
+      () => ({ maker: { listPairs } }),
+      vi.fn(),
+      [],
+      [],
+      { setValue: vi.fn() },
+      String,
+      vi.fn(),
+      vi.fn(),
+      vi.fn(),
+      vi.fn()
+    )
+  it('distinguishes an unreachable maker from a successful empty response', async () => {
+    expect(
+      await handler(async () => {
+        throw new Error('offline')
+      })()
+    ).toBeNull()
+    expect(await handler(async () => ({ pairs: [] }))()).toBe(false)
+  })
+  it('treats malformed maker responses as unavailable, not empty', async () => {
+    expect(await handler(async () => ({}))()).toBeNull()
+  })
+})
+
+it('starts with assets already held in ready channels instead of proposing a new channel', async () => {
+  const gold = makePair('BTC', 'BTC', 'XAUT', 'gold-id')
+  const usdt = makePair('BTC', 'BTC', 'USDT', 'usdt-id')
+  const selectPair = vi.fn()
+  const run = createFetchAndSetPairsHandler(
+    () => ({ maker: { listPairs: async () => ({ pairs: [gold, usdt] }) } }),
+    vi.fn(),
+    [makeChannel('usdt-id', true)],
+    [],
+    { setValue: vi.fn() },
+    String,
+    vi.fn(),
+    vi.fn(),
+    selectPair
+  )
+  expect(await run()).toBe(true)
+  expect(selectPair).toHaveBeenCalledWith(usdt)
 })

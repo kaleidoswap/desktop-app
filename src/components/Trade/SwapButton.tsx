@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import { twJoin } from 'tailwind-merge'
 
 interface SwapButtonProps {
+  quoteUnavailable?: boolean
   wsConnected: boolean
   isToAmountLoading: boolean
   isPriceLoading: boolean
@@ -33,6 +34,7 @@ interface SwapButtonProps {
 }
 
 export const SwapButton: React.FC<SwapButtonProps> = ({
+  quoteUnavailable = false,
   wsConnected,
   isToAmountLoading,
   isPriceLoading,
@@ -52,6 +54,7 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
 
   const getButtonText = () => {
     if (!wsConnected) return t('trade.swapButton.connecting')
+    if (quoteUnavailable) return t('ux.quoteUnavailable')
     // Only show "Buy channel" if there's truly no channel (not just unconfirmed)
     if (missingChannelAsset && !hasUnconfirmedChannel) {
       return t('trade.swapButton.buyChannel', {
@@ -160,10 +163,10 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
       ),
       success: twJoin(
         baseStyles,
-        'bg-[#15E99A]',
-        'border-[#15E99A]/60',
+        'bg-primary',
+        'border-primary/60',
         'text-gray-900',
-        'hover:bg-[#12C97E]',
+        'hover:bg-primary-emphasis',
         'hover:scale-[1.01]',
         'active:scale-[0.99]',
         'cursor-pointer',
