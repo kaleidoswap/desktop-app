@@ -1551,7 +1551,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
           )}
         </div>
 
-        {!showConfirmation && (
+        {!sent && !showConfirmation && (
           <div className="flex justify-between items-center pt-4">
             <button
               className="px-3 py-2 text-content-secondary hover:text-white transition-colors

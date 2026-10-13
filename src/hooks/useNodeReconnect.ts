@@ -1,5 +1,5 @@
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useRef } from 'react'
 
 import { useAppDispatch } from '../app/store/hooks'
 import { setNodeReachability } from '../slices/node/node.slice'
@@ -52,7 +52,14 @@ export const useNodeReconnect = () => {
   const dispatch = useAppDispatch()
   const [isReconnecting, setIsReconnecting] = useState(false)
 
+  const pending = useRef(false)
+  const [lastResult, setLastResult] = useState<
+    'reachable' | 'slow' | 'unreachable' | null
+  >(null)
   const reconnect = useCallback(async () => {
+    if (pending.current) return false
+    pending.current = true
+    setLastResult(null)
     setIsReconnecting(true)
     try {
       const result = await dispatch(
@@ -68,19 +75,40 @@ export const useNodeReconnect = () => {
           dispatch(
             setNodeReachability({
               error: getNodeErrorMessage(error),
-              status: 'unreachable',
+              status:
+                /timeout|timed out/i.test(getNodeErrorMessage(error)) ||
+                error.status === 'TIMEOUT_ERROR'
+                  ? 'slow'
+                  : 'unreachable',
             })
+          )
+          setLastResult(
+            /timeout|timed out/i.test(getNodeErrorMessage(error)) ||
+              error.status === 'TIMEOUT_ERROR'
+              ? 'slow'
+              : 'unreachable'
           )
           return false
         }
       }
 
+      setLastResult('reachable')
       dispatch(setNodeReachability({ status: 'reachable' }))
       return true
+    } catch (error) {
+      setLastResult('unreachable')
+      dispatch(
+        setNodeReachability({
+          error: getNodeErrorMessage(error),
+          status: 'unreachable',
+        })
+      )
+      return false
     } finally {
+      pending.current = false
       setIsReconnecting(false)
     }
   }, [dispatch])
 
-  return { isReconnecting, reconnect }
+  return { isReconnecting, lastResult, reconnect }
 }

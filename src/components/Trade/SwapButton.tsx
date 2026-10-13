@@ -82,6 +82,7 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
 
   const getButtonIcon = () => {
     if (!wsConnected) return <Plug className="w-5 h-5" />
+    if (quoteUnavailable) return <Ban className="w-5 h-5" />
     // Only show shopping cart if there's truly no channel (not just unconfirmed)
     if (missingChannelAsset && !hasUnconfirmedChannel)
       return <ShoppingCart className="w-5 h-5" />
@@ -100,7 +101,10 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
   }
 
   const isDisabled =
-    (!wsConnected ||
+    quoteUnavailable ||
+    !wsConnected ||
+    isSwapInProgress ||
+    ((!wsConnected ||
       (isQuoteLoading && !hasValidQuote) ||
       (!hasValidQuote && (isToAmountLoading || isPriceLoading)) ||
       !!errorMessage ||
@@ -110,8 +114,8 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
       isSwapInProgress ||
       hasZeroAmount ||
       !hasValidQuote) &&
-    // Allow clicking when channel is missing BUT NOT when it's just unconfirmed
-    !(missingChannelAsset && !hasUnconfirmedChannel)
+      // Allow clicking when channel is missing BUT NOT when it's just unconfirmed
+      !(missingChannelAsset && !hasUnconfirmedChannel))
 
   const isLoading =
     (isQuoteLoading && !hasValidQuote) ||
@@ -119,8 +123,10 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
     isSwapInProgress
 
   const getButtonVariant = () => {
+    if (quoteUnavailable) return 'disabled'
     // Only show as actionable (success) if there's truly no channel (not just unconfirmed)
-    if (missingChannelAsset && !hasUnconfirmedChannel) return 'success'
+    if (missingChannelAsset && !hasUnconfirmedChannel && !isDisabled)
+      return 'success'
     if (isDisabled) {
       if (hasUnconfirmedChannel) return 'warning'
       if (warningMessage) return 'warning'

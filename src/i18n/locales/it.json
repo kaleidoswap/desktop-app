@@ -1,4 +1,10 @@
 {
+  "nodeReachability": {
+    "unresponsiveTitle": "Il nodo non risponde",
+    "unresponsiveMessage": "Il nodo potrebbe essere occupato con operazioni del wallet oppure disconnesso. Puoi continuare a navigare; i saldi potrebbero non essere aggiornati. Controlla la cronologia prima di ripetere un pagamento o un’operazione sugli asset.",
+    "checking": "Verifica della connessione…",
+    "retryIncomplete": "Verifica terminata senza risposta. Il nodo potrebbe essere ancora occupato; i controlli automatici continuano."
+  },
   "common": {
     "loading": "Caricamento...",
     "save": "Salva",

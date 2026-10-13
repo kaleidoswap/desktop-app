@@ -16,6 +16,9 @@ A clearer desktop experience for managing an RGB Lightning node, trading assets 
 
 ### Wallet and node
 
+- Slow node responses show a non-blocking notice instead of freezing navigation; connection retries show progress and their outcome. Local HTTP probes run asynchronously.
+- Completed payments show Done without the previous Cancel and Send actions.
+- Settings is available directly in the sidebar; Help and Support lives in the profile menu. Remove the support and notification buttons from the top bar.
 - Docker node startup now pulls the configured image even when an older copy is cached, preserving existing data volumes. A failed pull is reported instead of silently using a stale image.
 - Recheck Docker availability from local setup without restarting the app; returning to the window also refreshes availability. Docker checks time out instead of blocking indefinitely.
 - Clearer typography, spacing, navigation, dashboard balances and channel liquidity displays.
@@ -28,6 +31,7 @@ A clearer desktop experience for managing an RGB Lightning node, trading assets 
 
 ### Trading, channels and app connections
 
+- Unavailable maker quotes disable the trade action, including the missing-channel shortcut and keyboard submission.
 - Correct BTC/satoshi and RGB display units in balances, channel orders, swap quotes and confirmation screens.
 - Quote refresh no longer depends on window animation frames; Lightning settlement layers and complete fees are included in requests and reviews.
 - Maker and LSP settings follow the selected account. Missing endpoints produce clear setup guidance instead of calls to an unrelated default service.
@@ -36,6 +40,8 @@ A clearer desktop experience for managing an RGB Lightning node, trading assets 
 
 ### KaleidoMind — beta
 
+- Starting a new chat saves the previous conversation in a read-only local archive. Previously deleted conversations are not recovered.
+- Preserve streamed Markdown when the final response contains the same text, while allowing corrected final answers to replace it.
 - Stable **Mind core/provider 0.11.1** and **runtime assets 0.11.1**, downloaded on demand for macOS Apple Silicon, macOS Intel, Linux x64 and Windows x64.
 - Local model recommendations based on device memory, a clearer chat composer, model controls and visible start/stop feedback.
 - Optional Thinking with a bounded reasoning phase and a direct-answer fallback. Thinking can be slow or reach the timeout on busy or lower-powered devices; reduce its budget or turn it off for faster replies.

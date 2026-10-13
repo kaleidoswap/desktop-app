@@ -232,9 +232,9 @@ export const TRANSACTION_MENU_ITEMS = getTransactionMenuItems(
 // User settings menu items
 export const getUserMenuItems = (t: TFunction) => [
   {
-    icon: <Settings className="w-4 h-4" />,
-    label: t('navigation.settings'),
-    to: SETTINGS_PATH,
+    action: 'support',
+    icon: <HelpCircle className="w-4 h-4" />,
+    label: t('navigation.helpSupport'),
   },
   {
     icon: <LinkIcon className="w-4 h-4" />,

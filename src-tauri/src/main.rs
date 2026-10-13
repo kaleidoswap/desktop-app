@@ -760,8 +760,8 @@ fn get_node_state(node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>) -> rg
 }
 
 #[tauri::command]
-fn probe_node_http(daemon_port: u16) -> Result<u16, String> {
-    let client = reqwest::blocking::Client::builder()
+async fn probe_node_http(daemon_port: u16) -> Result<u16, String> {
+    let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(2))
         .build()
         .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
@@ -769,6 +769,7 @@ fn probe_node_http(daemon_port: u16) -> Result<u16, String> {
     let response = client
         .get(format!("http://127.0.0.1:{}/nodeinfo", daemon_port))
         .send()
+        .await
         .map_err(|e| format!("Failed to reach node on port {}: {}", daemon_port, e))?;
 
     Ok(response.status().as_u16())

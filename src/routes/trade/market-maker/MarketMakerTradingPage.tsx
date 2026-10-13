@@ -2912,6 +2912,8 @@ export const Component = () => {
 
   // Submit handler - make sure we check for a valid quote with RFQ ID
   const onSubmit: SubmitHandler<Fields> = async () => {
+    // Also guard keyboard/programmatic submission before the buy-channel path.
+    if (quoteFailureMessage || !wsConnected || isSwapInProgress) return
     const fromAsset = form.getValues().fromAsset
     const toAsset = form.getValues().toAsset
     const fromAmount = parseAssetAmount(form.getValues().from, fromAsset)

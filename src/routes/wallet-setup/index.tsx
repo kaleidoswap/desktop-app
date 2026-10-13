@@ -6,8 +6,6 @@ import {
   Server,
   Container,
   ArrowLeft,
-  HelpCircle,
-  Bell,
   Boxes,
   Brain,
 } from 'lucide-react'
@@ -15,8 +13,6 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
-
-import { useNotification } from '../../components/NotificationSystem'
 
 import {
   WALLET_INIT_PATH,
@@ -28,7 +24,6 @@ import logoFull from '../../assets/logo-full.svg'
 import logoIcon from '../../assets/logo.svg'
 import { AppVersion } from '../../components/AppVersion'
 import { Layout } from '../../components/Layout'
-import { SupportModal } from '../../components/SupportModal'
 import { Toolbar } from '../../components/Toolbar'
 import {
   NodeOption,
@@ -75,8 +70,6 @@ export const Component = () => {
   // 'mind' skips node setup entirely and opens KaleidoMind.
   const [selectedMode, setSelectedMode] = useState<AppMode>('both')
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const [showSupportModal, setShowSupportModal] = useState(false)
-  const { toggleNotificationPanel, notifications } = useNotification()
   const {
     isNativeSupported,
     isDockerAvailable,
@@ -171,31 +164,6 @@ export const Component = () => {
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden relative flex flex-col">
-          {/* Top bar with Support + Notifications */}
-          <div className="flex-shrink-0 z-30 bg-surface-base/80 backdrop-blur-xl border-b border-divider/20 px-6 py-4 flex justify-end items-center gap-2">
-            <button
-              aria-label="Support"
-              className="p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
-                         transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-              onClick={() => setShowSupportModal(true)}
-            >
-              <HelpCircle className="w-5 h-5" />
-            </button>
-            <button
-              aria-label="Toggle notifications"
-              className="relative p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
-                         transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-              onClick={toggleNotificationPanel}
-            >
-              <Bell className="w-5 h-5" />
-              {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-cyan to-cyan/80 text-white text-xs font-bold flex items-center justify-center rounded-full shadow-lg shadow-primary/30 animate-pulse ring-2 ring-surface-base">
-                  {notifications.length}
-                </span>
-              )}
-            </button>
-          </div>
-
           {/* Animated background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-cyan/5 via-transparent to-blue-500/5 pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(6,182,212,0.1),transparent_50%)] pointer-events-none" />
@@ -503,11 +471,6 @@ export const Component = () => {
           </div>
         </div>
       </div>
-
-      <SupportModal
-        isOpen={showSupportModal}
-        onClose={() => setShowSupportModal(false)}
-      />
     </Layout>
   )
 }

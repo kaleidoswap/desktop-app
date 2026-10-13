@@ -8,8 +8,7 @@ import {
   Download,
   Upload,
   Activity,
-  Bell,
-  HelpCircle,
+  Settings,
   User,
   Loader2,
   RefreshCw,
@@ -23,6 +22,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { toast, ToastContainer } from 'react-toastify'
 
 import {
+  SETTINGS_PATH,
   ROOT_PATH,
   WALLET_SETUP_PATH,
   KALEIDO_MIND_PATH,
@@ -60,12 +60,10 @@ import {
   getChannelMenuItems,
   getTransactionMenuItems,
   getUserMenuItems,
-  getSupportResources,
   getPageConfig,
   HIDE_NAVBAR_PATHS,
   NavItem,
 } from './config'
-import { openUrl } from '@tauri-apps/plugin-opener'
 
 import { LayoutModal } from './Modal'
 
@@ -550,17 +548,16 @@ export const Layout = (props: Props) => {
   const [isHandlingCloseAction, setIsHandlingCloseAction] = useState(false)
   const [isChannelMenuOpen, setIsChannelMenuOpen] = useState(false)
   const [isTransactionMenuOpen, setIsTransactionMenuOpen] = useState(false)
-  const [isSupportMenuOpen, setIsSupportMenuOpen] = useState(false)
   const {
     reconnect: retryNodeConnection,
     isReconnecting: isRetryingNodeConnection,
+    lastResult: lastReconnectResult,
   } = useNodeReconnect()
 
   const [showSupportModal, setShowSupportModal] = useState(false)
 
   const channelMenuRef = useRef(null)
   const transactionMenuRef = useRef(null)
-  const supportMenuRef = useRef(null)
   const toastAutoDismissTimers = useRef<
     Record<string, ReturnType<typeof setTimeout>>
   >({})
@@ -591,7 +588,6 @@ export const Layout = (props: Props) => {
   }
   const CHANNEL_MENU_ITEMS = getChannelMenuItems(t)
   const TRANSACTION_MENU_ITEMS = getTransactionMenuItems(t)
-  const SUPPORT_RESOURCES = getSupportResources(t)
   const PAGE_CONFIG = getPageConfig(t)
 
   const [lock] = nodeApi.endpoints.lock.useMutation()
@@ -604,12 +600,10 @@ export const Layout = (props: Props) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  const { toggleNotificationPanel, notifications, addNotification } =
-    useNotification()
+  const { addNotification } = useNotification()
 
   useOnClickOutside(channelMenuRef, () => setIsChannelMenuOpen(false))
   useOnClickOutside(transactionMenuRef, () => setIsTransactionMenuOpen(false))
-  useOnClickOutside(supportMenuRef, () => setIsSupportMenuOpen(false))
 
   const nodeInfo = nodeApi.endpoints.nodeInfo.useQueryState()
   const nodeLifecycle = useAppSelector((state) => state.node.lifecycle)
@@ -629,7 +623,8 @@ export const Layout = (props: Props) => {
   const isNodeReachable =
     nodeReachability === 'reachable' ||
     (nodeReachability === 'unknown' && nodeInfo.isSuccess)
-  const isNodeUnreachable = nodeReachability === 'unreachable'
+  const isNodeUnreachable =
+    nodeReachability === 'unreachable' || nodeReachability === 'slow'
   const shouldPoll = isNodeReachable
   const isNodeActive =
     nodeLifecycle.status === 'Running' ||
@@ -728,10 +723,6 @@ export const Layout = (props: Props) => {
       setIsLoggingOut(false)
       setShowLogoutModal(false)
     }
-  }
-
-  const openExternalLink = (url: string) => {
-    openUrl(url)
   }
 
   useEffect(() => {
@@ -950,8 +941,12 @@ export const Layout = (props: Props) => {
       )}
 
       {!shouldHideNavbar && isNodeUnreachable && !isMindRoute && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-40 p-4">
-          <div className="w-full max-w-lg bg-surface-base rounded-lg border border-red-500/30 shadow-2xl p-6">
+        <div className="fixed bottom-4 right-4 left-4 sm:left-auto z-40 pointer-events-none">
+          <div
+            aria-live="polite"
+            className="pointer-events-auto w-full sm:w-96 max-h-[50vh] overflow-y-auto bg-surface-base rounded-lg border border-red-500/30 shadow-2xl p-4"
+            role="status"
+          >
             <div className="flex items-start gap-4">
               <div className="w-11 h-11 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
                 <Activity className="w-5 h-5 text-red-300" />
@@ -959,14 +954,14 @@ export const Layout = (props: Props) => {
 
               <div className="min-w-0">
                 <h3 className="text-xl font-semibold text-white">
-                  {t('nodeReachability.blockingTitle', {
-                    defaultValue: 'Node is offline',
+                  {t('nodeReachability.unresponsiveTitle', {
+                    defaultValue: 'Node response unavailable',
                   })}
                 </h3>
                 <p className="text-content-secondary mt-2">
-                  {t('nodeReachability.blockingMessage', {
+                  {t('nodeReachability.unresponsiveMessage', {
                     defaultValue:
-                      'KaleidoSwap cannot be used while the node is unreachable. Keep your local Docker/native node running or check the remote node URL, then retry the connection.',
+                      'The node may be busy processing wallet operations or disconnected. You can keep navigating; balances may be outdated. Check operation history before repeating a payment or asset operation.',
                   })}
                 </p>
 
@@ -990,9 +985,13 @@ export const Layout = (props: Props) => {
                       <RefreshCw className="w-4 h-4" />
                     )}
                     <span>
-                      {t('nodeReachability.retry', {
-                        defaultValue: 'Retry connection',
-                      })}
+                      {isRetryingNodeConnection
+                        ? t('nodeReachability.checking', {
+                            defaultValue: 'Checking connection…',
+                          })
+                        : t('nodeReachability.retry', {
+                            defaultValue: 'Retry connection',
+                          })}
                     </span>
                   </button>
 
@@ -1006,6 +1005,14 @@ export const Layout = (props: Props) => {
                   </button>
                 </div>
 
+                {lastReconnectResult && lastReconnectResult !== 'reachable' && (
+                  <p className="mt-3 text-sm text-content-secondary">
+                    {t('nodeReachability.retryIncomplete', {
+                      defaultValue:
+                        'Check completed without a response. The node may still be busy; automatic checks continue.',
+                    })}
+                  </p>
+                )}
                 <p className="mt-4 flex items-center gap-2 text-xs text-content-tertiary">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   {t('nodeReachability.autoRetrying', {
@@ -1138,6 +1145,18 @@ export const Layout = (props: Props) => {
               })}
             </div>
 
+            <div className="px-4 py-3 border-t border-divider/20">
+              <SidebarNavItem
+                isActive={location.pathname.startsWith(SETTINGS_PATH)}
+                isCollapsed={isSidebarCollapsed}
+                item={{
+                  icon: <Settings className="w-5 h-5" />,
+                  label: t('navigation.settings'),
+                  to: SETTINGS_PATH,
+                }}
+              />
+            </div>
+
             {/* Quick action buttons — node-only, hidden in KaleidoMind-only mode */}
             {!isSidebarCollapsed && Boolean(nodeSettingsData?.name) && (
               <div className="px-4 pb-6 pt-[25px] bg-surface-base">
@@ -1182,7 +1201,7 @@ export const Layout = (props: Props) => {
             className={`flex-1 flex flex-col ${isMindRoute ? 'h-screen min-h-0' : 'min-h-screen'} max-w-full overflow-x-hidden bg-surface-raised transition-all duration-300
                         ${isSidebarCollapsed ? 'ml-20' : 'ml-60'}`}
           >
-            {/* Top bar with page title and notifications */}
+            {/* Top bar with page title and user profile */}
             <div
               className="sticky top-0 z-30 shrink-0 bg-surface-base border-b border-divider/20 px-4 py-2
                           shadow-lg shadow-black/20"
@@ -1217,39 +1236,6 @@ export const Layout = (props: Props) => {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {/* Support button in header */}
-                  <button
-                    aria-label="Support"
-                    className="p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
-                             transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={() => setShowSupportModal(true)}
-                  >
-                    <HelpCircle className="w-5 h-5" />
-                  </button>
-
-                  {/* Notifications bell */}
-                  <button
-                    aria-label="Toggle notifications"
-                    className="relative p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
-                             transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      toggleNotificationPanel()
-                    }}
-                  >
-                    <Bell className="w-5 h-5" />
-                    {notifications.length > 0 && (
-                      <span
-                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-cyan to-cyan/80
-                                   text-white text-xs font-bold flex items-center justify-center rounded-full
-                                   shadow-lg shadow-primary/30 animate-pulse ring-2 ring-surface-base"
-                      >
-                        {notifications.length}
-                      </span>
-                    )}
-                  </button>
-
                   {/* User profile */}
                   <UserProfile
                     dropdownAlign="right"
@@ -1280,35 +1266,6 @@ export const Layout = (props: Props) => {
                       }
                       setIsOpen={setIsTransactionMenuOpen}
                       title={t('actions.quickActions')}
-                    />
-
-                    {/* Support dropdown for mobile */}
-                    <DropdownMenu
-                      icon={<HelpCircle className="w-5 h-5" />}
-                      isOpen={isSupportMenuOpen}
-                      items={[
-                        {
-                          action: 'support',
-                          icon: <HelpCircle className="w-4 h-4" />,
-                          label: t('navigation.getHelpSupport'),
-                        },
-                        ...SUPPORT_RESOURCES.map((resource) => ({
-                          icon: resource.icon,
-                          label: resource.name,
-                          to: '#', // Placeholder - we'll handle this in the click handler
-                          url: resource.url, // Custom property to store the URL
-                        })),
-                      ]}
-                      menuRef={supportMenuRef}
-                      onItemClick={(item: NavItem | string) => {
-                        if (item === 'support') {
-                          setShowSupportModal(true)
-                        } else if (typeof item !== 'string' && item.url) {
-                          openExternalLink(item.url)
-                        }
-                      }}
-                      setIsOpen={setIsSupportMenuOpen}
-                      title={t('navigation.helpSupport')}
                     />
                   </div>
                 </div>

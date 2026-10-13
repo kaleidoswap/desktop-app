@@ -25,7 +25,7 @@ vi.mock('../../slices/nodeApi/nodeApi.slice', () => ({
   nodeApi: { useNodeInfoQuery: () => mocks.query },
 }))
 const failure = (requestId: string) => ({
-  error: { error: 'Request timeout', status: 'TIMEOUT_ERROR' },
+  error: { error: 'Connection refused', status: 'FETCH_ERROR' },
   isError: true,
   isFetching: false,
   isSuccess: false,
@@ -90,4 +90,26 @@ describe('node reachability', () => {
     rerender({ accountKey: 'second' })
     expect(statuses()).not.toContain('unreachable')
   })
+})
+
+it('reports repeated timeouts as slow, not offline, and recovers', () => {
+  const { rerender } = renderHook(() =>
+    useNodeReachabilityMonitor({ accountKey: 'test', skip: false })
+  )
+  for (const requestId of ['one', 'two', 'three']) {
+    mocks.query = {
+      ...failure(requestId),
+      error: {
+        error: 'request timeout after 5000 milliseconds',
+        status: 'TIMEOUT_ERROR',
+      },
+    }
+    rerender()
+    expect(statuses().at(-1)).toBe('slow')
+  }
+  expect(statuses()).not.toContain('unreachable')
+  expect(mocks.add).not.toHaveBeenCalled()
+  mocks.query = { isFetching: false, isSuccess: true, requestId: 'recovered' }
+  rerender()
+  expect(statuses().at(-1)).toBe('reachable')
 })

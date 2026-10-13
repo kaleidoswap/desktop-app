@@ -7,7 +7,7 @@ export type BackendNodeState =
   | { status: 'Stopping' }
   | { status: 'Failed'; message: string }
 
-export type NodeReachability = 'unknown' | 'reachable' | 'unreachable'
+export type NodeReachability = 'unknown' | 'reachable' | 'unreachable' | 'slow'
 
 interface NodeState {
   lifecycle: BackendNodeState

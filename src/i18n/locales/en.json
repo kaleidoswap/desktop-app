@@ -1,4 +1,10 @@
 {
+  "nodeReachability": {
+    "unresponsiveTitle": "Node response unavailable",
+    "unresponsiveMessage": "The node may be busy processing wallet operations or disconnected. You can keep navigating; balances may be outdated. Check operation history before repeating a payment or asset operation.",
+    "checking": "Checking connection…",
+    "retryIncomplete": "Check completed without a response. The node may still be busy; automatic checks continue."
+  },
   "common": {
     "loading": "Loading...",
     "save": "Save",
