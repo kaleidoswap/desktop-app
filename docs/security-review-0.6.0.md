@@ -1,6 +1,6 @@
 # Desktop 0.6.0 security review — 2026-10-13
 
-Announcement recommendation: hold until the remaining Linux assessment and validation are complete. These changes are not included in the published 0.6.0 binaries. Ship a new signed patch release rather than replacing published installers.
+The owner requested rebuilding the unannounced 0.6.0 release in place. Prepare and verify signed replacement installers in a separate draft, retain a backup of the current artifacts, and promote only after Linux tests and signature checks pass. Mind assets are unchanged.
 
 ## Changes prepared
 
@@ -13,11 +13,11 @@ The complete pnpm audit reports zero known vulnerabilities after these changes. 
 
 ## Remaining Rust findings
 
-| Package     | Finding           | Assessment and follow-up                                                                                                                                                                                                                                                                                                                                             |
-| ----------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| glib 0.18.5 | RUSTSEC-2024-0429 | Linux GTK dependency; the upstream 0.18 branch still contains the faulty VariantStrIter pointer handling. The fix starts in 0.20, which cannot be forced into the GTK 0.18 dependency graph. No direct app usage was found, but transitive reachability is not yet established. Requires a reviewed compatible backport or framework migration and Linux validation. |
-| lru 0.16.4  | RUSTSEC-2026-0253 | Used by nostr-database and nostr-relay-pool. Both caches use EventId keys, a Copy wrapper around [u8; 32], with no Drop implementation. The advisory requires a panicking key destructor and caught unwinding; that prerequisite is absent in these caches. Upgrade the Nostr stack separately rather than force an incompatible lru version.                        |
-| rkyv 0.7.46 | RUSTSEC-2026-0235 | Present through an optional rust_decimal dependency in Cargo.lock. Not selected by cargo tree --target all with the desktop default features. Not demonstrated as compiled into a shipped target; keep the alert visible and revisit if features change.                                                                                                             |
+| Package     | Finding           | Assessment and follow-up                                                                                                                                                                                                                                                                                                                                     |
+| ----------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| glib 0.18.5 | RUSTSEC-2024-0429 | Patched locally using the exact two-line upstream fix (gtk-rs-core PR 1343). Cargo selects the vendored 0.18.5 source for GTK/Tauri. Dedicated optimized iterator regression tests cover forward/backward iteration, skipping, Unicode and empty arrays. See vendor/glib/KALEIDOSWAP-PATCH.md for provenance. Version-only scanners may still report 0.18.5. |
+| lru 0.16.4  | RUSTSEC-2026-0253 | Used by nostr-database and nostr-relay-pool. Both caches use EventId keys, a Copy wrapper around [u8; 32], with no Drop implementation. The advisory requires a panicking key destructor and caught unwinding; that prerequisite is absent in these caches. Upgrade the Nostr stack separately rather than force an incompatible lru version.                |
+| rkyv 0.7.46 | RUSTSEC-2026-0235 | Present through an optional rust_decimal dependency in Cargo.lock. Not selected by cargo tree --target all with the desktop default features. Not demonstrated as compiled into a shipped target; keep the alert visible and revisit if features change.                                                                                                     |
 
 Cargo audit also reports unmaintained dependencies (including the Nostr relay pool, GTK-related utilities and yaml-rust) and yanked versions. These are maintenance findings, separate from demonstrated exploitability. No audit findings have been suppressed or dismissed.
 
@@ -33,4 +33,4 @@ Removed only desktop test releases test-v0.6.0-rc.1, rc.4, rc.5 and rc.6. Git ta
 - Frontend suite: 547/549 passed initially; two UI tests hit the default five-second timeout under host load. Both affected files passed on a single-worker rerun with a 30-second timeout (9/9); source timeout settings were not changed.
 - pnpm audit: zero known vulnerabilities, including development dependencies.
 - cargo audit: XML and event-listener findings removed; rkyv remains in the lockfile audit, plus the glib/lru and maintenance warnings documented above.
-- Native Apple Silicon cargo check --locked passed. Linux release validation remains required before approval. This review does not validate a new signed installer.
+- Native Apple Silicon cargo check --locked passed. Linux validation of the GLib backport is required before approval. This review does not validate a new signed installer.

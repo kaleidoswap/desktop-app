@@ -58,3 +58,6 @@ jobs:
         run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
       - name: Test
         run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: GTK iterator regression tests (optimized)
+        run: cargo test --manifest-path src-tauri/tests/gtk-variant-iter/Cargo.toml --locked --release

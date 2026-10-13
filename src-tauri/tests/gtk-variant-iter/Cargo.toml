@@ -1,0 +1,10 @@
+[package]
+name = "gtk-variant-iter-regression"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+glib = { path = "../../vendor/glib" }

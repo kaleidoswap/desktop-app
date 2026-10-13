@@ -58,3 +58,7 @@ default = []
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2.9.0"
+
+# GTK 3 requires GLib 0.18; backport the upstream iterator soundness fix.
+[patch.crates-io]
+glib = { path = "vendor/glib" }
