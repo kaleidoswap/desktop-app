@@ -1,27 +1,13 @@
-## [Version 0.6.1] - 2026-10-14
-
-Security and reliability fixes from testing 0.6.0.
-
-### Security
-
-- The local node's API now accepts connections only from this computer instead of the whole local network. New wallets get this automatically; wallets created with 0.6.0 should be recreated to get it.
-- Each release runs one exact node version. If a wallet uses a different node image, the app switches it to the pinned version on start.
-- Nostr Wallet Connect keys are no longer stored in plaintext. The service key is kept in the system keychain (macOS Keychain, Windows Credential Manager, Secret Service on Linux), and app connection keys are only shown once, in the connection link.
-- The Nostr Wallet Connect service can no longer start twice, so the same request cannot be paid twice.
-
-### Fixes
-
-- Swaps below the smallest Lightning payment an RGB channel accepts (3,000 sats) are blocked before a quote is requested, instead of expiring without executing.
-- A channel order that the provider marks as failed after it already funded the channel now shows "Channel funded, waiting for the provider" and no longer offers to pay again.
-- Creating colored UTXOs with too little BTC shows a clear message with a shortcut to receive BTC, and never sends an invalid size to the node.
-- Peer addresses are checked for the `pubkey@host:port` format before connecting.
-
-## [Version 0.6.0] - 2026-10-13
+## [Version 0.6.0] - 2026-10-14
 
 A clearer desktop experience for managing an RGB Lightning node, trading assets and using KaleidoMind. These notes cover the complete upgrade from 0.5.0, including the changes previously listed under 0.5.1.
 
-### Security maintenance
+### Security
 
+- The local node's API now accepts connections only from this computer instead of the whole local network. Local wallets created with an earlier build keep their previous binding; recreate them to get it.
+- Each release runs one exact node version. If a wallet uses a different node image, the app switches it to the pinned version on start.
+- Nostr Wallet Connect keys are no longer stored in plaintext. The service key is kept in the system keychain (macOS Keychain, Windows Credential Manager, Secret Service on Linux), and app connection keys are only shown once, in the connection link.
+- The Nostr Wallet Connect service can no longer start twice, so the same request cannot be paid twice.
 - Apply the upstream GLib iterator safety fix to the Linux GTK dependency.
 - Update XML parsers and event-listener to patched versions.
 - Remove unused browser crypto polyfills and React Native dependencies from the desktop build.
@@ -37,7 +23,11 @@ A clearer desktop experience for managing an RGB Lightning node, trading assets 
 - Slow node responses show a non-blocking notice instead of freezing navigation; connection retries show progress and their outcome. Local HTTP probes run asynchronously.
 - Completed payments show Done without the previous Cancel and Send actions.
 - Settings is available directly in the sidebar; Help and Support lives in the profile menu. Remove the support and notification buttons from the top bar.
-- Docker node startup now pulls the configured image even when an older copy is cached, preserving existing data volumes. A failed pull is reported instead of silently using a stale image.
+- Docker node startup pulls the pinned node image when it is missing, preserving existing data volumes. A failed pull is reported instead of silently using a stale image.
+- Swaps below the smallest Lightning payment an RGB channel accepts (3,000 sats) are blocked before a quote is requested, instead of expiring without executing.
+- A channel order that the provider marks as failed after it already funded the channel now shows "Channel funded, waiting for the provider" and no longer offers to pay again.
+- Creating colored UTXOs with too little BTC shows a clear message with a shortcut to receive BTC, and never sends an invalid size to the node.
+- Peer addresses are checked for the `pubkey@host:port` format before connecting.
 - Recheck Docker availability from local setup without restarting the app; returning to the window also refreshes availability. Docker checks time out instead of blocking indefinitely.
 - Clearer typography, spacing, navigation, dashboard balances and channel liquidity displays.
 - Redesigned receive and payment-confirmation screens, with larger QR codes, copyable addresses, pinned BTC/USDT choices and transaction explorer links.
