@@ -12,7 +12,7 @@ use crate::rgb_node::NodeState;
 
 /// Pinned per app release so every install runs the node version it was tested with.
 const RLN_IMAGE_REPO: &str = "kaleidoswap/rgb-lightning-node";
-const RLN_IMAGE: &str = "kaleidoswap/rgb-lightning-node:0.10.0@sha256:d68cbf4a7157380ce0a6adc99774e31f062213d2d224ceaeb37d638386cb9b34";
+const RLN_IMAGE: &str = "kaleidoswap/rgb-lightning-node:0.10.1@sha256:4676ed77dd97c7ec3043e660cf8aa834463b4b0df5eb49045c0575b91c3f4737";
 /// The daemon API is unauthenticated, so it must only be reachable from this machine.
 const DAEMON_BIND_ADDR: &str = "127.0.0.1";
 const DEFAULT_BASE_DAEMON_PORT: u16 = 3001;
