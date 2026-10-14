@@ -1,4 +1,10 @@
 {
+  "nodeReachability": {
+    "unresponsiveTitle": "노드 응답 없음",
+    "unresponsiveMessage": "노드가 지갑 작업을 처리 중이거나 연결이 끊어졌을 수 있습니다. 계속 탐색할 수 있지만 잔액이 최신이 아닐 수 있습니다. 결제나 자산 작업을 반복하기 전에 내역을 확인하세요.",
+    "checking": "연결 확인 중…",
+    "retryIncomplete": "응답 없이 확인이 끝났습니다. 노드가 아직 작업 중일 수 있으며, 자동 확인은 계속됩니다."
+  },
   "common": {
     "loading": "불러오는 중...",
     "save": "저장",

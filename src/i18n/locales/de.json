@@ -1,4 +1,10 @@
 {
+  "nodeReachability": {
+    "unresponsiveTitle": "Keine Antwort vom Node",
+    "unresponsiveMessage": "Der Node ist möglicherweise mit Wallet-Vorgängen beschäftigt oder getrennt. Du kannst weiter navigieren; Guthaben sind eventuell nicht aktuell. Prüfe den Verlauf, bevor du eine Zahlung oder einen Asset-Vorgang wiederholst.",
+    "checking": "Verbindung wird geprüft…",
+    "retryIncomplete": "Prüfung ohne Antwort beendet. Der Node ist möglicherweise noch beschäftigt; automatische Prüfungen laufen weiter."
+  },
   "common": {
     "loading": "Wird geladen...",
     "save": "Speichern",

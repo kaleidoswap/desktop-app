@@ -1,4 +1,10 @@
 {
+  "nodeReachability": {
+    "unresponsiveTitle": "Le nœud ne répond pas",
+    "unresponsiveMessage": "Le nœud est peut-être occupé par des opérations du portefeuille ou déconnecté. Vous pouvez continuer à naviguer ; les soldes peuvent ne pas être à jour. Consultez l'historique avant de répéter un paiement ou une opération sur un actif.",
+    "checking": "Vérification de la connexion…",
+    "retryIncomplete": "Vérification terminée sans réponse. Le nœud est peut-être encore occupé ; les vérifications automatiques continuent."
+  },
   "common": {
     "loading": "Chargement...",
     "save": "Enregistrer",
