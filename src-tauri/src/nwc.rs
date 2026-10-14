@@ -24,6 +24,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter};
 
 use crate::db;
+use crate::secret_store;
 
 /// Default relays used when a connection / service doesn't specify its own.
 pub const DEFAULT_RELAYS: [&str; 4] = [
@@ -65,6 +66,25 @@ pub const RLN_METHODS: [&str; 12] = [
 
 /// How long to poll RLN for a payment preimage before giving up (seconds).
 const PAY_POLL_TIMEOUT_SECS: u64 = 60;
+
+/// Recent request ids remembered to drop duplicates delivered by other relays.
+const SEEN_REQUESTS_CAP: usize = 1024;
+
+pub fn service_secret_name(account_id: i32) -> String {
+    format!("nwc-service-{account_id}")
+}
+
+/// The service key lives only in the OS credential store.
+fn load_service_keys(account_id: i32) -> Result<Keys, String> {
+    let name = service_secret_name(account_id);
+    let unavailable = |e: String| format!("OS credential store is unavailable: {e}");
+    if let Some(hex) = secret_store::get(&name).map_err(unavailable)? {
+        return Keys::parse(&hex).map_err(|e| format!("Stored NWC service key is invalid: {e}"));
+    }
+    let keys = Keys::generate();
+    secret_store::set(&name, &keys.secret_key().to_secret_hex()).map_err(unavailable)?;
+    Ok(keys)
+}
 
 fn now_secs() -> i64 {
     SystemTime::now()
@@ -111,6 +131,9 @@ pub struct NwcManager {
     /// Service pubkey + active relays, available even to build connection URIs.
     service_pubkey: Arc<Mutex<Option<PublicKey>>>,
     relays: Arc<Mutex<Vec<String>>>,
+    /// Held for the whole of `start`/`stop`: `start` awaits relay setup before
+    /// `inner` is set, so concurrent callers would otherwise both start a listener.
+    lifecycle: tokio::sync::Mutex<()>,
 }
 
 impl NwcManager {
@@ -120,6 +143,7 @@ impl NwcManager {
             inner: Arc::new(Mutex::new(None)),
             service_pubkey: Arc::new(Mutex::new(None)),
             relays: Arc::new(Mutex::new(Vec::new())),
+            lifecycle: tokio::sync::Mutex::new(()),
         }
     }
 
@@ -148,6 +172,7 @@ impl NwcManager {
 
     /// Start the NWC service. Idempotent: a no-op if already running.
     pub async fn start(&self, cfg: StartConfig) -> Result<(), String> {
+        let _guard = self.lifecycle.lock().await;
         if self.is_running() {
             return Ok(());
         }
@@ -155,17 +180,7 @@ impl NwcManager {
         // Load (or generate + persist) the service keypair. It's a random Nostr
         // identity independent of the wallet seed, so this works for every
         // account type — including remote-node accounts with no stored mnemonic.
-        let keys = match db::get_nwc_service_secret(cfg.account_id) {
-            Ok(Some(hex)) => {
-                Keys::parse(&hex).map_err(|e| format!("Stored NWC service key is invalid: {e}"))?
-            }
-            _ => {
-                let generated = Keys::generate();
-                db::set_nwc_service_secret(cfg.account_id, &generated.secret_key().to_secret_hex())
-                    .map_err(|e| format!("Failed to persist NWC service key: {e}"))?;
-                generated
-            }
-        };
+        let keys = load_service_keys(cfg.account_id)?;
         let service_pubkey = keys.public_key();
 
         let relays: Vec<String> = if cfg.relays.is_empty() {
@@ -228,10 +243,16 @@ impl NwcManager {
         let mut notifications = client.notifications();
         let task = tauri::async_runtime::spawn(async move {
             log::info!("[NWC] service listening on {relay_count} relay(s)");
+            // The same request can arrive from several relays; handle it once.
+            let mut seen = std::collections::VecDeque::<EventId>::new();
             loop {
                 match notifications.recv().await {
                     Ok(RelayPoolNotification::Event { event, .. }) => {
-                        if event.kind == Kind::WalletConnectRequest {
+                        if event.kind == Kind::WalletConnectRequest && !seen.contains(&event.id) {
+                            if seen.len() >= SEEN_REQUESTS_CAP {
+                                seen.pop_front();
+                            }
+                            seen.push_back(event.id);
                             let ctx = ctx.clone();
                             tauri::async_runtime::spawn(async move {
                                 handle_request(ctx, *event).await;
@@ -267,6 +288,7 @@ impl NwcManager {
 
     /// Stop the NWC service. Safe to call when not running.
     pub async fn stop(&self) {
+        let _guard = self.lifecycle.lock().await;
         let running = self
             .inner
             .lock()
@@ -329,7 +351,6 @@ impl NwcManager {
             account_id,
             name,
             &client_pubkey.to_hex(),
-            &client_secret.to_secret_hex(),
             &relays_json,
             &methods_json,
             budget_msat,

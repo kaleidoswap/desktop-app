@@ -1957,6 +1957,10 @@
       "numberPlaceholder": "Introduce la cantidad",
       "sizeLabel": "Tamaño del UTXO (en satoshis)",
       "sizePlaceholder": "Introduce el tamaño",
+      "availableBalance": "Saldo disponible",
+      "insufficientBalance": "Saldo insuficiente. Crear {{num}} UTXO de al menos {{min}} sats requiere más de {{required}} sats más comisiones. Deposita BTC on-chain para continuar.",
+      "receiveBtc": "Recibir BTC",
+      "sizeOutOfRange": "El tamaño de los UTXO debe estar entre {{min}} y {{max}} sats.",
       "feeRate": "Tarifa de Comisión"
     },
     "feeOptions": {
@@ -2494,6 +2498,7 @@
       "insufficientBalance": "Saldo insuficiente. No tienes {{asset}} disponible para enviar.",
       "enterAmount": "Por favor ingresa una cantidad para enviar.",
       "minimumOrderSize": "El tamaño mínimo de orden es {{amount}} {{asset}}.",
+      "minimumReceiveAmount": "Debes recibir al menos {{amount}} {{asset}} por swap.",
       "maxSendAmount": "Solo puedes enviar hasta {{amount}} {{asset}}.",
       "unableToReceive": "No se puede recibir {{asset}}. No hay capacidad de canal disponible.",
       "maxReceiveAmount": "Solo puedes recibir hasta {{amount}} {{asset}}.",
@@ -2857,6 +2862,7 @@
         "status": {
           "completed": "Completado",
           "failed": "Fallido",
+          "funded": "Canal financiado",
           "created": "Creado",
           "unknown": "Desconocido"
         },
@@ -2930,6 +2936,9 @@
       "statusCreateNewOrder": "Crear nuevo pedido",
       "statusErrorHelp": "Si se realizó el pago, no se descontaron fondos. Inténtalo de nuevo o contacta con soporte si el problema persiste.",
       "statusErrorMessage": "Hubo un problema al procesar tu pedido de canal.",
+      "statusFundedTitle": "Canal financiado, esperando al proveedor",
+      "statusFundedMessage": "Tu pago se recibió y el proveedor financió el canal on-chain, pero se desconectó antes de terminar la apertura.",
+      "statusFundedHelp": "No vuelvas a pagar. El canal se podrá usar automáticamente cuando el proveedor vuelva a estar en línea. Si sigue pendiente, contacta con soporte indicando el ID del pedido.",
       "statusErrorTitle": "Pedido fallido",
       "statusExpiredMessage": "La ventana de pago ha caducado sin recibir el pago.",
       "statusExpiredTitle": "Pago caducado",

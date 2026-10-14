@@ -1211,6 +1211,10 @@ export const Component = () => {
           minOrderSize = minOrderSize / MSATS_PER_SAT
         }
       }
+      if (fromAsset === 'BTC') {
+        // Lightning legs of RGB swaps cannot carry HTLCs below this.
+        minOrderSize = Math.max(minOrderSize, RGB_HTLC_MIN_SAT)
+      }
       setMinFromAmount(minOrderSize)
 
       // Calculate max amounts

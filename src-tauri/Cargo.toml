@@ -47,6 +47,7 @@ nostr-sdk = "0.44"
 # Encryption dependencies
 aes-gcm = "0.10"
 argon2 = "0.5"
+keyring = { version = "3.6", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
 hex = "0.4"
 sysinfo = { version = "0.37", default-features = false, features = ["system"] }
 

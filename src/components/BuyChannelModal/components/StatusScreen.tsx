@@ -2,7 +2,7 @@ import { CheckCircle, XCircle, Clock, Info } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 interface StatusScreenProps {
-  status: 'success' | 'error' | 'expired'
+  status: 'success' | 'error' | 'expired' | 'funded'
   orderId?: string | null
   onClose: () => void
   onRetry: () => void
@@ -79,6 +79,30 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
       icon: <Clock className="w-12 h-12 text-yellow-400" />,
       message: t('components.buyChannelModal.statusExpiredMessage'),
       title: t('components.buyChannelModal.statusExpiredTitle'),
+    },
+    funded: {
+      actions: (
+        <button
+          className="px-8 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl font-medium transition-colors"
+          onClick={onClose}
+        >
+          {t('components.buyChannelModal.statusClose')}
+        </button>
+      ),
+      bgColor: 'bg-yellow-500/20',
+      details: (
+        <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-4">
+          <div className="flex items-start gap-2">
+            <Info className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-yellow-200/80">
+              <p>{t('components.buyChannelModal.statusFundedHelp')}</p>
+            </div>
+          </div>
+        </div>
+      ),
+      icon: <Clock className="w-12 h-12 text-yellow-400" />,
+      message: t('components.buyChannelModal.statusFundedMessage'),
+      title: t('components.buyChannelModal.statusFundedTitle'),
     },
     success: {
       actions: (

@@ -1,5 +1,6 @@
 import { TFunction } from 'i18next'
 
+import { RGB_HTLC_MIN_SAT } from '../../../constants'
 import { NiaAsset } from './types'
 
 import { mapAssetIdToTicker, isAssetId } from './assetUtils'
@@ -120,13 +121,13 @@ export const parseAmountValidationError = (
 /** Gets a validation error message for the current form state */
 export const getValidationError = (
   fromAmount: number,
-  _toAmount: number,
+  toAmount: number,
   minFromAmount: number,
   maxFromAmount: number,
   _maxToAmount: number,
   maxOutboundHtlcSat: number,
   fromAsset: string,
-  _toAsset: string,
+  toAsset: string,
   formatAmount: (amount: number, asset: string) => string,
   displayAsset: (asset: string) => string,
   assets: NiaAsset[] = [],
@@ -187,6 +188,21 @@ export const getValidationError = (
       minFromAmount,
       fromDisplayAsset
     )} ${displayAsset(fromDisplayAsset)}.`
+  }
+
+  // The maker pays BTC over Lightning, so the received amount must clear the
+  // RGB HTLC minimum too.
+  if (toAsset === 'BTC' && toAmount > 0 && toAmount < RGB_HTLC_MIN_SAT) {
+    if (t) {
+      return t('tradeMarketMaker.validation.minimumReceiveAmount', {
+        amount: formatAmount(RGB_HTLC_MIN_SAT, 'BTC'),
+        asset: displayAsset('BTC'),
+      })
+    }
+    return `You must receive at least ${formatAmount(
+      RGB_HTLC_MIN_SAT,
+      'BTC'
+    )} ${displayAsset('BTC')} per swap.`
   }
 
   // HTLC limit for BTC

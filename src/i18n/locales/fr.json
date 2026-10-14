@@ -1957,6 +1957,10 @@
       "numberPlaceholder": "Saisir le montant",
       "sizeLabel": "Taille de l'UTXO (en satoshis)",
       "sizePlaceholder": "Saisir la taille",
+      "availableBalance": "Solde disponible",
+      "insufficientBalance": "Solde insuffisant. Créer {{num}} UTXO d'au moins {{min}} sats nécessite plus de {{required}} sats, frais en sus. Déposez des BTC on-chain pour continuer.",
+      "receiveBtc": "Recevoir des BTC",
+      "sizeOutOfRange": "La taille des UTXO doit être comprise entre {{min}} et {{max}} sats.",
       "feeRate": "Taux de frais"
     },
     "feeOptions": {
@@ -2494,6 +2498,7 @@
       "insufficientBalance": "Solde insuffisant. Vous n'avez pas de {{asset}} disponible à envoyer.",
       "enterAmount": "Veuillez saisir un montant à envoyer.",
       "minimumOrderSize": "La taille minimale de commande est {{amount}} {{asset}}.",
+      "minimumReceiveAmount": "Vous devez recevoir au moins {{amount}} {{asset}} par swap.",
       "maxSendAmount": "Vous ne pouvez envoyer que jusqu'à {{amount}} {{asset}}.",
       "unableToReceive": "Impossible de recevoir {{asset}}. Aucune capacité de canal disponible.",
       "maxReceiveAmount": "Vous ne pouvez recevoir que jusqu'à {{amount}} {{asset}}.",
@@ -2857,6 +2862,7 @@
         "status": {
           "completed": "Terminé",
           "failed": "Échoué",
+          "funded": "Canal financé",
           "created": "Créé",
           "unknown": "Inconnu"
         },
@@ -2930,6 +2936,9 @@
       "statusCreateNewOrder": "Créer une nouvelle commande",
       "statusErrorHelp": "Si un paiement a été effectué, aucun fonds n'a été prélevé. Veuillez réessayer ou contacter le support si le problème persiste.",
       "statusErrorMessage": "Un problème est survenu lors du traitement de votre commande de canal.",
+      "statusFundedTitle": "Canal financé, en attente du fournisseur",
+      "statusFundedMessage": "Votre paiement a été reçu et le fournisseur a financé le canal on-chain, mais il s'est déconnecté avant la fin de l'ouverture.",
+      "statusFundedHelp": "Ne payez pas à nouveau. Le canal deviendra utilisable automatiquement quand le fournisseur sera de nouveau en ligne. S'il reste en attente, contactez le support avec l'ID de commande.",
       "statusErrorTitle": "Commande échouée",
       "statusExpiredMessage": "La fenêtre de paiement a expiré sans réception du paiement.",
       "statusExpiredTitle": "Paiement expiré",

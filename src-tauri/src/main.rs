@@ -14,6 +14,7 @@ mod mind_runtime;
 mod node_backend;
 mod nwc;
 mod rgb_node;
+mod secret_store;
 mod tray;
 
 use dca::{DcaOrderInfo, DcaScheduler};

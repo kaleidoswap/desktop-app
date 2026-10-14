@@ -1957,6 +1957,10 @@
       "numberPlaceholder": "数量を入力",
       "sizeLabel": "UTXOサイズ（サトシ単位）",
       "sizePlaceholder": "サイズを入力",
+      "availableBalance": "利用可能残高",
+      "insufficientBalance": "残高が不足しています。{{min}} sats 以上の UTXO を {{num}} 個作成するには、手数料に加えて {{required}} sats を超える残高が必要です。続行するにはオンチェーンで BTC を入金してください。",
+      "receiveBtc": "BTC を受け取る",
+      "sizeOutOfRange": "UTXO のサイズは {{min}}〜{{max}} sats の範囲で指定してください。",
       "feeRate": "手数料率"
     },
     "feeOptions": {
@@ -2494,6 +2498,7 @@
       "insufficientBalance": "残高不足。送信可能な{{asset}}がありません。",
       "enterAmount": "送信する金額を入力してください。",
       "minimumOrderSize": "最小注文サイズは{{amount}} {{asset}}です。",
+      "minimumReceiveAmount": "1 回のスワップで少なくとも {{amount}} {{asset}} を受け取る必要があります。",
       "maxSendAmount": "最大{{amount}} {{asset}}まで送信できます。",
       "unableToReceive": "{{asset}}を受け取れません。チャネル容量がありません。",
       "maxReceiveAmount": "最大{{amount}} {{asset}}まで受け取ることができます。",
@@ -2857,6 +2862,7 @@
         "status": {
           "completed": "完了",
           "failed": "失敗",
+          "funded": "資金済み",
           "created": "作成済み",
           "unknown": "不明"
         },
@@ -2930,6 +2936,9 @@
       "statusCreateNewOrder": "新しい注文を作成",
       "statusErrorHelp": "支払いが行われた場合でも資金は差し引かれていません。もう一度お試しいただくか、問題が続く場合はサポートへご連絡ください。",
       "statusErrorMessage": "チャネル注文の処理中に問題が発生しました。",
+      "statusFundedTitle": "チャネル資金済み・プロバイダー待ち",
+      "statusFundedMessage": "支払いは受領され、プロバイダーはオンチェーンでチャネルに資金を入れましたが、開設完了前にオフラインになりました。",
+      "statusFundedHelp": "再度支払わないでください。プロバイダーがオンラインに戻るとチャネルは自動的に利用可能になります。保留が続く場合は注文 ID を添えてサポートに連絡してください。",
       "statusErrorTitle": "注文に失敗しました",
       "statusExpiredMessage": "支払いを受け取らないまま支払い期限が切れました。",
       "statusExpiredTitle": "支払い期限切れ",

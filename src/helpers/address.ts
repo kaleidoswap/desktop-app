@@ -43,3 +43,7 @@ export const isValidPubkeyAndAddress = (value: string): boolean => {
 
   return true
 }
+
+/** `pubkey@host:port`, the only form `connectpeer` accepts (pubkey-only is not enough). */
+export const isValidPeerConnectionString = (value: string): boolean =>
+  value.includes('@') && isValidPubkeyAndAddress(value)
