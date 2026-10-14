@@ -2489,6 +2489,7 @@
       "insufficientBalance": "余额不足。您没有可用于发送的 {{asset}}。",
       "enterAmount": "请输入要发送的金额。",
       "minimumOrderSize": "最小订单量为 {{amount}} {{asset}}。",
+      "minimumReceiveAmount": "每次兑换至少需要收到 {{amount}} {{asset}}。",
       "maxSendAmount": "您最多只能发送 {{amount}} {{asset}}。",
       "unableToReceive": "无法接收 {{asset}}。没有可用的通道容量。",
       "maxReceiveAmount": "您最多只能接收 {{amount}} {{asset}}。",

@@ -2492,6 +2492,7 @@
       "insufficientBalance": "Insufficient balance. You don't have any {{asset}} available to send.",
       "enterAmount": "Please enter an amount to send.",
       "minimumOrderSize": "The minimum order size is {{amount}} {{asset}}.",
+      "minimumReceiveAmount": "You must receive at least {{amount}} {{asset}} per swap.",
       "maxSendAmount": "You can only send up to {{amount}} {{asset}}.",
       "unableToReceive": "Unable to receive {{asset}}. No channel capacity available.",
       "maxReceiveAmount": "You can only receive up to {{amount}} {{asset}}.",

@@ -2492,6 +2492,7 @@
       "insufficientBalance": "Unzureichendes Guthaben. Sie haben keine {{asset}} zum Senden verfügbar.",
       "enterAmount": "Bitte geben Sie einen zu sendenden Betrag ein.",
       "minimumOrderSize": "Die Mindestbestellmenge beträgt {{amount}} {{asset}}.",
+      "minimumReceiveAmount": "Du musst pro Swap mindestens {{amount}} {{asset}} erhalten.",
       "maxSendAmount": "Sie können nur bis zu {{amount}} {{asset}} senden.",
       "unableToReceive": "{{asset}} kann nicht empfangen werden. Keine Channel-Kapazität verfügbar.",
       "maxReceiveAmount": "Sie können nur bis zu {{amount}} {{asset}} empfangen.",

@@ -2498,6 +2498,7 @@
       "insufficientBalance": "残高不足。送信可能な{{asset}}がありません。",
       "enterAmount": "送信する金額を入力してください。",
       "minimumOrderSize": "最小注文サイズは{{amount}} {{asset}}です。",
+      "minimumReceiveAmount": "1 回のスワップで少なくとも {{amount}} {{asset}} を受け取る必要があります。",
       "maxSendAmount": "最大{{amount}} {{asset}}まで送信できます。",
       "unableToReceive": "{{asset}}を受け取れません。チャネル容量がありません。",
       "maxReceiveAmount": "最大{{amount}} {{asset}}まで受け取ることができます。",
