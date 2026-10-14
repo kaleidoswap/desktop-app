@@ -85,28 +85,36 @@ You can install the app in two ways:
 
 1. **Download** the appropriate binary for your operating system from the [Releases](https://github.com/kaleidoswap/desktop-app/releases) page.
 
-2. **Verify** the download against the release's `SHA256SUMS` file.
+2. **Verify** the download against the release's GPG-signed `SHA256SUMS` file.
 
 3. **Install and run** the package for your operating system and architecture.
 
 #### Verifying Downloads
 
-Download your installer and `SHA256SUMS` from the same [0.6.0 release](https://github.com/kaleidoswap/desktop-app/releases/tag/v0.6.0). Calculate its SHA-256 hash and compare it with the matching filename in `SHA256SUMS`:
+Every release includes `SHA256SUMS`, listing the SHA-256 hash of each asset, and `SHA256SUMS.asc`, its detached GPG signature made with the release key:
+
+```
+D226 87EA 589C 508E E1FB  2725 9EE3 96C0 4527 55F0
+```
+
+Download your installer, `SHA256SUMS` and `SHA256SUMS.asc` from the same release into one folder, then:
 
 ```sh
-# macOS
-shasum -a 256 <downloaded-file>
-# Linux
-sha256sum <downloaded-file>
+# 1. Import the release key (once) and check that the fingerprint matches the one above
+curl -s https://github.com/bitwalt.gpg | gpg --import
+gpg --fingerprint D22687EA589C508EE1FB27259EE396C0452755F0
+
+# 2. Verify the signature on the checksum file
+gpg --verify SHA256SUMS.asc SHA256SUMS
+
+# 3. Check your download against it
+sha256sum --ignore-missing -c SHA256SUMS            # Linux
+shasum -a 256 --ignore-missing -c SHA256SUMS        # macOS
 ```
 
-On Windows, use PowerShell:
+Step 2 must print `Good signature` from the key above, and step 3 must print `OK` for your file. On Windows, compare the output of `Get-FileHash <downloaded-file> -Algorithm SHA256` in PowerShell with the matching line of `SHA256SUMS`.
 
-```powershell
-Get-FileHash <downloaded-file> -Algorithm SHA256
-```
-
-Checksums detect file corruption; they are not independent proof of publisher identity. The app's updater verifies the `.sig` signatures automatically using its embedded public key. Both macOS builds are also code-signed and Apple-notarized. This release does not include GPG `.asc` files.
+Both macOS builds are also code-signed and Apple-notarized, and the app's updater verifies the `.sig` files automatically using its embedded public key.
 
 ### Updating to 0.6.0
 

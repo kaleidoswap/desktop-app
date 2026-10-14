@@ -236,7 +236,7 @@ jobs:
             All macOS builds install without security warnings!
 
             **Verification:**
-            - GPG signatures (`.asc` files) will be added shortly after release
+            - `SHA256SUMS` and its GPG signature `SHA256SUMS.asc` are added shortly after release. See https://kaleidoswap.com/downloads#verify
           releaseDraft: ${{ github.event_name == 'workflow_dispatch' || !startsWith(github.ref, 'refs/tags/v') }}
           prerelease: ${{ startsWith(github.ref, 'refs/tags/test-v') }}
           includeUpdaterJson: true
