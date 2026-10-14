@@ -1,3 +1,21 @@
+## [Version 0.6.1] - 2026-10-14
+
+Security and reliability fixes from testing 0.6.0.
+
+### Security
+
+- The local node's API now accepts connections only from this computer instead of the whole local network. New wallets get this automatically; wallets created with 0.6.0 should be recreated to get it.
+- Each release runs one exact node version. If a wallet uses a different node image, the app switches it to the pinned version on start.
+- Nostr Wallet Connect keys are no longer stored in plaintext. The service key is kept in the system keychain (macOS Keychain, Windows Credential Manager, Secret Service on Linux), and app connection keys are only shown once, in the connection link.
+- The Nostr Wallet Connect service can no longer start twice, so the same request cannot be paid twice.
+
+### Fixes
+
+- Swaps below the smallest Lightning payment an RGB channel accepts (3,000 sats) are blocked before a quote is requested, instead of expiring without executing.
+- A channel order that the provider marks as failed after it already funded the channel now shows "Channel funded, waiting for the provider" and no longer offers to pay again.
+- Creating colored UTXOs with too little BTC shows a clear message with a shortcut to receive BTC, and never sends an invalid size to the node.
+- Peer addresses are checked for the `pubkey@host:port` format before connecting.
+
 ## [Version 0.6.0] - 2026-10-13
 
 A clearer desktop experience for managing an RGB Lightning node, trading assets and using KaleidoMind. These notes cover the complete upgrade from 0.5.0, including the changes previously listed under 0.5.1.
