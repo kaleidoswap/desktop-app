@@ -2856,6 +2856,7 @@
         "status": {
           "completed": "Abgeschlossen",
           "failed": "Fehlgeschlagen",
+          "funded": "Kanal finanziert",
           "created": "Erstellt",
           "unknown": "Unbekannt"
         },
@@ -2929,6 +2930,9 @@
       "statusCreateNewOrder": "Neue Bestellung erstellen",
       "statusErrorHelp": "Wenn eine Zahlung erfolgt ist, wurden keine Mittel abgezogen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support, wenn das Problem bestehen bleibt.",
       "statusErrorMessage": "Bei der Verarbeitung Ihrer Kanalbestellung ist ein Problem aufgetreten.",
+      "statusFundedTitle": "Kanal finanziert, warte auf den Anbieter",
+      "statusFundedMessage": "Deine Zahlung ist eingegangen und der Anbieter hat den Kanal on-chain finanziert, ist aber offline gegangen, bevor die Eröffnung abgeschlossen war.",
+      "statusFundedHelp": "Bitte nicht erneut bezahlen. Der Kanal wird automatisch nutzbar, sobald der Anbieter wieder online ist. Bleibt er ausstehend, kontaktiere den Support mit der Bestell-ID.",
       "statusErrorTitle": "Bestellung fehlgeschlagen",
       "statusExpiredMessage": "Das Zahlungsfenster ist abgelaufen, ohne dass eine Zahlung eingegangen ist.",
       "statusExpiredTitle": "Zahlung abgelaufen",

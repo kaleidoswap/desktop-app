@@ -2856,6 +2856,7 @@
         "status": {
           "completed": "Completato",
           "failed": "Fallito",
+          "funded": "Canale finanziato",
           "created": "Creato",
           "unknown": "Sconosciuto"
         },
@@ -2929,6 +2930,9 @@
       "statusCreateNewOrder": "Crea nuovo ordine",
       "statusErrorHelp": "Se il pagamento è stato effettuato, nessun fondo è stato detratto. Riprova o contatta il supporto se il problema persiste.",
       "statusErrorMessage": "Si è verificato un problema nell'elaborazione del tuo ordine di canale.",
+      "statusFundedTitle": "Canale finanziato, in attesa del provider",
+      "statusFundedMessage": "Il pagamento è stato ricevuto e il provider ha finanziato il canale on-chain, ma è andato offline prima che l'apertura fosse completata.",
+      "statusFundedHelp": "Non pagare di nuovo. Il canale diventa utilizzabile da solo quando il provider torna online. Se resta in sospeso, contatta il supporto con l'ID dell'ordine.",
       "statusErrorTitle": "Ordine fallito",
       "statusExpiredMessage": "La finestra di pagamento è scaduta senza ricevere il pagamento.",
       "statusExpiredTitle": "Pagamento scaduto",

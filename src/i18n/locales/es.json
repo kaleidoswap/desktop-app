@@ -2862,6 +2862,7 @@
         "status": {
           "completed": "Completado",
           "failed": "Fallido",
+          "funded": "Canal financiado",
           "created": "Creado",
           "unknown": "Desconocido"
         },
@@ -2935,6 +2936,9 @@
       "statusCreateNewOrder": "Crear nuevo pedido",
       "statusErrorHelp": "Si se realizó el pago, no se descontaron fondos. Inténtalo de nuevo o contacta con soporte si el problema persiste.",
       "statusErrorMessage": "Hubo un problema al procesar tu pedido de canal.",
+      "statusFundedTitle": "Canal financiado, esperando al proveedor",
+      "statusFundedMessage": "Tu pago se recibió y el proveedor financió el canal on-chain, pero se desconectó antes de terminar la apertura.",
+      "statusFundedHelp": "No vuelvas a pagar. El canal se podrá usar automáticamente cuando el proveedor vuelva a estar en línea. Si sigue pendiente, contacta con soporte indicando el ID del pedido.",
       "statusErrorTitle": "Pedido fallido",
       "statusExpiredMessage": "La ventana de pago ha caducado sin recibir el pago.",
       "statusExpiredTitle": "Pago caducado",

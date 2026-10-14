@@ -45,6 +45,7 @@ import {
 } from '../../../slices/makerApi/makerApi.slice'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 import { logger } from '../../../utils/logger'
+import { getChannelOrderDisplayState } from '../../../utils/channelOrderUtils'
 
 interface ChannelOrder {
   id: number
@@ -189,6 +190,7 @@ const OrderDetailCard: React.FC<{
         return <CheckCircle2 className="w-5 h-5 text-green-500" />
       case 'FAILED':
         return <XCircle className="w-5 h-5 text-red-500" />
+      case 'FUNDED':
       case 'CREATED':
         return <Clock className="w-5 h-5 text-yellow-500" />
       default:
@@ -202,6 +204,7 @@ const OrderDetailCard: React.FC<{
         return 'bg-green-500/10 border-green-500/30 text-green-400'
       case 'FAILED':
         return 'bg-red-500/10 border-red-500/30 text-red-400'
+      case 'FUNDED':
       case 'CREATED':
         return 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
       default:
@@ -689,7 +692,9 @@ export const Component = () => {
             order_id: order.order_id,
           })
           if (response.data) {
-            statuses[order.order_id] = response.data.order_state
+            statuses[order.order_id] =
+              getChannelOrderDisplayState(response.data) ??
+              response.data.order_state
             data[order.order_id] = response.data
           }
         } catch (err) {
@@ -1025,6 +1030,13 @@ export const Component = () => {
                           'components.walletHistory.channelOrders.status.failed'
                         ),
                         'danger'
+                      )
+                    case 'FUNDED':
+                      return renderStatusBadge(
+                        t(
+                          'components.walletHistory.channelOrders.status.funded'
+                        ),
+                        'warning'
                       )
                     case 'CREATED':
                       return renderStatusBadge(

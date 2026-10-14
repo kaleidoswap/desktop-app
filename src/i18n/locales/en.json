@@ -2856,6 +2856,7 @@
         "status": {
           "completed": "Completed",
           "failed": "Failed",
+          "funded": "Channel funded",
           "created": "Created",
           "unknown": "Unknown"
         },
@@ -2929,6 +2930,9 @@
       "statusCreateNewOrder": "Create New Order",
       "statusErrorHelp": "If payment was made, no funds were deducted. Please try again or contact support if the issue persists.",
       "statusErrorMessage": "There was an issue processing your channel order.",
+      "statusFundedTitle": "Channel funded, waiting for the provider",
+      "statusFundedMessage": "Your payment was received and the provider funded the channel on-chain, but it went offline before the channel finished opening.",
+      "statusFundedHelp": "Do not pay again. The channel becomes usable automatically when the provider is back online. If it stays pending, contact support with the order ID.",
       "statusErrorTitle": "Order Failed",
       "statusExpiredMessage": "The payment window has expired without receiving payment.",
       "statusExpiredTitle": "Payment Expired",

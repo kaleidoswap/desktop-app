@@ -62,7 +62,13 @@ export interface CreateChannelOrderParams {
 }
 
 export type ChannelOrderPaymentMethod = 'lightning' | 'onchain'
-export type ChannelOrderTerminalStatus = 'success' | 'error' | 'expired'
+/**
+ * `funded`: the LSP reported a failure but already funded the channel on-chain.
+ * The channel finishes opening once the LSP is back online, so the user must
+ * not be told the order failed or be offered to pay again.
+ */
+export type ChannelOrderTerminalStatus =
+  'success' | 'error' | 'expired' | 'funded'
 
 interface ChannelOrderPaymentLike {
   expires_at?: string | null
@@ -327,6 +333,27 @@ export const getChannelOrderFailureStatus = (
   return noPaymentMade || isPastExpiry ? 'expired' : 'error'
 }
 
+/** Whether the LSP reports a channel that already has a funding transaction. */
+export const hasFundedChannel = (
+  order: ChannelOrderStatusLike | null | undefined
+): boolean => {
+  const channel = order?.channel as
+    | { funding_outpoint?: string | null; funded_at?: string | null }
+    | null
+    | undefined
+  return Boolean(channel?.funding_outpoint || channel?.funded_at)
+}
+
+/** LSP order state, with a failed order whose channel is funded reported as FUNDED. */
+export const getChannelOrderDisplayState = (
+  order: ChannelOrderStatusLike | null | undefined
+): string | null => {
+  const orderState = getChannelOrderState(order)
+  return orderState === 'FAILED' && hasFundedChannel(order)
+    ? 'FUNDED'
+    : orderState
+}
+
 export const getChannelOrderTerminalStatus = (
   order: ChannelOrderStatusLike | null | undefined,
   now = Date.now()
@@ -347,6 +374,7 @@ export const getChannelOrderTerminalStatus = (
     orderState === 'ERROR' ||
     orderState === 'EXPIRED'
   ) {
+    if (hasFundedChannel(order)) return 'funded'
     return getChannelOrderFailureStatus(order, now)
   }
 

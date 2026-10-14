@@ -2853,6 +2853,7 @@
         "status": {
           "completed": "已完成",
           "failed": "失败",
+          "funded": "已注资",
           "created": "已创建",
           "unknown": "未知"
         },
@@ -2926,6 +2927,9 @@
       "statusCreateNewOrder": "创建新订单",
       "statusErrorHelp": "如果已付款，资金并未被扣除。请重试；若问题持续，请联系支持。",
       "statusErrorMessage": "处理你的通道订单时出现问题。",
+      "statusFundedTitle": "通道已注资，等待服务商",
+      "statusFundedMessage": "已收到你的付款，服务商已在链上为通道注资，但在通道开通完成前离线了。",
+      "statusFundedHelp": "请勿重复付款。服务商恢复在线后通道会自动可用。如果一直处于待定状态，请携带订单 ID 联系支持。",
       "statusErrorTitle": "订单失败",
       "statusExpiredMessage": "支付窗口已过期，未收到付款。",
       "statusExpiredTitle": "支付已过期",
