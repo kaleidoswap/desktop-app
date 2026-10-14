@@ -66,6 +66,9 @@ pub const RLN_METHODS: [&str; 12] = [
 /// How long to poll RLN for a payment preimage before giving up (seconds).
 const PAY_POLL_TIMEOUT_SECS: u64 = 60;
 
+/// Recent request ids remembered to drop duplicates delivered by other relays.
+const SEEN_REQUESTS_CAP: usize = 1024;
+
 fn now_secs() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -111,6 +114,9 @@ pub struct NwcManager {
     /// Service pubkey + active relays, available even to build connection URIs.
     service_pubkey: Arc<Mutex<Option<PublicKey>>>,
     relays: Arc<Mutex<Vec<String>>>,
+    /// Held for the whole of `start`/`stop`: `start` awaits relay setup before
+    /// `inner` is set, so concurrent callers would otherwise both start a listener.
+    lifecycle: tokio::sync::Mutex<()>,
 }
 
 impl NwcManager {
@@ -120,6 +126,7 @@ impl NwcManager {
             inner: Arc::new(Mutex::new(None)),
             service_pubkey: Arc::new(Mutex::new(None)),
             relays: Arc::new(Mutex::new(Vec::new())),
+            lifecycle: tokio::sync::Mutex::new(()),
         }
     }
 
@@ -148,6 +155,7 @@ impl NwcManager {
 
     /// Start the NWC service. Idempotent: a no-op if already running.
     pub async fn start(&self, cfg: StartConfig) -> Result<(), String> {
+        let _guard = self.lifecycle.lock().await;
         if self.is_running() {
             return Ok(());
         }
@@ -228,10 +236,16 @@ impl NwcManager {
         let mut notifications = client.notifications();
         let task = tauri::async_runtime::spawn(async move {
             log::info!("[NWC] service listening on {relay_count} relay(s)");
+            // The same request can arrive from several relays; handle it once.
+            let mut seen = std::collections::VecDeque::<EventId>::new();
             loop {
                 match notifications.recv().await {
                     Ok(RelayPoolNotification::Event { event, .. }) => {
-                        if event.kind == Kind::WalletConnectRequest {
+                        if event.kind == Kind::WalletConnectRequest && !seen.contains(&event.id) {
+                            if seen.len() >= SEEN_REQUESTS_CAP {
+                                seen.pop_front();
+                            }
+                            seen.push_back(event.id);
                             let ctx = ctx.clone();
                             tauri::async_runtime::spawn(async move {
                                 handle_request(ctx, *event).await;
@@ -267,6 +281,7 @@ impl NwcManager {
 
     /// Stop the NWC service. Safe to call when not running.
     pub async fn stop(&self) {
+        let _guard = self.lifecycle.lock().await;
         let running = self
             .inner
             .lock()
