@@ -11,6 +11,7 @@ use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 use crate::rgb_node::NodeState;
 
 /// Pinned per app release so every install runs the node version it was tested with.
+const RLN_IMAGE_REPO: &str = "kaleidoswap/rgb-lightning-node";
 const RLN_IMAGE: &str = "kaleidoswap/rgb-lightning-node:0.10.0@sha256:d68cbf4a7157380ce0a6adc99774e31f062213d2d224ceaeb37d638386cb9b34";
 /// The daemon API is unauthenticated, so it must only be reachable from this machine.
 const DAEMON_BIND_ADDR: &str = "127.0.0.1";
@@ -753,6 +754,18 @@ impl DockerNodeManager {
             return Err("Docker is not installed or not running".to_string());
         }
 
+        // Every environment runs the node version this release is pinned to;
+        // `up --pull missing` below fetches it and recreates the container.
+        match ensure_pinned_image(&compose_path) {
+            Ok(true) => self.add_log(&format!("Switching node image to {}", RLN_IMAGE)),
+            Ok(false) => {}
+            Err(e) => {
+                let err = format!("Failed to check node version: {}", e);
+                self.set_state(NodeState::Failed(err.clone()));
+                return Err(err);
+            }
+        }
+
         // Determine daemon port from compose file
         let daemon_port = Self::get_daemon_port_from_compose(&compose_path, node_index)?;
 
@@ -1149,6 +1162,33 @@ fn daemon_port_mapping(daemon_port: u16) -> String {
     format!("{}:{}:{}", DAEMON_BIND_ADDR, daemon_port, daemon_port)
 }
 
+/// Point every RLN service at the pinned image. Returns whether it changed.
+fn pin_image(doc: &mut serde_yaml::Value) -> bool {
+    let Some(services) = doc.get_mut("services").and_then(|s| s.as_mapping_mut()) else {
+        return false;
+    };
+    let mut changed = false;
+    for (_, svc) in services.iter_mut() {
+        let image = svc.get("image").and_then(|i| i.as_str()).unwrap_or("");
+        if image.starts_with(RLN_IMAGE_REPO) && image != RLN_IMAGE {
+            svc["image"] = serde_yaml::Value::String(RLN_IMAGE.into());
+            changed = true;
+        }
+    }
+    changed
+}
+
+fn ensure_pinned_image(path: &Path) -> Result<bool, String> {
+    let content = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+    let mut doc: serde_yaml::Value = serde_yaml::from_str(&content).map_err(|e| e.to_string())?;
+    if !pin_image(&mut doc) {
+        return Ok(false);
+    }
+    let yaml = serde_yaml::to_string(&doc).map_err(|e| e.to_string())?;
+    std::fs::write(path, yaml).map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
 /// Whether a `docker ps` Ports column (e.g.
 /// `0.0.0.0:3001->3001/tcp, :::3001->3001/tcp`) publishes `host_port`.
 fn publishes_host_port(ports: &str, host_port: u16) -> bool {
@@ -1207,5 +1247,40 @@ mod container_log_tests {
         let err = "2026-10-07T10:00:02.000Z b\n";
         assert_eq!(merge_timestamped_streams(out, err, 10), vec!["a", "b", "c"]);
         assert_eq!(merge_timestamped_streams(out, err, 2), vec!["b", "c"]);
+    }
+}
+
+#[cfg(test)]
+mod image_pin_tests {
+    use super::{pin_image, DockerNodeManager, DockerSpawnConfig, RLN_IMAGE};
+
+    #[test]
+    fn pins_any_other_node_image() {
+        for image in ["latest", "0.9.0"] {
+            let yaml = format!(
+                "services:\n  rgb_node_1:\n    image: kaleidoswap/rgb-lightning-node:{image}\n"
+            );
+            let mut doc: serde_yaml::Value = serde_yaml::from_str(&yaml).unwrap();
+            assert!(pin_image(&mut doc));
+            assert_eq!(
+                doc["services"]["rgb_node_1"]["image"].as_str(),
+                Some(RLN_IMAGE)
+            );
+            assert!(!pin_image(&mut doc));
+        }
+    }
+
+    #[test]
+    fn generated_compose_is_pinned() {
+        let config = DockerSpawnConfig {
+            base_daemon_port: 3001,
+            base_peer_port: 9735,
+            count: 1,
+            disable_authentication: true,
+            name: "test".into(),
+            network: "signet".into(),
+        };
+        let mut doc = DockerNodeManager::build_compose_dict(&config);
+        assert!(!pin_image(&mut doc));
     }
 }
