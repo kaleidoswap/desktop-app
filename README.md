@@ -120,7 +120,7 @@ Both macOS builds are also code-signed and Apple-notarized, and the app's update
 
 Use the app's update prompt, or download the matching installer from the release page. The public updater path from **0.5.1 to 0.6.0** was verified on **macOS Apple Silicon**, with the local application database preserved. See the [validation details](docs/security-review-0.6.0.md#validation) for the scope of testing.
 
-**RGB Lightning Node 0.10.0 or later is required.** The bundled node is 0.10.0. Wallets and backups created with the node bundled in desktop 0.5.0 or earlier require a separate migration: node 0.9.0 changed recovery-phrase storage without an automatic migration. Updating the desktop does not migrate those older node wallets. Keep your node backup and recovery phrase before upgrading.
+**RGB Lightning Node 0.10.0 or later is required.** The bundled node is 0.10.1. Wallets and backups created with the node bundled in desktop 0.5.0 or earlier require a separate migration: node 0.9.0 changed recovery-phrase storage without an automatic migration. Updating the desktop does not migrate those older node wallets. Keep your node backup and recovery phrase before upgrading.
 
 ### 2. Building Locally
 
