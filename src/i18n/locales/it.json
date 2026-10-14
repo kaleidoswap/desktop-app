@@ -3541,6 +3541,21 @@
         "title": "Cosa dice il registro",
         "asking": "Sto chiedendo al registro…",
         "footnote": "Sono fatti pubblicati dal registro. Nessuno dice che un asset sia sicuro."
+      },
+      "glyph": {
+        "failed": "Lo swap non è andato a buon fine. Non è stato speso nulla.",
+        "settled": "Entrambe le parti hanno ricevuto quanto dovuto",
+        "confirming": "Su Bitcoin, in attesa delle conferme",
+        "signing": "Controllo la prova, poi firmo",
+        "requested": "Lo chiedo a {{who}}",
+        "idle": "Le due parti si muovono in una sola transazione, o nessuna",
+        "aria": "Una sola transazione Bitcoin porta entrambi i lati dello swap",
+        "you": "Tu",
+        "maker": "Maker",
+        "tx": "Una sola transazione Bitcoin",
+        "in": "IN",
+        "out": "OUT",
+        "feeTo": "Commissione"
       }
     }
   }

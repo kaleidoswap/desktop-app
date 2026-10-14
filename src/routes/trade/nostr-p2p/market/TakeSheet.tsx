@@ -235,11 +235,12 @@ export function TakeSheet({ orders, trades, info, onClose, onChanged }: Props) {
           confirmations={
             reached(p.stage, 'confirming') ? p.confirmations : null
           }
-          failed={p.stage === 'failed'}
+          counterparty={orders.length > 1 ? `${orders.length}×` : first.maker}
+          fee={`${fmtSats(platform)} sats`}
+          phase={started ? p.stage : 'idle'}
           receive={buying ? asset : sats}
           required={p.required || info.min_confirmations}
           send={buying ? sats : asset}
-          settled={done}
         />
 
         {!started && (
