@@ -200,13 +200,6 @@ pub fn init() -> Result<(), String> {
     )
     .map_err(|e| format!("failed to run database migration: {}", e))?;
 
-    // Client keys are only handed out in the connection URI; earlier versions
-    // also stored them, which let anyone reading the database act as the app.
-    let _ = conn.execute(
-        "UPDATE NwcConnections SET client_secret = '' WHERE client_secret != ''",
-        (),
-    );
-
     Ok(())
 }
 
@@ -465,13 +458,6 @@ pub fn delete_account(name: String) -> Result<usize, rusqlite::Error> {
         if let Err(e) = crate::secret_store::delete(&crate::nwc::service_secret_name(account.id)) {
             log::warn!("Failed to remove NWC service key from the OS credential store: {e}");
         }
-        let _ = conn.execute(
-            "DELETE FROM AppSettings WHERE key IN (?1, ?2)",
-            [
-                format!("nwc_service_secret_{}", account.id),
-                format!("nwc_service_secret_{}_in_os_store", account.id),
-            ],
-        );
         if let Some(datapath) = account.datapath {
             if !datapath.is_empty() {
                 let full_path = PathBuf::from("../bin").join(datapath);
@@ -828,25 +814,5 @@ pub fn reset_expired_nwc_budgets(now: i64) -> Result<usize, rusqlite::Error> {
         "UPDATE NwcConnections SET spent_msat = 0, budget_renews_at = NULL
          WHERE budget_renews_at IS NOT NULL AND budget_renews_at <= ?1",
         rusqlite::params![now],
-    )
-}
-
-/// The NWC wallet-service secret key (hex) for an account. This is a random
-/// Nostr identity independent of the wallet seed, generated once and reused so
-/// connection URIs stay valid across restarts. Stored in AppSettings.
-pub fn get_nwc_service_secret(account_id: i32) -> Result<Option<String>, rusqlite::Error> {
-    get_app_setting(&format!("nwc_service_secret_{account_id}"))
-}
-
-pub fn set_nwc_service_secret(account_id: i32, secret_hex: &str) -> Result<usize, rusqlite::Error> {
-    set_app_setting(&format!("nwc_service_secret_{account_id}"), secret_hex)
-}
-
-/// Remove the plaintext copy once the secret lives in the OS credential store.
-pub fn delete_nwc_service_secret(account_id: i32) -> Result<usize, rusqlite::Error> {
-    let conn = Connection::open(get_db_path())?;
-    conn.execute(
-        "DELETE FROM AppSettings WHERE key = ?1",
-        [format!("nwc_service_secret_{account_id}")],
     )
 }

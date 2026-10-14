@@ -10,7 +10,6 @@ use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 
 use crate::rgb_node::NodeState;
 
-const RLN_IMAGE_REPO: &str = "kaleidoswap/rgb-lightning-node";
 /// Pinned per app release so every install runs the node version it was tested with.
 const RLN_IMAGE: &str = "kaleidoswap/rgb-lightning-node:0.10.0@sha256:d68cbf4a7157380ce0a6adc99774e31f062213d2d224ceaeb37d638386cb9b34";
 /// The daemon API is unauthenticated, so it must only be reachable from this machine.
@@ -754,14 +753,6 @@ impl DockerNodeManager {
             return Err("Docker is not installed or not running".to_string());
         }
 
-        // Environments created by older releases use a floating image tag and
-        // publish the daemon port on every interface.
-        match harden_compose_file(&compose_path) {
-            Ok(true) => self.add_log("Updated node image pin and local-only API binding"),
-            Ok(false) => {}
-            Err(e) => log::warn!("Could not harden {}: {}", compose_path.display(), e),
-        }
-
         // Determine daemon port from compose file
         let daemon_port = Self::get_daemon_port_from_compose(&compose_path, node_index)?;
 
@@ -1158,57 +1149,6 @@ fn daemon_port_mapping(daemon_port: u16) -> String {
     format!("{}:{}:{}", DAEMON_BIND_ADDR, daemon_port, daemon_port)
 }
 
-/// Pin floating node images (`:latest` or untagged) and bind the daemon port
-/// (first `ports` entry) to localhost in every RLN service. Explicit version
-/// tags are kept: wallets from older nodes may need a migration first.
-/// Returns whether the document changed.
-fn harden_compose(doc: &mut serde_yaml::Value) -> bool {
-    use serde_yaml::Value;
-
-    let Some(services) = doc.get_mut("services").and_then(|s| s.as_mapping_mut()) else {
-        return false;
-    };
-    let mut changed = false;
-    for (_, svc) in services.iter_mut() {
-        let Some(image) = svc.get("image").and_then(|i| i.as_str()) else {
-            continue;
-        };
-        let Some(rest) = image.strip_prefix(RLN_IMAGE_REPO) else {
-            continue;
-        };
-        if rest.is_empty() || rest == ":latest" {
-            svc["image"] = Value::String(RLN_IMAGE.into());
-            changed = true;
-        }
-        let Some(daemon) = svc
-            .get_mut("ports")
-            .and_then(|p| p.as_sequence_mut())
-            .and_then(|p| p.first_mut())
-        else {
-            continue;
-        };
-        let parts: Vec<&str> = daemon.as_str().unwrap_or("").split(':').collect();
-        if let [host, container] = parts[..] {
-            if let (Ok(host), Ok(_)) = (host.parse::<u16>(), container.parse::<u16>()) {
-                *daemon = Value::String(format!("{}:{}:{}", DAEMON_BIND_ADDR, host, container));
-                changed = true;
-            }
-        }
-    }
-    changed
-}
-
-fn harden_compose_file(path: &Path) -> Result<bool, String> {
-    let content = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
-    let mut doc: serde_yaml::Value = serde_yaml::from_str(&content).map_err(|e| e.to_string())?;
-    if !harden_compose(&mut doc) {
-        return Ok(false);
-    }
-    let yaml = serde_yaml::to_string(&doc).map_err(|e| e.to_string())?;
-    std::fs::write(path, yaml).map_err(|e| e.to_string())?;
-    Ok(true)
-}
-
 /// Whether a `docker ps` Ports column (e.g.
 /// `0.0.0.0:3001->3001/tcp, :::3001->3001/tcp`) publishes `host_port`.
 fn publishes_host_port(ports: &str, host_port: u16) -> bool {
@@ -1267,57 +1207,5 @@ mod container_log_tests {
         let err = "2026-10-07T10:00:02.000Z b\n";
         assert_eq!(merge_timestamped_streams(out, err, 10), vec!["a", "b", "c"]);
         assert_eq!(merge_timestamped_streams(out, err, 2), vec!["b", "c"]);
-    }
-}
-
-#[cfg(test)]
-mod compose_hardening_tests {
-    use super::{harden_compose, DockerNodeManager, DockerSpawnConfig, RLN_IMAGE};
-
-    const LEGACY: &str = r#"
-services:
-  rgb_node_1:
-    image: kaleidoswap/rgb-lightning-node:latest
-    ports:
-    - 3001:3001
-    - 9735:9735
-"#;
-
-    #[test]
-    fn hardens_legacy_compose() {
-        let mut doc: serde_yaml::Value = serde_yaml::from_str(LEGACY).unwrap();
-        assert!(harden_compose(&mut doc));
-        let svc = &doc["services"]["rgb_node_1"];
-        assert_eq!(svc["image"].as_str(), Some(RLN_IMAGE));
-        assert_eq!(svc["ports"][0].as_str(), Some("127.0.0.1:3001:3001"));
-        assert_eq!(svc["ports"][1].as_str(), Some("9735:9735"));
-        assert!(!harden_compose(&mut doc));
-    }
-
-    #[test]
-    fn keeps_explicit_version_tags() {
-        let mut doc: serde_yaml::Value =
-            serde_yaml::from_str(&LEGACY.replace(":latest", ":0.9.0")).unwrap();
-        assert!(harden_compose(&mut doc));
-        let svc = &doc["services"]["rgb_node_1"];
-        assert_eq!(
-            svc["image"].as_str(),
-            Some("kaleidoswap/rgb-lightning-node:0.9.0")
-        );
-        assert_eq!(svc["ports"][0].as_str(), Some("127.0.0.1:3001:3001"));
-    }
-
-    #[test]
-    fn generated_compose_is_already_hardened() {
-        let config = DockerSpawnConfig {
-            base_daemon_port: 3001,
-            base_peer_port: 9735,
-            count: 1,
-            disable_authentication: true,
-            name: "test".into(),
-            network: "signet".into(),
-        };
-        let mut doc = DockerNodeManager::build_compose_dict(&config);
-        assert!(!harden_compose(&mut doc));
     }
 }

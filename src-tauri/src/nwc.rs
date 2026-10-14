@@ -74,73 +74,16 @@ pub fn service_secret_name(account_id: i32) -> String {
     format!("nwc-service-{account_id}")
 }
 
-fn in_secret_store_marker(account_id: i32) -> String {
-    format!("nwc_service_secret_{account_id}_in_os_store")
-}
-
-fn parse_service_keys(hex: &str) -> Result<Keys, String> {
-    Keys::parse(hex).map_err(|e| format!("Stored NWC service key is invalid: {e}"))
-}
-
-/// The service key lives in the OS credential store. A plaintext copy left in
-/// the database by earlier versions is moved there on first use. Without a
-/// usable credential store (e.g. Linux with no Secret Service) the key stays
-/// in the database as before.
+/// The service key lives only in the OS credential store.
 fn load_service_keys(account_id: i32) -> Result<Keys, String> {
     let name = service_secret_name(account_id);
-    let marker = in_secret_store_marker(account_id);
-    let legacy = db::get_nwc_service_secret(account_id)
-        .map_err(|e| format!("Failed to read NWC service key: {e}"))?;
-
-    match secret_store::get(&name) {
-        Ok(Some(hex)) => {
-            let keys = parse_service_keys(&hex)?;
-            if legacy.is_some() {
-                let _ = db::delete_nwc_service_secret(account_id);
-            }
-            Ok(keys)
-        }
-        Ok(None) => {
-            let hex = legacy
-                .clone()
-                .unwrap_or_else(|| Keys::generate().secret_key().to_secret_hex());
-            let keys = parse_service_keys(&hex)?;
-            match secret_store::set(&name, &hex) {
-                Ok(()) => {
-                    let _ = db::set_app_setting(&marker, "1");
-                    if legacy.is_some() {
-                        db::delete_nwc_service_secret(account_id)
-                            .map_err(|e| format!("Failed to remove plaintext NWC key: {e}"))?;
-                    }
-                }
-                Err(e) => {
-                    log::warn!("[NWC] OS credential store rejected the service key: {e}");
-                    if legacy.is_none() {
-                        db::set_nwc_service_secret(account_id, &hex)
-                            .map_err(|e| format!("Failed to persist NWC service key: {e}"))?;
-                    }
-                }
-            }
-            Ok(keys)
-        }
-        Err(e) => {
-            if let Some(hex) = legacy {
-                return parse_service_keys(&hex);
-            }
-            // A key already moved to the store must not be silently replaced:
-            // that would invalidate every connected app.
-            if db::get_app_setting(&marker).ok().flatten().is_some() {
-                return Err(format!("OS credential store is unavailable: {e}"));
-            }
-            log::warn!(
-                "[NWC] OS credential store unavailable ({e}); storing key in the app database"
-            );
-            let generated = Keys::generate();
-            db::set_nwc_service_secret(account_id, &generated.secret_key().to_secret_hex())
-                .map_err(|e| format!("Failed to persist NWC service key: {e}"))?;
-            Ok(generated)
-        }
+    let unavailable = |e: String| format!("OS credential store is unavailable: {e}");
+    if let Some(hex) = secret_store::get(&name).map_err(unavailable)? {
+        return Keys::parse(&hex).map_err(|e| format!("Stored NWC service key is invalid: {e}"));
     }
+    let keys = Keys::generate();
+    secret_store::set(&name, &keys.secret_key().to_secret_hex()).map_err(unavailable)?;
+    Ok(keys)
 }
 
 fn now_secs() -> i64 {
