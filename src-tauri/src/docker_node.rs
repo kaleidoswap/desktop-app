@@ -1158,8 +1158,10 @@ fn daemon_port_mapping(daemon_port: u16) -> String {
     format!("{}:{}:{}", DAEMON_BIND_ADDR, daemon_port, daemon_port)
 }
 
-/// Pin the node image and bind the daemon port (first `ports` entry) to
-/// localhost in every RLN service. Returns whether the document changed.
+/// Pin floating node images (`:latest` or untagged) and bind the daemon port
+/// (first `ports` entry) to localhost in every RLN service. Explicit version
+/// tags are kept: wallets from older nodes may need a migration first.
+/// Returns whether the document changed.
 fn harden_compose(doc: &mut serde_yaml::Value) -> bool {
     use serde_yaml::Value;
 
@@ -1168,14 +1170,13 @@ fn harden_compose(doc: &mut serde_yaml::Value) -> bool {
     };
     let mut changed = false;
     for (_, svc) in services.iter_mut() {
-        let is_rln = svc
-            .get("image")
-            .and_then(|i| i.as_str())
-            .is_some_and(|i| i.starts_with(RLN_IMAGE_REPO));
-        if !is_rln {
+        let Some(image) = svc.get("image").and_then(|i| i.as_str()) else {
             continue;
-        }
-        if svc.get("image").and_then(|i| i.as_str()) != Some(RLN_IMAGE) {
+        };
+        let Some(rest) = image.strip_prefix(RLN_IMAGE_REPO) else {
+            continue;
+        };
+        if rest.is_empty() || rest == ":latest" {
             svc["image"] = Value::String(RLN_IMAGE.into());
             changed = true;
         }
@@ -1291,6 +1292,19 @@ services:
         assert_eq!(svc["ports"][0].as_str(), Some("127.0.0.1:3001:3001"));
         assert_eq!(svc["ports"][1].as_str(), Some("9735:9735"));
         assert!(!harden_compose(&mut doc));
+    }
+
+    #[test]
+    fn keeps_explicit_version_tags() {
+        let mut doc: serde_yaml::Value =
+            serde_yaml::from_str(&LEGACY.replace(":latest", ":0.9.0")).unwrap();
+        assert!(harden_compose(&mut doc));
+        let svc = &doc["services"]["rgb_node_1"];
+        assert_eq!(
+            svc["image"].as_str(),
+            Some("kaleidoswap/rgb-lightning-node:0.9.0")
+        );
+        assert_eq!(svc["ports"][0].as_str(), Some("127.0.0.1:3001:3001"));
     }
 
     #[test]
