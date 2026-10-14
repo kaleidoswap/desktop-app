@@ -4,7 +4,7 @@ A clearer desktop experience for managing an RGB Lightning node, trading assets 
 
 ### Security
 
-- The local node's API now accepts connections only from this computer instead of the whole local network. Local wallets created with an earlier build keep their previous binding; recreate them to get it.
+- The local node's API now accepts connections only from this computer instead of the whole local network.
 - Each release runs one exact node version. If a wallet uses a different node image, the app switches it to the pinned version on start.
 - Nostr Wallet Connect keys are no longer stored in plaintext. The service key is kept in the system keychain (macOS Keychain, Windows Credential Manager, Secret Service on Linux), and app connection keys are only shown once, in the connection link.
 - The Nostr Wallet Connect service can no longer start twice, so the same request cannot be paid twice.
