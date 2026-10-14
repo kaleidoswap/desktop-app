@@ -37,19 +37,17 @@ pub struct ChannelOrder {
 
 /// A Nostr Wallet Connect (NIP-47) app connection.
 ///
-/// Each connected app gets its own randomly generated `client_secret` (the key
-/// handed out inside the `nostr+walletconnect://` URI). The service authorizes
-/// incoming requests by `client_pubkey` and enforces the per-connection
-/// `methods` allowlist and optional spend `budget_msat`.
+/// Each connected app gets its own randomly generated client key, handed out
+/// once inside the `nostr+walletconnect://` URI and never stored. The service
+/// authorizes incoming requests by `client_pubkey` and enforces the
+/// per-connection `methods` allowlist and optional spend `budget_msat`.
 #[derive(Debug, Serialize, Clone)]
 pub struct NwcConnection {
     pub id: i32,
     pub account_id: i32,
     pub name: String,
-    /// x-only hex public key derived from `client_secret`; identifies the app.
+    /// x-only hex public key of the app's client key; identifies the app.
     pub client_pubkey: String,
-    /// hex secret key handed to the app via the connection URI.
-    pub client_secret: String,
     /// JSON array of relay URLs this connection uses.
     pub relays_json: String,
     /// JSON array of permitted NIP-47 method names.
@@ -201,6 +199,13 @@ pub fn init() -> Result<(), String> {
         (),
     )
     .map_err(|e| format!("failed to run database migration: {}", e))?;
+
+    // Client keys are only handed out in the connection URI; earlier versions
+    // also stored them, which let anyone reading the database act as the app.
+    let _ = conn.execute(
+        "UPDATE NwcConnections SET client_secret = '' WHERE client_secret != ''",
+        (),
+    );
 
     Ok(())
 }
@@ -457,6 +462,16 @@ pub fn delete_account(name: String) -> Result<usize, rusqlite::Error> {
 
     // If account exists and has a datapath, delete the directory
     if let Some(account) = account {
+        if let Err(e) = crate::secret_store::delete(&crate::nwc::service_secret_name(account.id)) {
+            log::warn!("Failed to remove NWC service key from the OS credential store: {e}");
+        }
+        let _ = conn.execute(
+            "DELETE FROM AppSettings WHERE key IN (?1, ?2)",
+            [
+                format!("nwc_service_secret_{}", account.id),
+                format!("nwc_service_secret_{}_in_os_store", account.id),
+            ],
+        );
         if let Some(datapath) = account.datapath {
             if !datapath.is_empty() {
                 let full_path = PathBuf::from("../bin").join(datapath);
@@ -676,7 +691,7 @@ pub fn set_app_setting(key: &str, value: &str) -> Result<usize, rusqlite::Error>
 
 // NWC connections (Nostr Wallet Connect)
 
-const NWC_COLUMNS: &str = "id, account_id, name, client_pubkey, client_secret, relays_json, methods_json, budget_msat, spent_msat, budget_renews_at, enabled, created_at, last_used_at";
+const NWC_COLUMNS: &str = "id, account_id, name, client_pubkey, relays_json, methods_json, budget_msat, spent_msat, budget_renews_at, enabled, created_at, last_used_at";
 
 fn row_to_nwc_connection(row: &rusqlite::Row) -> Result<NwcConnection, rusqlite::Error> {
     Ok(NwcConnection {
@@ -684,15 +699,14 @@ fn row_to_nwc_connection(row: &rusqlite::Row) -> Result<NwcConnection, rusqlite:
         account_id: row.get(1)?,
         name: row.get(2)?,
         client_pubkey: row.get(3)?,
-        client_secret: row.get(4)?,
-        relays_json: row.get(5)?,
-        methods_json: row.get(6)?,
-        budget_msat: row.get(7)?,
-        spent_msat: row.get(8)?,
-        budget_renews_at: row.get(9)?,
-        enabled: row.get::<_, i64>(10)? != 0,
-        created_at: row.get(11)?,
-        last_used_at: row.get(12)?,
+        relays_json: row.get(4)?,
+        methods_json: row.get(5)?,
+        budget_msat: row.get(6)?,
+        spent_msat: row.get(7)?,
+        budget_renews_at: row.get(8)?,
+        enabled: row.get::<_, i64>(9)? != 0,
+        created_at: row.get(10)?,
+        last_used_at: row.get(11)?,
     })
 }
 
@@ -701,7 +715,6 @@ pub fn insert_nwc_connection(
     account_id: i32,
     name: &str,
     client_pubkey: &str,
-    client_secret: &str,
     relays_json: &str,
     methods_json: &str,
     budget_msat: Option<i64>,
@@ -712,12 +725,11 @@ pub fn insert_nwc_connection(
     conn.execute(
         "INSERT INTO NwcConnections
             (account_id, name, client_pubkey, client_secret, relays_json, methods_json, budget_msat, spent_msat, budget_renews_at, enabled, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8, 1, ?9)",
+         VALUES (?1, ?2, ?3, '', ?4, ?5, ?6, 0, ?7, 1, ?8)",
         rusqlite::params![
             account_id,
             name,
             client_pubkey,
-            client_secret,
             relays_json,
             methods_json,
             budget_msat,
@@ -828,4 +840,13 @@ pub fn get_nwc_service_secret(account_id: i32) -> Result<Option<String>, rusqlit
 
 pub fn set_nwc_service_secret(account_id: i32, secret_hex: &str) -> Result<usize, rusqlite::Error> {
     set_app_setting(&format!("nwc_service_secret_{account_id}"), secret_hex)
+}
+
+/// Remove the plaintext copy once the secret lives in the OS credential store.
+pub fn delete_nwc_service_secret(account_id: i32) -> Result<usize, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "DELETE FROM AppSettings WHERE key = ?1",
+        [format!("nwc_service_secret_{account_id}")],
+    )
 }
