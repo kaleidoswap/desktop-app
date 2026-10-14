@@ -6,6 +6,7 @@ import { toast } from 'react-toastify'
 
 import { Modal } from '../ui/Modal'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { isValidPeerConnectionString } from '../../helpers/address'
 
 interface PeerManagementModalProps {
   onClose: () => void
@@ -32,9 +33,14 @@ export const PeerManagementModal = ({ onClose }: PeerManagementModalProps) => {
   }, [getPeers])
 
   const handleConnect = async (data: ConnectPeerForm) => {
+    const peerAddress = data.peerAddress.trim()
+    if (!isValidPeerConnectionString(peerAddress)) {
+      toast.error(t('createChannel.step1.errorInvalidPeerString'))
+      return
+    }
     try {
       await connectPeer({
-        peer_pubkey_and_addr: data.peerAddress,
+        peer_pubkey_and_addr: peerAddress,
       }).unwrap()
       toast.success(t('peerManagement.success.connected'))
       setShowConnectForm(false)

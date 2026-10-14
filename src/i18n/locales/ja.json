@@ -1957,6 +1957,10 @@
       "numberPlaceholder": "数量を入力",
       "sizeLabel": "UTXOサイズ（サトシ単位）",
       "sizePlaceholder": "サイズを入力",
+      "availableBalance": "利用可能残高",
+      "insufficientBalance": "残高が不足しています。{{min}} sats 以上の UTXO を {{num}} 個作成するには、手数料に加えて {{required}} sats を超える残高が必要です。続行するにはオンチェーンで BTC を入金してください。",
+      "receiveBtc": "BTC を受け取る",
+      "sizeOutOfRange": "UTXO のサイズは {{min}}〜{{max}} sats の範囲で指定してください。",
       "feeRate": "手数料率"
     },
     "feeOptions": {

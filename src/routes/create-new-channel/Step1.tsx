@@ -23,7 +23,10 @@ import { useAppSelector } from '../../app/store/hooks'
 import { Spinner } from '../../components/Spinner'
 import { Button } from '../../components/ui'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
-import { isValidPubkeyAndAddress } from '../../helpers/address'
+import {
+  isValidPeerConnectionString,
+  isValidPubkeyAndAddress,
+} from '../../helpers/address'
 import kaleidoswapPictogram from '../../assets/logo.svg'
 import { MinidenticonImg } from '../../components/MinidenticonImg'
 import {
@@ -253,20 +256,21 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
   }
 
   const handleConnect = async () => {
-    if (!selectedPeerInfo || !isValidPubkeyAndAddress(selectedPeerInfo)) {
+    const peerInfo = selectedPeerInfo.trim()
+    if (!isValidPeerConnectionString(peerInfo)) {
       setLocalError(t('createChannel.step1.errorInvalidPeerString'))
       return
     }
 
     setIsConnecting(true)
     try {
-      await connectPeer({ peer_pubkey_and_addr: selectedPeerInfo }).unwrap()
+      await connectPeer({ peer_pubkey_and_addr: peerInfo }).unwrap()
 
       // Update form data and proceed
       onFormUpdate({
-        pubKeyAndAddress: selectedPeerInfo,
+        pubKeyAndAddress: peerInfo,
       })
-      setValue('pubKeyAndAddress', selectedPeerInfo)
+      setValue('pubKeyAndAddress', peerInfo)
       setShowConnectionDialog(false)
       onNext()
     } catch (err) {

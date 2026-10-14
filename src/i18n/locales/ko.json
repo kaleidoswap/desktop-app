@@ -1957,6 +1957,10 @@
       "numberPlaceholder": "수량 입력",
       "sizeLabel": "UTXO 크기 (사토시 단위)",
       "sizePlaceholder": "크기 입력",
+      "availableBalance": "사용 가능 잔액",
+      "insufficientBalance": "잔액이 부족합니다. {{min}} sats 이상의 UTXO {{num}}개를 만들려면 수수료 외에 {{required}} sats를 초과하는 잔액이 필요합니다. 계속하려면 온체인으로 BTC를 입금하세요.",
+      "receiveBtc": "BTC 받기",
+      "sizeOutOfRange": "UTXO 크기는 {{min}}~{{max}} sats 사이여야 합니다.",
       "feeRate": "수수료율"
     },
     "feeOptions": {

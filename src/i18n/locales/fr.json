@@ -1957,6 +1957,10 @@
       "numberPlaceholder": "Saisir le montant",
       "sizeLabel": "Taille de l'UTXO (en satoshis)",
       "sizePlaceholder": "Saisir la taille",
+      "availableBalance": "Solde disponible",
+      "insufficientBalance": "Solde insuffisant. Créer {{num}} UTXO d'au moins {{min}} sats nécessite plus de {{required}} sats, frais en sus. Déposez des BTC on-chain pour continuer.",
+      "receiveBtc": "Recevoir des BTC",
+      "sizeOutOfRange": "La taille des UTXO doit être comprise entre {{min}} et {{max}} sats.",
       "feeRate": "Taux de frais"
     },
     "feeOptions": {

@@ -1957,6 +1957,10 @@
       "numberPlaceholder": "Enter amount",
       "sizeLabel": "UTXO Size (in satoshis)",
       "sizePlaceholder": "Enter size",
+      "availableBalance": "Available balance",
+      "insufficientBalance": "Insufficient balance. Creating {{num}} UTXOs of at least {{min}} sats needs more than {{required}} sats plus fees. Deposit BTC on-chain to continue.",
+      "receiveBtc": "Receive BTC",
+      "sizeOutOfRange": "UTXO size must be between {{min}} and {{max}} sats.",
       "feeRate": "Fee Rate"
     },
     "feeOptions": {

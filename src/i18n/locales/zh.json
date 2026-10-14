@@ -1957,6 +1957,10 @@
       "numberPlaceholder": "输入数量",
       "sizeLabel": "UTXO 大小（以聪为单位）",
       "sizePlaceholder": "输入大小",
+      "availableBalance": "可用余额",
+      "insufficientBalance": "余额不足。创建 {{num}} 个至少 {{min}} sats 的 UTXO 需要超过 {{required}} sats 外加手续费。请先链上充值 BTC。",
+      "receiveBtc": "接收 BTC",
+      "sizeOutOfRange": "UTXO 大小必须在 {{min}} 到 {{max}} sats 之间。",
       "feeRate": "费率"
     },
     "feeOptions": {

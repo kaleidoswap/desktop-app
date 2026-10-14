@@ -1957,6 +1957,10 @@
       "numberPlaceholder": "Inserisci quantità",
       "sizeLabel": "Dimensione UTXO (in satoshi)",
       "sizePlaceholder": "Inserisci dimensione",
+      "availableBalance": "Saldo disponibile",
+      "insufficientBalance": "Saldo insufficiente. Per creare {{num}} UTXO da almeno {{min}} sats servono più di {{required}} sats, commissioni escluse. Deposita BTC on-chain per continuare.",
+      "receiveBtc": "Ricevi BTC",
+      "sizeOutOfRange": "La dimensione degli UTXO deve essere tra {{min}} e {{max}} sats.",
       "feeRate": "Tariffa Commissioni"
     },
     "feeOptions": {

@@ -1957,6 +1957,10 @@
       "numberPlaceholder": "Anzahl eingeben",
       "sizeLabel": "UTXO-Größe (in Satoshis)",
       "sizePlaceholder": "Größe eingeben",
+      "availableBalance": "Verfügbares Guthaben",
+      "insufficientBalance": "Unzureichendes Guthaben. Für {{num}} UTXOs von mindestens {{min}} sats werden mehr als {{required}} sats plus Gebühren benötigt. Zahle BTC on-chain ein, um fortzufahren.",
+      "receiveBtc": "BTC empfangen",
+      "sizeOutOfRange": "Die UTXO-Größe muss zwischen {{min}} und {{max}} sats liegen.",
       "feeRate": "Gebührensatz"
     },
     "feeOptions": {
