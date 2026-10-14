@@ -1,4 +1,10 @@
 {
+  "nodeReachability": {
+    "unresponsiveTitle": "El nodo no responde",
+    "unresponsiveMessage": "Es posible que el nodo esté ocupado con operaciones de la billetera o desconectado. Puedes seguir navegando; los saldos podrían no estar actualizados. Revisa el historial antes de repetir un pago o una operación con activos.",
+    "checking": "Comprobando la conexión…",
+    "retryIncomplete": "Comprobación terminada sin respuesta. Es posible que el nodo siga ocupado; las comprobaciones automáticas continúan."
+  },
   "common": {
     "loading": "Cargando...",
     "save": "Guardar",

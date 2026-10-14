@@ -1,4 +1,10 @@
 {
+  "nodeReachability": {
+    "unresponsiveTitle": "节点无响应",
+    "unresponsiveMessage": "节点可能正忙于处理钱包操作，或已断开连接。你可以继续浏览，但余额可能不是最新的。在重复付款或资产操作之前，请先查看操作历史。",
+    "checking": "正在检查连接…",
+    "retryIncomplete": "检查结束但未收到响应。节点可能仍在忙碌，自动检查将继续进行。"
+  },
   "common": {
     "loading": "加载中...",
     "save": "保存",
