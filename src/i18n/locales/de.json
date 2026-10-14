@@ -3560,6 +3560,21 @@
         "title": "What the registry says",
         "asking": "Asking the registry…",
         "footnote": "These are facts the registry publishes. None of them says an asset is safe."
+      },
+      "glyph": {
+        "failed": "The swap did not go through. Nothing was spent.",
+        "settled": "Both sides received what they were owed",
+        "confirming": "On Bitcoin, waiting for confirmations",
+        "signing": "Checking the proof, then signing",
+        "requested": "Asking {{who}}",
+        "idle": "Both sides move in one transaction, or neither does",
+        "aria": "One Bitcoin transaction carries both sides of the swap",
+        "you": "You",
+        "maker": "Maker",
+        "tx": "One Bitcoin transaction",
+        "in": "IN",
+        "out": "OUT",
+        "feeTo": "Fee"
       }
     }
   }
