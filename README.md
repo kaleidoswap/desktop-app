@@ -11,7 +11,7 @@
 KaleidoSwap also ships with **Kaleido Mind**, an optional built-in AI assistant that lets you interact with your wallet in plain language—asking questions and carrying out actions such as buying assets, requesting channels, and swapping. You can run the app as **Node**, **Mind**, or both, switchable from **Settings → Capabilities**.
 
 - **Alpha Software Caution**: This software is still in alpha. Swaps may fail or get stuck, and **mainnet usage is not recommended**.
-- **Current release**: [Desktop 0.6.0](https://github.com/kaleidoswap/desktop-app/releases/tag/v0.6.0) is the stable distribution release. Trading remains experimental; **Kaleido Mind remains beta**. See the [changelog](CHANGELOG.md) and [release security review](docs/security-review-0.6.0.md).
+- **Current release**: [Desktop 0.6.1](https://github.com/kaleidoswap/desktop-app/releases/tag/v0.6.1) is the stable distribution release. Trading remains experimental; **Kaleido Mind remains beta**. See the [changelog](CHANGELOG.md) and [release security review](docs/security-review-0.6.0.md).
 - **Mind platforms**: Optional runtime downloads are available for macOS Apple Silicon, macOS Intel, Linux x64 and Windows x64. Node mode works without the AI runtime.
 - **Documentation**: Visit [docs.kaleidoswap.com](https://docs.kaleidoswap.com) for comprehensive guides and additional details.
 

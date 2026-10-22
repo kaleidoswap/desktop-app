@@ -623,8 +623,8 @@ export const Layout = (props: Props) => {
   const isNodeReachable =
     nodeReachability === 'reachable' ||
     (nodeReachability === 'unknown' && nodeInfo.isSuccess)
-  const isNodeUnreachable =
-    nodeReachability === 'unreachable' || nodeReachability === 'slow'
+  // 'slow' (a nodeinfo timeout while the node is busy) stays silent.
+  const isNodeUnreachable = nodeReachability === 'unreachable'
   const shouldPoll = isNodeReachable
   const isNodeActive =
     nodeLifecycle.status === 'Running' ||
