@@ -1,3 +1,9 @@
+## [Version 0.6.1] - 2026-10-22
+
+### Wallet and node
+
+- A node that is slow to respond no longer shows the "Node response unavailable" panel. The app keeps checking in the background, and the panel only appears when the node cannot be reached.
+
 ## [Version 0.6.0] - 2026-10-14
 
 A clearer desktop experience for managing an RGB Lightning node, trading assets and using KaleidoMind. These notes cover the complete upgrade from 0.5.0, including the changes previously listed under 0.5.1.
