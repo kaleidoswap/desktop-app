@@ -108,7 +108,7 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
           message: `Version ${update.version} is available. Click to install now.`,
           title: 'Update Available',
           type: 'info',
-          // Don't auto-close so user can click it later
+          autoClose: 0,
         })
       }
     }
@@ -169,7 +169,7 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
         message: `Version ${update.version} is available for download. Click to install now.`,
         title: 'Update Found',
         type: 'info',
-        // Don't auto-close so user can click it later
+        autoClose: 0,
       })
     } else {
       addNotification({
