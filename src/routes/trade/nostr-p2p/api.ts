@@ -153,9 +153,12 @@ export const marketApi = {
       order_id: o.order_id,
       reviewed: {
         amount: o.amount,
+        asset_id: o.asset_id,
         network_fee_sat: o.network_fee_sat,
         platform_fee_sat: o.platform_fee_sat,
         price_sat: o.price_sat,
+        rgb_output_sat: o.rgb_output_sat,
+        side: o.side,
       },
     }),
   trades: () => get<Trade[]>('/api/trades'),
