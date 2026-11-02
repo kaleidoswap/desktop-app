@@ -147,6 +147,16 @@ export const marketApi = {
   info: () => get<Info>('/api/info'),
   orders: () => get<Order[]>('/api/orders'),
   placeOrder: (o: NewOrder) => post<Order>('/api/orders', o),
-  take: (orderId: string) => post<unknown>('/api/take', { order_id: orderId }),
+  // the daemon refuses if the order is no longer on the terms that were reviewed
+  take: (o: Order) =>
+    post<unknown>('/api/take', {
+      order_id: o.order_id,
+      reviewed: {
+        amount: o.amount,
+        network_fee_sat: o.network_fee_sat,
+        platform_fee_sat: o.platform_fee_sat,
+        price_sat: o.price_sat,
+      },
+    }),
   trades: () => get<Trade[]>('/api/trades'),
 }

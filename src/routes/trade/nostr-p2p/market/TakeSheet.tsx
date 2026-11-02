@@ -97,7 +97,7 @@ export function TakeSheet({ orders, trades, info, onClose, onChanged }: Props) {
     setBusy(true)
     const since = Math.floor(Date.now() / 1000) - 2
     const results = await Promise.allSettled(
-      orders.map((o) => marketApi.take(o.order_id))
+      orders.map((o) => marketApi.take(o))
     )
     const failed = results.find(
       (r): r is PromiseRejectedResult => r.status === 'rejected'

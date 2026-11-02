@@ -65,10 +65,8 @@ export function Market({ onOpenFunds }: Props) {
       }
       cur.verified = cur.verified || o.verified
       cur.impersonates = cur.impersonates ?? o.impersonates
-      if (o.ticker && cur.ticker !== o.ticker) {
-        cur.ticker = o.ticker
-        cur.precision = o.precision
-      }
+      // what a maker says about an asset (ticker, precision) never replaces what is already known:
+      // the wallet's own entry is authoritative, and a later order cannot rewrite the first
       cur.orders += 1
       m.set(o.asset_id, cur)
     }
