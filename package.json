@@ -95,7 +95,8 @@
       "react-native-svg": "-",
       "undici": "^7.30.1",
       "@vitest/mocker": ">=4.1.12",
-      "follow-redirects": ">=1.16.2"
+      "follow-redirects": ">=1.16.2",
+      "minimatch": ">=11.0.1"
     }
   }
 }
