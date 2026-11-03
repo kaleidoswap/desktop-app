@@ -540,7 +540,7 @@ export const Step2: React.FC<Props> = ({
           const adjustedData = { ...submissionData }
           let madeAdjustments = false
 
-          error.errors.forEach((err) => {
+          error.issues.forEach((err) => {
             const path = err.path.join('.')
             if (path === 'capacitySat' && err.message.includes('minimum')) {
               adjustedData.capacitySat = effectiveMinCapacity
