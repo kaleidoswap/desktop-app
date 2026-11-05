@@ -36,11 +36,21 @@ export const p2pStart = (config: P2pStartConfig) =>
   invoke<P2pStatus>('p2p_start', { config })
 export const p2pStop = () => invoke<void>('p2p_stop')
 
+/**
+ * The daemon keeps its data and its keychain entry under the account name, so it takes letters,
+ * digits, `-` and `_` only; an account called "My Bitcoin Wallet" becomes "My-Bitcoin-Wallet".
+ */
+export const daemonAccountName = (name: string): string =>
+  name
+    .trim()
+    .replace(/[^A-Za-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'account'
+
 export const startConfigFor = (
   account: string,
   cfg: P2pNetworkConfig
 ): P2pStartConfig => ({
-  account,
+  account: daemonAccountName(account),
   fee_address: cfg.feeAddress,
   indexer_url: cfg.indexerUrl,
   network: cfg.network,

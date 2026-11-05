@@ -19,7 +19,7 @@ export function DepthChart({
   const { asks, bids } = splitBook(orders)
   if (!asks.length && !bids.length) {
     return (
-      <div className="flex h-36 items-center justify-center text-caption text-content-tertiary">
+      <div className="flex h-full min-h-36 items-center justify-center text-caption text-content-tertiary">
         {tr('depth.empty', 'The depth chart fills in as orders arrive.')}
       </div>
     )
@@ -58,7 +58,7 @@ export function DepthChart({
   return (
     <svg
       aria-label={tr('depth.label', 'Depth chart for {{ticker}}', { ticker })}
-      className="h-40 w-full"
+      className="h-full min-h-40 w-full"
       preserveAspectRatio="none"
       role="img"
       viewBox={`0 0 ${W} ${H + 20}`}

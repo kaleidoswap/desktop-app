@@ -13,7 +13,7 @@ import { fmtBtc, fmtPrice, fmtSats, fmtUnits, toBase } from '../format'
 
 import { Field } from './Field'
 import { useTr } from './hooks'
-import { Pill, cx } from './ui'
+import { Pill, Slider, cx } from './ui'
 
 interface Asset {
   asset_id: string
@@ -136,21 +136,31 @@ export function TradeTicket({
     })
   }
 
+  // the most the wallet can put into this order, in base units: what is held when selling, what
+  // the bitcoin buys at the best price (or the typed one) when buying
+  const refPrice = mode === 'limit' ? unitPrice : (asks[0]?.unit_price ?? 0)
+  const maxBase =
+    side === 'sell'
+      ? spendable
+      : refPrice > 0
+        ? Math.floor((btc / refPrice) * 10 ** asset.precision)
+        : 0
+  const pctNow =
+    maxBase > 0 ? Math.min(100, Math.round((amountBase / maxBase) * 100)) : 0
+
   const pct = (p: number) => {
-    if (side === 'sell') {
-      const u = (spendable * p) / 100 / 10 ** asset.precision
-      setAmount(
-        u ? String(Number(u.toFixed(Math.min(asset.precision, 8)))) : ''
-      )
+    if (p <= 0 || maxBase <= 0) {
+      setAmount('')
       return
     }
-    const ref = mode === 'limit' ? unitPrice : (asks[0]?.unit_price ?? 0)
-    if (ref > 0) {
-      const u = (btc * p) / 100 / ref
-      setAmount(
-        u > 0 ? String(Number(u.toFixed(Math.min(asset.precision, 6)))) : ''
-      )
-    }
+    const base = Math.floor((maxBase * p) / 100)
+    setAmount(
+      base > 0
+        ? String(
+            Number((base / 10 ** asset.precision).toFixed(asset.precision))
+          )
+        : ''
+    )
   }
 
   const place = async () => {
@@ -240,12 +250,40 @@ export function TradeTicket({
         ))}
       </div>
 
+      <p className="-mt-1 text-caption text-content-tertiary">
+        {mode === 'market'
+          ? side === 'buy'
+            ? tr(
+                'ticket.marketHelpBuy',
+                'Buy now from the cheapest open orders. You see the exact cost before anything is signed.'
+              )
+            : tr(
+                'ticket.marketHelpSell',
+                'Sell now to the highest open buy orders. You see exactly what you receive before anything is signed.'
+              )
+          : tr(
+              'ticket.limitHelp',
+              'Post an order at your own price. It waits in the book until someone takes it.'
+            )}
+      </p>
+
       <div className="flex items-center justify-between text-caption text-content-tertiary">
         <span>{tr('ticket.available', 'Available')}</span>
-        <span className="tabular-nums text-content-secondary">
-          {side === 'buy'
-            ? `${fmtSats(btc)} sats`
-            : `${fmtUnits(spendable, asset.precision)} ${asset.ticker}`}
+        <span className="flex items-center gap-2">
+          <span className="tabular-nums text-content-secondary">
+            {side === 'buy'
+              ? `${fmtSats(btc)} sats`
+              : `${fmtUnits(spendable, asset.precision)} ${asset.ticker}`}
+          </span>
+          {onOpenFunds && (side === 'buy' ? btc === 0 : spendable === 0) && (
+            <button
+              className="font-medium text-primary hover:underline"
+              onClick={onOpenFunds}
+              type="button"
+            >
+              {tr('ticket.deposit', 'Deposit')}
+            </button>
+          )}
         </span>
       </div>
 
@@ -267,44 +305,33 @@ export function TradeTicket({
         suffix={asset.ticker}
         value={amount}
       />
-      <div className="grid grid-cols-4 gap-2">
-        {[25, 50, 75, 100].map((p) => (
-          <button
-            className="rounded-lg bg-surface-raised py-1 text-caption text-content-secondary transition-colors hover:text-content-primary"
-            key={p}
-            onClick={() => pct(p)}
-            type="button"
-          >
-            {p}%
-          </button>
-        ))}
-      </div>
+      <Slider
+        disabled={maxBase <= 0}
+        label={tr('ticket.share', 'Share of what you can use')}
+        marks={[0, 25, 50, 75, 100].map((v) => ({
+          label: `${v}%`,
+          value: v,
+        }))}
+        onChange={pct}
+        readout={maxBase > 0 ? `${pctNow}%` : undefined}
+        value={pctNow}
+      />
 
       {mode === 'market' ? (
         <>
-          <div className="flex flex-col gap-1.5">
-            <span className="text-caption text-content-secondary">
-              {tr('ticket.limitPrice', 'Worst price you accept')}
-            </span>
-            <div className="grid grid-cols-4 gap-2">
-              {SLIPPAGE.map((s) => (
-                <button
-                  aria-pressed={slippage === s}
-                  className={cx(
-                    'rounded-lg py-1 text-caption tabular-nums transition-colors',
-                    slippage === s
-                      ? 'bg-primary/15 text-primary'
-                      : 'bg-surface-raised text-content-secondary hover:text-content-primary'
-                  )}
-                  key={s}
-                  onClick={() => setSlippage(s)}
-                  type="button"
-                >
-                  {(s * 100).toFixed(s < 0.01 ? 1 : 0)}%
-                </button>
-              ))}
-            </div>
-          </div>
+          <Slider
+            label={tr('ticket.limitPrice', 'Worst price you accept')}
+            marks={SLIPPAGE.map((v, i) => ({
+              label: `${(v * 100).toFixed(v < 0.01 ? 1 : 0)}%`,
+              value: i,
+            }))}
+            max={SLIPPAGE.length - 1}
+            onChange={(i) => setSlippage(SLIPPAGE[i] ?? 0.01)}
+            readout={tr('ticket.slipReadout', 'up to {{pct}}% worse', {
+              pct: (slippage * 100).toFixed(slippage < 0.01 ? 1 : 0),
+            })}
+            value={Math.max(0, SLIPPAGE.indexOf(slippage))}
+          />
           <div className="flex flex-col gap-2 rounded-xl bg-surface-inset p-3 text-caption">
             <div className="flex justify-between">
               <span className="text-content-secondary">

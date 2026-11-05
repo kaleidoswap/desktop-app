@@ -79,6 +79,96 @@ export const EmptyState = ({
   </div>
 )
 
+export interface SliderMark {
+  value: number
+  label: string
+}
+
+/**
+ * A range slider with a filled track, labelled marks to snap to, and a readout. `value` is a
+ * position between `min` and `max`; for a few fixed choices pass `step={1}` and a mark per choice.
+ */
+export const Slider = ({
+  label,
+  value,
+  min = 0,
+  max = 100,
+  step = 1,
+  marks,
+  readout,
+  onChange,
+  disabled,
+}: {
+  label: string
+  value: number
+  min?: number
+  max?: number
+  step?: number
+  marks?: SliderMark[]
+  readout?: ReactNode
+  onChange: (v: number) => void
+  disabled?: boolean
+}) => {
+  const span = Math.max(max - min, 1e-9)
+  const pct = Math.min(100, Math.max(0, ((value - min) / span) * 100))
+  return (
+    <div className={cx('flex flex-col gap-1.5', disabled && 'opacity-50')}>
+      <div className="flex items-baseline justify-between">
+        <span className="text-caption text-content-secondary">{label}</span>
+        {readout && (
+          <span className="text-caption font-medium tabular-nums text-content-primary">
+            {readout}
+          </span>
+        )}
+      </div>
+      <div className="relative flex h-5 items-center">
+        <span
+          aria-hidden
+          className="absolute inset-x-0 h-1.5 rounded-full bg-surface-raised"
+        />
+        <span
+          aria-hidden
+          className="absolute left-0 h-1.5 rounded-full bg-primary"
+          style={{ width: `${pct}%` }}
+        />
+        <input
+          aria-label={label}
+          aria-valuetext={typeof readout === 'string' ? readout : undefined}
+          className="relative h-5 w-full cursor-pointer appearance-none bg-transparent outline-none disabled:cursor-not-allowed [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-surface-card [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow [&:focus-visible::-webkit-slider-thumb]:ring-2 [&:focus-visible::-webkit-slider-thumb]:ring-primary/50"
+          disabled={disabled}
+          max={max}
+          min={min}
+          onChange={(e) => onChange(Number(e.target.value))}
+          step={step}
+          type="range"
+          value={value}
+        />
+      </div>
+      {marks && (
+        <div className="relative h-4">
+          {marks.map((m) => (
+            <button
+              className={cx(
+                'absolute -translate-x-1/2 text-tiny tabular-nums transition-colors hover:text-content-primary',
+                Math.abs(m.value - value) < step / 2 + 1e-9
+                  ? 'font-medium text-primary'
+                  : 'text-content-tertiary'
+              )}
+              disabled={disabled}
+              key={m.value}
+              onClick={() => onChange(m.value)}
+              style={{ left: `${((m.value - min) / span) * 100}%` }}
+              type="button"
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export interface Row {
   label: ReactNode
   value: ReactNode

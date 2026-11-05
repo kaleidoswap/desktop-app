@@ -7,8 +7,9 @@ import { useAppSelector } from '../../../app/store/hooks'
 import { TradeNav } from '../../../components/Trade'
 import { Alert, Button } from '../../../components/ui'
 import { p2pConfigFor } from '../../../constants/p2p'
+import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 
-import { FundsModal } from './FundsModal'
+import { FundsModal, type Direction } from './FundsModal'
 import { Market } from './market/Market'
 import {
   p2pStart,
@@ -29,7 +30,11 @@ export const Component = () => {
 
   const [status, setStatus] = useState<P2pStatus | null>(null)
   const [busy, setBusy] = useState(false)
+  const nodeBtc = nodeApi.endpoints.btcBalance.useQuery(undefined, {
+    pollingInterval: 15_000,
+  })
   const [fundsOpen, setFundsOpen] = useState(false)
+  const [fundsDirection, setFundsDirection] = useState<Direction>('toTrading')
 
   const refresh = useCallback(async () => {
     try {
@@ -96,8 +101,21 @@ export const Component = () => {
             {t('p2pMarket.stop')}
           </Button>
         </div>
-        <Market onOpenFunds={() => setFundsOpen(true)} />
-        <FundsModal isOpen={fundsOpen} onClose={() => setFundsOpen(false)} />
+        <Market
+          node={{
+            btc: nodeBtc.data?.vanilla.spendable ?? 0,
+            connected: nodeBtc.data !== undefined,
+          }}
+          onOpenFunds={(d) => {
+            setFundsDirection(d ?? 'toTrading')
+            setFundsOpen(true)
+          }}
+        />
+        <FundsModal
+          initialDirection={fundsDirection}
+          isOpen={fundsOpen}
+          onClose={() => setFundsOpen(false)}
+        />
       </div>
     )
   }

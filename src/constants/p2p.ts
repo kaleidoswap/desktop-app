@@ -9,7 +9,7 @@
 
 export interface P2pNetworkConfig {
   /** The network name the daemon understands. */
-  network: 'regtest' | 'signet' | 'testnet' | 'mainnet'
+  network: 'regtest' | 'signet' | 'signetcustom' | 'testnet' | 'mainnet'
   /** An esplora HTTP API (the daemon does not speak electrum). */
   indexerUrl: string
   /** The RGB proxy as an http(s) JSON-RPC URL. */
@@ -39,7 +39,7 @@ const fromEnv = (
 /** Keyed by the app's `BitcoinNetwork` names. */
 export const P2P_NETWORKS: Record<string, P2pNetworkConfig | undefined> = {
   LocalRegtest: fromEnv('VITE_P2P_REGTEST', 'regtest'),
-  SignetCustom: fromEnv('VITE_P2P_SIGNET', 'signet'),
+  SignetCustom: fromEnv('VITE_P2P_SIGNETCUSTOM', 'signetcustom'),
 }
 
 export const p2pConfigFor = (network: string): P2pNetworkConfig | null =>

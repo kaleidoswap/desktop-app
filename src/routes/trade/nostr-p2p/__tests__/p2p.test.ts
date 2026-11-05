@@ -11,6 +11,7 @@ import {
   MIN_PART_SAT,
   PartialSend,
   splitAmount,
+  daemonAccountName,
   startConfigFor,
   toBaseUnits,
   type Daemon,
@@ -257,5 +258,12 @@ describe('amounts and config', () => {
       proxy_url: 'https://proxy.example/json-rpc',
       relays: ['wss://relay.example'],
     })
+  })
+
+  it('turns an account name the daemon would refuse into one it takes', () => {
+    expect(daemonAccountName('My Bitcoin Wallet')).toBe('My-Bitcoin-Wallet')
+    expect(daemonAccountName('  nodo/è 1 ')).toBe('nodo-1')
+    expect(daemonAccountName('alice_2')).toBe('alice_2')
+    expect(daemonAccountName('???')).toBe('account')
   })
 })

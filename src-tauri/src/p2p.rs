@@ -37,7 +37,7 @@ const STOP_GRACE: Duration = Duration::from_secs(8);
 pub struct P2pStartConfig {
     /// Names the data directory and the keychain entry.
     pub account: String,
-    /// `regtest`, `signet`, `testnet` or `mainnet`.
+    /// `regtest`, `signet`, `signetcustom` (Mutinynet), `testnet` or `mainnet`.
     pub network: String,
     pub indexer_url: String,
     pub proxy_url: String,
@@ -259,7 +259,7 @@ fn validate(cfg: &P2pStartConfig) -> Result<(), String> {
     if !name_ok {
         return Err("the account name must be letters, digits, - or _".into());
     }
-    if !matches!(cfg.network.as_str(), "regtest" | "signet" | "testnet" | "testnet4" | "mainnet") {
+    if !matches!(cfg.network.as_str(), "regtest" | "signet" | "signetcustom" | "testnet" | "testnet4" | "mainnet") {
         return Err(format!("unknown network {:?}", cfg.network));
     }
     if cfg.relays.is_empty() || cfg.fee_address.is_empty() || cfg.indexer_url.is_empty() || cfg.proxy_url.is_empty() {
@@ -340,6 +340,11 @@ mod tests {
             let c = P2pStartConfig { account: bad.into(), ..cfg() };
             assert!(validate(&c).is_err(), "{bad:?}");
         }
+    }
+
+    #[test]
+    fn mutinynet_is_its_own_network_not_signet() {
+        assert!(validate(&P2pStartConfig { network: "signetcustom".into(), ..cfg() }).is_ok());
     }
 
     #[test]

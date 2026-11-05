@@ -106,7 +106,7 @@ export function OrderBook({ orders, ticker, onPick }: Props) {
   return (
     <section
       aria-label={tr('book.title', 'Order book')}
-      className="flex flex-col rounded-2xl bg-surface-card/70 p-3"
+      className="flex h-full flex-col rounded-2xl bg-surface-card/70 p-3"
     >
       <header className="flex items-baseline justify-between px-2 pb-2">
         <h2 className="text-subhead font-medium text-content-primary">
@@ -124,7 +124,7 @@ export function OrderBook({ orders, ticker, onPick }: Props) {
         <span className="text-right">{tr('book.total', 'Total (sats)')}</span>
       </div>
 
-      <ul className="flex min-h-[9.5rem] flex-col justify-end">
+      <ul className="flex flex-col justify-end">
         {askRows.length ? (
           [...askRows].reverse().map((r) => row(r, 'ask'))
         ) : (
@@ -147,7 +147,7 @@ export function OrderBook({ orders, ticker, onPick }: Props) {
         </span>
       </div>
 
-      <ul className="flex min-h-[9.5rem] flex-col">
+      <ul className="flex flex-col">
         {bidRows.length ? (
           bidRows.map((r) => row(r, 'bid'))
         ) : (
@@ -168,7 +168,7 @@ export function OrderBook({ orders, ticker, onPick }: Props) {
           })}
         />
       )}
-      <footer className="px-2 pt-2 text-tiny text-content-tertiary">
+      <footer className="mt-auto px-2 pt-2 text-tiny text-content-tertiary">
         {tr('book.foot', 'Orders fill whole. Click one to trade it.')}
       </footer>
     </section>

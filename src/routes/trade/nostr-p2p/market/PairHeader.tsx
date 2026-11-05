@@ -1,7 +1,7 @@
-import { ShieldAlert, ShieldCheck, Wallet } from 'lucide-react'
+import { ShieldAlert, ShieldCheck } from 'lucide-react'
 
 import type { Info, RegistryNote } from '../api'
-import { fmtPrice, fmtSats, short } from '../format'
+import { fmtPrice, short } from '../format'
 
 import { useTr } from './hooks'
 import { Pill, cx } from './ui'
@@ -23,11 +23,9 @@ interface Props {
   bestAsk?: number
   last?: number
   open: number
-  btc: number
   info: Info
   /** What the registry lists for this market's asset, when the daemon reads one. */
   registry?: RegistryNote | null
-  onOpenFunds?: () => void
 }
 
 const Stat = ({
@@ -60,10 +58,8 @@ export function PairHeader({
   bestAsk,
   last,
   open,
-  btc,
   info,
   registry,
-  onOpenFunds,
 }: Props) {
   const tr = useTr()
   const market = markets.find((m) => m.asset_id === selected)
@@ -117,7 +113,7 @@ export function PairHeader({
             }
 
   return (
-    <header className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl bg-surface-card/70 px-4 py-3">
+    <header className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl bg-surface-card/70 px-4 py-2.5">
       <div className="flex items-center gap-3">
         <label className="sr-only" htmlFor="p2p-market">
           {tr('header.market', 'Market')}
@@ -174,28 +170,6 @@ export function PairHeader({
       )}
 
       <div className="ml-auto flex flex-wrap items-center gap-3">
-        <div
-          className="flex items-baseline gap-1.5 rounded-xl bg-surface-inset px-3 py-2"
-          title={tr(
-            'header.spendable',
-            'Spendable bitcoin in the trading wallet'
-          )}
-        >
-          <span className="text-tiny text-content-tertiary">BTC</span>
-          <strong className="text-body tabular-nums text-content-primary">
-            {fmtSats(btc)}
-          </strong>
-          <span className="text-tiny text-content-tertiary">sats</span>
-        </div>
-        {onOpenFunds && (
-          <button
-            className="flex items-center gap-2 rounded-xl bg-surface-raised px-3 py-2 text-caption font-medium text-content-primary transition-colors hover:bg-surface-high"
-            onClick={onOpenFunds}
-            type="button"
-          >
-            <Wallet aria-hidden size={14} /> {tr('header.funds', 'Funds')}
-          </button>
-        )}
         <Pill tone={info.network === 'mainnet' ? 'success' : 'warning'}>
           {info.network}
         </Pill>

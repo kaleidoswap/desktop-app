@@ -7,18 +7,23 @@ import { tickerOf } from '../format'
 import { Activity } from './Activity'
 import { DepthChart } from './DepthChart'
 import { useTr, usePoll } from './hooks'
+import { HowItWorks } from './HowItWorks'
 import { OrderBook } from './OrderBook'
 import { PairHeader, type MarketInfo } from './PairHeader'
 import { TakeSheet } from './TakeSheet'
 import { TradeTicket } from './TradeTicket'
 import { EmptyState, Panel } from './ui'
+import { WalletCard, type FundsDirection, type NodeSummary } from './WalletCard'
 
 interface Props {
-  onOpenFunds?: () => void
+  /** Opens the dialog that moves funds between the node and the trading wallet. */
+  onOpenFunds?: (direction?: FundsDirection) => void
+  /** The user's node balance, when the app has a node to read it from. */
+  node?: NodeSummary
 }
 
 /** The market: order book, depth, a ticket for market and limit orders, and the user's activity. */
-export function Market({ onOpenFunds }: Props) {
+export function Market({ onOpenFunds, node }: Props) {
   const tr = useTr()
   const info = usePoll(marketApi.info, 30_000)
   const balance = usePoll(marketApi.balance, 4_000)
@@ -98,18 +103,21 @@ export function Market({ onOpenFunds }: Props) {
     (t) => t.asset_id === current && t.status !== 'failed'
   )
 
+  const deposit = onOpenFunds ? () => onOpenFunds('toTrading') : undefined
+  const funded =
+    (balance.data?.btc_spendable_sat ?? 0) > 0 ||
+    (balance.data?.assets ?? []).some((a) => a.total > 0)
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <PairHeader
         bestAsk={asks[0]?.unit_price}
         bestBid={bids[0]?.unit_price}
-        btc={balance.data?.btc_spendable_sat ?? 0}
         info={inf}
         last={
           lastTrade ? lastTrade.price_sat / (lastTrade.amount || 1) : undefined
         }
         markets={markets}
-        onOpenFunds={onOpenFunds}
         onSelect={setSelected}
         open={marketOrders.length}
         registry={
@@ -118,6 +126,13 @@ export function Market({ onOpenFunds }: Props) {
           null
         }
         selected={current}
+      />
+
+      <HowItWorks
+        active={(mine.data ?? []).length > 0 || (trades.data ?? []).length > 0}
+        confirmations={inf.min_confirmations}
+        funded={funded}
+        onDeposit={deposit}
       />
 
       {(book.error || mine.error) && (
@@ -129,9 +144,9 @@ export function Market({ onOpenFunds }: Props) {
         </p>
       )}
 
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[19rem_minmax(0,1fr)_22rem]">
-        <div className="grid items-start gap-4 lg:grid-cols-[17rem_minmax(0,1fr)] xl:contents">
-          <div>
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_21rem]">
+        <div className="flex min-w-0 flex-col gap-3">
+          <div className="grid items-stretch gap-3 md:grid-cols-[18rem_minmax(0,1fr)]">
             {market ? (
               <OrderBook
                 onPick={(o) => !o.mine && setTaking([o])}
@@ -143,17 +158,17 @@ export function Market({ onOpenFunds }: Props) {
                 <EmptyState
                   description={tr(
                     'market.noMarketsBody',
-                    'A market appears when someone posts an order, or when your wallet holds an RGB asset.'
+                    'A market appears when someone posts an order, or when your trading wallet holds an RGB asset.'
                   )}
                   title={tr('market.noMarkets', 'No markets yet')}
                 />
               </Panel>
             )}
-          </div>
-
-          <div className="flex min-w-0 flex-col gap-4">
-            <Panel label={tr('market.depth', 'Market depth')}>
-              <header className="flex items-baseline justify-between pb-2">
+            <Panel
+              className="flex flex-col gap-2"
+              label={tr('market.depth', 'Market depth')}
+            >
+              <header className="flex items-baseline justify-between">
                 <h2 className="text-subhead font-medium text-content-primary">
                   {tr('market.depthTitle', '{{ticker}} depth', {
                     ticker: market?.ticker ?? '',
@@ -165,26 +180,37 @@ export function Market({ onOpenFunds }: Props) {
                   })}
                 </span>
               </header>
-              <DepthChart orders={marketOrders} ticker={market?.ticker ?? ''} />
+              <div className="min-h-40 flex-1">
+                <DepthChart
+                  orders={marketOrders}
+                  ticker={market?.ticker ?? ''}
+                />
+              </div>
             </Panel>
-            <Activity
-              balance={balance.data}
-              onChanged={refreshAll}
-              onOpenFunds={onOpenFunds}
-              orders={mine.data ?? []}
-              trades={trades.data ?? []}
-            />
           </div>
+          <Activity
+            balance={balance.data}
+            onChanged={refreshAll}
+            onOpenFunds={deposit}
+            orders={mine.data ?? []}
+            trades={trades.data ?? []}
+          />
         </div>
 
-        <div>
+        <div className="flex min-w-0 flex-col gap-3">
+          <WalletCard
+            balance={balance.data}
+            info={inf}
+            node={node}
+            onOpenFunds={onOpenFunds}
+          />
           {market ? (
             <TradeTicket
               asset={market}
               balance={balance.data}
               info={inf}
               key={market.asset_id}
-              onOpenFunds={onOpenFunds}
+              onOpenFunds={deposit}
               onPlaced={refreshAll}
               onReview={setTaking}
               orders={marketOrders}
@@ -194,7 +220,7 @@ export function Market({ onOpenFunds }: Props) {
               <EmptyState
                 description={tr(
                   'market.nothingBody',
-                  'Move bitcoin and an RGB asset into the trading wallet to open a market.'
+                  'Deposit bitcoin and an RGB asset into the trading wallet to open a market.'
                 )}
                 title={tr('market.nothing', 'Nothing to trade yet')}
               />
