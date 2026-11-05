@@ -123,6 +123,18 @@ pub fn route_allowed(method: &str, path: &str) -> bool {
 pub struct P2pProcess {
     child: Arc<Mutex<Option<Child>>>,
     port: Arc<Mutex<Option<u16>>>,
+    /// Fresh for every start and known only to this process and the daemon it started: the daemon
+    /// answers nothing that does not carry it, so another process that finds the port gets nothing.
+    token: Arc<Mutex<Option<String>>>,
+}
+
+/// 32 random bytes as hex.
+fn new_token() -> String {
+    use aes_gcm::aead::OsRng;
+    use argon2::password_hash::rand_core::RngCore;
+    let mut b = [0u8; 32];
+    OsRng.fill_bytes(&mut b);
+    hex::encode(b)
 }
 
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
@@ -162,7 +174,9 @@ impl P2pProcess {
         std::fs::create_dir_all(&data_dir).map_err(|e| format!("{}: {e}", data_dir.display()))?;
         let port = free_port()?;
 
+        let token = new_token();
         let mut cmd = Command::new(&program);
+        cmd.env("P2PD_API_TOKEN", &token);
         cmd.arg("--name")
             .arg(&cfg.account)
             .args(["--port", &port.to_string()])
@@ -206,6 +220,7 @@ impl P2pProcess {
         pipe_to_log(child.stderr.take(), "err");
         *child_guard = Some(child);
         *lock(&self.port) = Some(port);
+        *lock(&self.token) = Some(token.clone());
         drop(child_guard);
 
         // the daemon answers once its wallet is up and it is connected to the relays
@@ -233,6 +248,7 @@ impl P2pProcess {
             return Err(format!("{method} {path} is not available from the app"));
         }
         let port = self.status().port.ok_or("the P2P daemon is not running")?;
+        let token = lock(&self.token).clone().ok_or("the P2P daemon is not running")?;
         let client = reqwest::blocking::Client::builder()
             .timeout(Duration::from_secs(120))
             .build()
@@ -243,7 +259,8 @@ impl P2pProcess {
             "POST" => client.post(url).json(&body.unwrap_or(serde_json::Value::Null)),
             "DELETE" => client.delete(url),
             other => return Err(format!("unsupported method {other}")),
-        };
+        }
+        .bearer_auth(token);
         let res = req.send().map_err(|e| format!("the P2P daemon did not answer: {e}"))?;
         let status = res.status();
         let text = res.text().map_err(|e| e.to_string())?;
@@ -261,6 +278,7 @@ impl P2pProcess {
     pub fn stop(&self) {
         let Some(mut child) = lock(&self.child).take() else { return };
         *lock(&self.port) = None;
+        *lock(&self.token) = None;
         #[cfg(unix)]
         // SAFETY: `kill` only sends a signal to the child pid we spawned.
         unsafe {
