@@ -44,3 +44,25 @@ export const P2P_NETWORKS: Record<string, P2pNetworkConfig | undefined> = {
 
 export const p2pConfigFor = (network: string): P2pNetworkConfig | null =>
   P2P_NETWORKS[network] ?? null
+
+const NETWORK_LABELS: Record<string, string> = {
+  LocalRegtest: 'Regtest',
+  SignetCustom: 'Mutinynet',
+}
+
+export interface P2pNetworkOption {
+  /** The app's network name, which keys the configuration. */
+  key: string
+  label: string
+  config: P2pNetworkConfig
+}
+
+/** The networks that have a market configured: what the page lets the user pick from. */
+export const p2pNetworkOptions = (): P2pNetworkOption[] =>
+  Object.entries(P2P_NETWORKS).flatMap(([key, config]) =>
+    config ? [{ config, key, label: NETWORK_LABELS[key] ?? key }] : []
+  )
+
+/** The trading wallet's account name on a network: one wallet per network, whatever node is used. */
+export const walletAccountFor = (config: P2pNetworkConfig): string =>
+  `wallet-${config.network}`

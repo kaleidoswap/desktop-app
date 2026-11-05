@@ -29,12 +29,37 @@ export interface P2pStartConfig {
   fee_bps?: number
   min_fee_sat?: number
   verified_assets_path?: string
+  /** The recovery phrase to create the wallet from. First start only; never replaces a wallet. */
+  seed_mnemonic?: string
 }
 
 export const p2pStatus = () => invoke<P2pStatus>('p2p_status')
 export const p2pStart = (config: P2pStartConfig) =>
   invoke<P2pStatus>('p2p_start', { config })
 export const p2pStop = () => invoke<void>('p2p_stop')
+
+/** A new recovery phrase. Nothing is created until a wallet is started from it. */
+export const p2pGenerateSeed = (network: string) =>
+  invoke<string>('p2p_generate_seed', { network })
+
+/** What the app remembers about a trading wallet it set up (the keys themselves stay in the keychain). */
+export interface WalletProfile {
+  version: 1
+  created_at: number
+  /** The phrase was shown and the user confirmed it, or typed it in to restore. */
+  backed_up: boolean
+}
+
+export const p2pProfileGet = (account: string) =>
+  invoke<WalletProfile | null>('p2p_profile_get', { account })
+export const p2pProfileSet = (account: string, profile: WalletProfile) =>
+  invoke<void>('p2p_profile_set', { account, profile })
+
+/** The wallet's recovery phrase, read back from the daemon when the user asks for it. */
+export const recoveryPhrase = () =>
+  transport()
+    .request<{ mnemonic: string }>('POST', '/api/recovery-phrase', {})
+    .then((r) => r.mnemonic)
 
 /**
  * The daemon keeps its data and its keychain entry under the account name, so it takes letters,
@@ -208,6 +233,14 @@ export function toBaseUnits(input: string, precision: number): number {
   const fraction = (frac + '0'.repeat(precision)).slice(0, precision)
   return Number(whole || '0') * 10 ** precision + Number(fraction || '0')
 }
+
+/** An RGB invoice a sender can pay. `assetId` empty accepts whatever asset the sender picks. */
+export const createReceiveInvoice = (amount: number, assetId?: string) =>
+  call<{ invoice: string; expiration_timestamp: number }>(
+    'POST',
+    '/api/rgb/invoice',
+    { amount, ...(assetId ? { asset_id: assetId } : {}) }
+  )
 
 export interface DaemonBalance {
   btc_spendable_sat: number

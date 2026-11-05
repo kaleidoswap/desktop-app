@@ -79,6 +79,24 @@ async fn p2p_request(
         .map_err(|e| e.to_string())?
 }
 
+/// A new recovery phrase for a trading wallet that does not exist yet.
+#[tauri::command]
+async fn p2p_generate_seed(app: AppHandle, network: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || p2p::generate_seed(&app, &network))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+fn p2p_profile_get(app: AppHandle, account: String) -> Result<Option<serde_json::Value>, String> {
+    p2p::profile_get(&app, &account)
+}
+
+#[tauri::command]
+fn p2p_profile_set(app: AppHandle, account: String, profile: serde_json::Value) -> Result<(), String> {
+    p2p::profile_set(&app, &account, &profile)
+}
+
 #[tauri::command]
 fn p2p_status(p2p: State<Arc<P2pProcess>>) -> P2pStatus {
     p2p.status()
@@ -291,6 +309,9 @@ fn main() {
             p2p_stop,
             p2p_status,
             p2p_request,
+            p2p_generate_seed,
+            p2p_profile_get,
+            p2p_profile_set,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

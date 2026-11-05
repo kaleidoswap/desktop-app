@@ -33,6 +33,17 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 const STARTUP_TIMEOUT: Duration = Duration::from_secs(30);
 const STOP_GRACE: Duration = Duration::from_secs(8);
 
+/// A secret that never prints: logging a start config must not leak the recovery phrase.
+#[derive(Clone, Deserialize)]
+#[serde(transparent)]
+pub struct Secret(String);
+
+impl std::fmt::Debug for Secret {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Secret(..)")
+    }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct P2pStartConfig {
     /// Names the data directory and the keychain entry.
@@ -50,6 +61,10 @@ pub struct P2pStartConfig {
     /// JSON list of the assets to show as verified.
     #[serde(default)]
     pub verified_assets_path: Option<String>,
+    /// The recovery phrase to create the wallet from, on its first start only. Handed to the daemon
+    /// on its stdin, so it never appears in the process list; an existing wallet is never replaced.
+    #[serde(default)]
+    pub seed_mnemonic: Option<Secret>,
 }
 
 fn default_fee_bps() -> u64 {
@@ -84,6 +99,7 @@ const ALLOWED: &[(&str, &str)] = &[
     ("POST", "/api/rgb/send"),
     ("POST", "/api/btc/send"),
     ("POST", "/api/refresh"),
+    ("POST", "/api/recovery-phrase"),
 ];
 
 /// Whether the app may call `method path`: the market's own routes, nothing from the daemon's
@@ -159,7 +175,7 @@ impl P2pProcess {
             .args(["--keystore", "keychain"])
             .arg("--data-dir")
             .arg(&data_dir)
-            .stdin(Stdio::null())
+            .stdin(if cfg.seed_mnemonic.is_some() { Stdio::piped() } else { Stdio::null() })
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
         for relay in &cfg.relays {
@@ -171,11 +187,21 @@ impl P2pProcess {
         if cfg.network == "mainnet" {
             cmd.arg("--allow-mainnet");
         }
+        if cfg.seed_mnemonic.is_some() {
+            cmd.arg("--seed-stdin");
+        }
         #[cfg(target_os = "windows")]
         cmd.creation_flags(CREATE_NO_WINDOW);
 
         log::info!("[p2p] starting {program:?} on 127.0.0.1:{port} for {} ({})", cfg.account, cfg.network);
         let mut child = cmd.spawn().map_err(|e| format!("could not start the P2P daemon ({program:?}): {e}"))?;
+        if let Some(Secret(phrase)) = &cfg.seed_mnemonic {
+            use std::io::Write;
+            let mut stdin = child.stdin.take().ok_or("could not reach the daemon's stdin")?;
+            let body = serde_json::json!({ "mnemonic": phrase }).to_string();
+            stdin.write_all(body.as_bytes()).map_err(|e| format!("could not hand the recovery phrase to the daemon: {e}"))?;
+            // closing stdin is what tells the daemon the phrase is complete
+        }
         pipe_to_log(child.stdout.take(), "out");
         pipe_to_log(child.stderr.take(), "err");
         *child_guard = Some(child);
@@ -254,12 +280,65 @@ impl P2pProcess {
     }
 }
 
-fn validate(cfg: &P2pStartConfig) -> Result<(), String> {
-    let name_ok = !cfg.account.is_empty() && cfg.account.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_'));
-    if !name_ok {
+fn account_ok(account: &str) -> bool {
+    !account.is_empty() && account.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_'))
+}
+
+fn networks_ok(network: &str) -> bool {
+    matches!(network, "regtest" | "signet" | "signetcustom" | "testnet" | "testnet4" | "mainnet")
+}
+
+/// A new recovery phrase from the daemon's own generator, so the app and the daemon agree on what a
+/// valid phrase is. Nothing is created: the phrase exists only until the user has written it down and
+/// the wallet is started from it.
+pub fn generate_seed(app: &AppHandle, network: &str) -> Result<String, String> {
+    if !networks_ok(network) {
+        return Err(format!("unknown network {network:?}"));
+    }
+    let program = resolve_binary(app);
+    let mut cmd = Command::new(&program);
+    cmd.args(["--generate-seed", "--network", network, "--fee-address", "unused"]).stdin(Stdio::null());
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    let out = cmd.output().map_err(|e| format!("could not run the P2P daemon ({program:?}): {e}"))?;
+    if !out.status.success() {
+        return Err(format!("the P2P daemon could not make a phrase: {}", String::from_utf8_lossy(&out.stderr).trim()));
+    }
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).map_err(|e| format!("unexpected answer from the P2P daemon: {e}"))?;
+    v.get("mnemonic").and_then(|m| m.as_str()).map(str::to_string).ok_or_else(|| "the P2P daemon sent no phrase".into())
+}
+
+fn profile_path(app: &AppHandle, account: &str) -> Result<PathBuf, String> {
+    if !account_ok(account) {
         return Err("the account name must be letters, digits, - or _".into());
     }
-    if !matches!(cfg.network.as_str(), "regtest" | "signet" | "signetcustom" | "testnet" | "testnet4" | "mainnet") {
+    Ok(app.path().app_data_dir().map_err(|e| format!("no app data dir: {e}"))?.join("p2pd").join(account).join("profile.json"))
+}
+
+/// Whether this trading wallet was set up here, and whether its phrase was confirmed. The app keeps
+/// this next to the daemon's data; the keys themselves stay in the keychain.
+pub fn profile_get(app: &AppHandle, account: &str) -> Result<Option<serde_json::Value>, String> {
+    let path = profile_path(app, account)?;
+    match std::fs::read_to_string(&path) {
+        Ok(text) => Ok(serde_json::from_str(&text).ok()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(format!("{}: {e}", path.display())),
+    }
+}
+
+pub fn profile_set(app: &AppHandle, account: &str, profile: &serde_json::Value) -> Result<(), String> {
+    let path = profile_path(app, account)?;
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    }
+    std::fs::write(&path, profile.to_string()).map_err(|e| format!("{}: {e}", path.display()))
+}
+
+fn validate(cfg: &P2pStartConfig) -> Result<(), String> {
+    if !account_ok(&cfg.account) {
+        return Err("the account name must be letters, digits, - or _".into());
+    }
+    if !networks_ok(&cfg.network) {
         return Err(format!("unknown network {:?}", cfg.network));
     }
     if cfg.relays.is_empty() || cfg.fee_address.is_empty() || cfg.indexer_url.is_empty() || cfg.proxy_url.is_empty() {
@@ -326,6 +405,7 @@ mod tests {
             fee_bps: 100,
             min_fee_sat: 1_000,
             verified_assets_path: None,
+            seed_mnemonic: None,
         }
     }
 
@@ -403,5 +483,15 @@ mod tests {
         let s = p.status();
         assert!(!s.running && s.port.is_none() && s.url.is_none());
         p.stop(); // and stopping it is harmless
+    }
+
+    #[test]
+    fn the_recovery_phrase_never_prints_and_is_only_asked_for_with_a_post() {
+        let json = r#"{"account":"a","network":"signet","indexer_url":"i","proxy_url":"p","relays":["r"],"fee_address":"f","seed_mnemonic":"abandon ability able"}"#;
+        let cfg: P2pStartConfig = serde_json::from_str(json).unwrap();
+        assert!(cfg.seed_mnemonic.is_some());
+        assert!(!format!("{cfg:?}").contains("abandon"), "a logged config must not leak the phrase");
+        assert!(route_allowed("POST", "/api/recovery-phrase"));
+        assert!(!route_allowed("GET", "/api/recovery-phrase"));
     }
 }
