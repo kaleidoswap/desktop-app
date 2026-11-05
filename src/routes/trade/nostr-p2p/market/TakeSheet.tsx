@@ -11,6 +11,7 @@ import {
   type Trade,
 } from '../api'
 import {
+  ago,
   fmtPrice,
   fmtSats,
   fmtUnits,
@@ -212,6 +213,19 @@ export function TakeSheet({ orders, trades, info, onClose, onChanged }: Props) {
           ? tr('take.orders', 'Orders')
           : tr('take.counterparty', 'Counterparty'),
       value: orders.length > 1 ? String(orders.length) : first.maker,
+    },
+    // like a peer-to-peer exchange shows whether the other side is around: a maker that was seen
+    // a moment ago answers fast, one that was not may take minutes
+    {
+      label: tr('take.makerStatus', 'Maker'),
+      tone: away ? ('warning' as const) : ('success' as const),
+      value: away
+        ? tr('take.makerAway', 'Away · last seen {{when}}', {
+            when: ago(Math.min(...orders.map((o) => o.last_seen))),
+          })
+        : tr('take.makerOnline', 'Online · seen {{when}}', {
+            when: ago(Math.min(...orders.map((o) => o.last_seen))),
+          }),
     },
   ]
 

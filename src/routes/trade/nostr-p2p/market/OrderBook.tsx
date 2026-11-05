@@ -23,6 +23,17 @@ export function OrderBook({ orders, ticker, onPick }: Props) {
   const bidRows = useMemo(() => withDepth(bids).slice(0, ROWS), [bids])
   const max = Math.max(1e-9, askRows.at(-1)?.cum ?? 0, bidRows.at(-1)?.cum ?? 0)
 
+  // who is around, counted by maker rather than by order
+  const makers = useMemo(() => {
+    const m = new Map<string, boolean>()
+    for (const o of orders) {
+      if (o.mine) continue
+      m.set(o.maker, (m.get(o.maker) ?? false) || !o.away)
+    }
+    return m
+  }, [orders])
+  const onlineMakers = [...makers.values()].filter(Boolean).length
+
   const bestAsk = asks[0]?.unit_price
   const bestBid = bids[0]?.unit_price
   const both = bestAsk !== undefined && bestBid !== undefined
@@ -76,6 +87,19 @@ export function OrderBook({ orders, ticker, onPick }: Props) {
               side === 'ask' ? 'text-status-danger' : 'text-status-success'
             )}
           >
+            {!o.mine && (
+              <span
+                aria-label={
+                  o.away
+                    ? tr('book.makerAway', 'Maker away')
+                    : tr('book.makerOnline', 'Maker online')
+                }
+                className={cx(
+                  'h-1.5 w-1.5 shrink-0 rounded-full',
+                  o.away ? 'bg-content-tertiary' : 'bg-status-success'
+                )}
+              />
+            )}
             {fmtPrice(o.unit_price)}
             {o.mine && (
               <span className="rounded-full bg-primary/15 px-1.5 text-tiny text-primary">
@@ -112,8 +136,19 @@ export function OrderBook({ orders, ticker, onPick }: Props) {
         <h2 className="text-subhead font-medium text-content-primary">
           {tr('book.title', 'Order book')}
         </h2>
-        <span className="text-caption text-content-tertiary">
-          {tr('book.open', '{{n}} open', { n: asks.length + bids.length })}
+        <span
+          className="text-caption text-content-tertiary"
+          title={tr(
+            'book.presenceHelp',
+            'A maker is online when its offers were refreshed in the last few minutes. Away makers may answer slowly.'
+          )}
+        >
+          {makers.size > 0
+            ? tr('book.makersOnline', '{{on}} of {{all}} makers online', {
+                all: makers.size,
+                on: onlineMakers,
+              })
+            : tr('book.open', '{{n}} open', { n: asks.length + bids.length })}
         </span>
       </header>
       <div className="grid grid-cols-[1.2fr_1fr_1fr] gap-2 px-2 pb-1 text-tiny text-content-tertiary">

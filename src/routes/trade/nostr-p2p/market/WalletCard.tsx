@@ -1,8 +1,14 @@
-import { ArrowDownToLine, ArrowUpFromLine, Copy } from 'lucide-react'
-import { useState } from 'react'
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Copy,
+  Loader2,
+  RefreshCw,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 
-import type { Balance, Info } from '../api'
+import { availableSats, type Balance, type Info } from '../api'
 import { fmtSats, fmtUnits, short } from '../format'
 
 import { useTr } from './hooks'
@@ -23,18 +29,49 @@ interface Props {
   info: Info
   /** Opens the funds dialog on the given direction. */
   onOpenFunds?: (direction: FundsDirection) => void
+  /** Sync the wallet with the chain now. */
+  onRefresh?: () => Promise<void>
 }
 
 /**
  * What the trading wallet holds and the way to put more in. The wallet is separate from the node:
  * only what is moved here can be traded, so this is the first thing a new user needs.
  */
-export function WalletCard({ balance, info, node, onOpenFunds }: Props) {
+export function WalletCard({
+  balance,
+  info,
+  node,
+  onOpenFunds,
+  onRefresh,
+}: Props) {
   const tr = useTr()
   const [showAddress, setShowAddress] = useState(false)
-  const btc = balance?.btc_spendable_sat ?? 0
+  const [refreshing, setRefreshing] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 5_000)
+    return () => clearInterval(id)
+  }, [])
+  const btc = availableSats(balance)
+  const pending = balance?.btc_pending_sat ?? 0
+  const syncedAgo =
+    balance?.synced_at && balance.synced_at > 0
+      ? Math.max(0, Math.floor(now / 1000) - balance.synced_at)
+      : null
+
+  const refresh = async () => {
+    if (!onRefresh || refreshing) return
+    setRefreshing(true)
+    try {
+      await onRefresh()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e))
+    } finally {
+      setRefreshing(false)
+    }
+  }
   const assets = (balance?.assets ?? []).filter((a) => a.total > 0)
-  const empty = btc === 0 && assets.length === 0
+  const empty = btc === 0 && pending === 0 && assets.length === 0
 
   const copy = async () => {
     try {
@@ -54,15 +91,32 @@ export function WalletCard({ balance, info, node, onOpenFunds }: Props) {
         <h2 className="text-subhead font-medium text-content-primary">
           {tr('wallet.title', 'Trading wallet')}
         </h2>
-        <span
-          className="text-tiny text-content-tertiary"
-          title={tr(
-            'wallet.explain',
-            'A separate wallet for the market. Only what you move here can be traded; your node keeps the rest.'
-          )}
-        >
-          {tr('wallet.separate', 'separate from your node')}
-        </span>
+        {onRefresh && (
+          <button
+            aria-label={tr('wallet.refresh', 'Update balance')}
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-tiny text-content-tertiary transition-colors hover:bg-surface-raised hover:text-content-primary"
+            disabled={refreshing}
+            onClick={() => void refresh()}
+            title={tr(
+              'wallet.refreshHelp',
+              'Check the chain for new deposits now. The wallet also updates by itself every 20 seconds.'
+            )}
+            type="button"
+          >
+            {refreshing ? (
+              <Loader2 aria-hidden className="animate-spin" size={12} />
+            ) : (
+              <RefreshCw aria-hidden size={12} />
+            )}
+            {syncedAgo === null
+              ? tr('wallet.syncing', 'syncing…')
+              : syncedAgo < 10
+                ? tr('wallet.justNow', 'just updated')
+                : tr('wallet.updatedAgo', 'updated {{n}}s ago', {
+                    n: syncedAgo,
+                  })}
+          </button>
+        )}
       </header>
 
       {node && (

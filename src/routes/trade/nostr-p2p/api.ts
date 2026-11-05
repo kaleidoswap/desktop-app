@@ -70,6 +70,12 @@ export interface AssetBalance {
 
 export interface Balance {
   btc_spendable_sat: number
+  /** Bitcoin not confirmed yet: a deposit shows here first. Absent from an older daemon. */
+  /** Confirmed bitcoin: what a swap can use. Absent from an older daemon. */
+  btc_settled_sat?: number
+  btc_pending_sat?: number
+  /** When the wallet last synced (unix seconds). Absent from an older daemon. */
+  synced_at?: number
   /** Bitcoin coins free for a swap, largest first. Each swap spends coins of its own. Absent from an older daemon. */
   btc_coins?: number[]
   assets: AssetBalance[]
@@ -133,6 +139,10 @@ const get = <T>(path: string) => transport().request<T>('GET', path)
 const post = <T>(path: string, body: unknown) =>
   transport().request<T>('POST', path, body)
 
+/** The bitcoin a swap can spend: confirmed coins, falling back to the spendable figure of an older daemon. */
+export const availableSats = (b: Balance | undefined): number =>
+  b ? (b.btc_settled_sat ?? b.btc_spendable_sat) : 0
+
 export const marketApi = {
   /** Null when the daemon reads no registry. */
   asset: (contractId: string) =>
@@ -146,7 +156,10 @@ export const marketApi = {
     ),
   info: () => get<Info>('/api/info'),
   orders: () => get<Order[]>('/api/orders'),
+
   placeOrder: (o: NewOrder) => post<Order>('/api/orders', o),
+  /** Sync the wallet with the chain now, instead of waiting for the next automatic sync. */
+  refresh: () => post<void>('/api/refresh', {}),
   // the daemon refuses if the order is no longer on the terms that were reviewed
   take: (o: Order) =>
     post<unknown>('/api/take', {

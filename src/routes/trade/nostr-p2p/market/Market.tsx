@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 
-import { marketApi, type Order } from '../api'
+import { availableSats, marketApi, type Order } from '../api'
 import { splitBook } from '../book'
 import { tickerOf } from '../format'
 
@@ -33,6 +33,12 @@ export function Market({ onOpenFunds, node }: Props) {
 
   const [selected, setSelected] = useState<string | null>(null)
   const [taking, setTaking] = useState<Order[] | null>(null)
+
+  // sync with the chain now, then read the result: for a deposit that has just been sent
+  const syncWallet = async () => {
+    await marketApi.refresh()
+    balance.refresh()
+  }
 
   const refreshAll = () => {
     book.refresh()
@@ -105,7 +111,8 @@ export function Market({ onOpenFunds, node }: Props) {
 
   const deposit = onOpenFunds ? () => onOpenFunds('toTrading') : undefined
   const funded =
-    (balance.data?.btc_spendable_sat ?? 0) > 0 ||
+    availableSats(balance.data) > 0 ||
+    (balance.data?.btc_pending_sat ?? 0) > 0 ||
     (balance.data?.assets ?? []).some((a) => a.total > 0)
 
   return (
@@ -203,6 +210,7 @@ export function Market({ onOpenFunds, node }: Props) {
             info={inf}
             node={node}
             onOpenFunds={onOpenFunds}
+            onRefresh={syncWallet}
           />
           {market ? (
             <TradeTicket

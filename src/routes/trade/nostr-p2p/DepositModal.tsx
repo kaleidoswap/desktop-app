@@ -5,7 +5,7 @@ import { toast } from 'react-toastify'
 
 import { Button, Modal } from '../../../components/ui'
 
-import { marketApi } from './api'
+import { marketApi, type Balance } from './api'
 import { short } from './format'
 import { useTr } from './market/hooks'
 import { cx } from './market/ui'
@@ -36,14 +36,49 @@ export function DepositModal({ isOpen, onClose, onFromNode }: Props) {
   const [assetId, setAssetId] = useState('')
   const [invoice, setInvoice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // what the wallet held when the dialog opened, so a deposit shows up as a change
+  const [baseline, setBaseline] = useState<number | null>(null)
+  const [seen, setSeen] = useState<Balance | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
+    let cancelled = false
     void marketApi
       .info()
-      .then((i) => setAddress(i.address))
-      .catch(() => setAddress(null))
+      .then((i) => !cancelled && setAddress(i.address))
+      .catch(() => !cancelled && setAddress(null))
+    // while the dialog is open, look for the deposit every few seconds
+    // confirmed plus waiting: a deposit counts from the moment it is seen
+    const total = (b: Balance) =>
+      (b.btc_settled_sat ?? b.btc_spendable_sat) + (b.btc_pending_sat ?? 0)
+    const look = async () => {
+      try {
+        await marketApi.refresh()
+        const b = await marketApi.balance()
+        if (cancelled) return
+        setBaseline((base) => base ?? total(b))
+        setSeen(b)
+      } catch {
+        // the next look tries again
+      }
+    }
+    void look()
+    const id = setInterval(() => void look(), 6_000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+      // the next opening starts from what the wallet holds then
+      setBaseline(null)
+      setSeen(null)
+    }
   }, [isOpen])
+
+  const arrived =
+    seen && baseline !== null
+      ? (seen.btc_settled_sat ?? seen.btc_spendable_sat) +
+        (seen.btc_pending_sat ?? 0) -
+        baseline
+      : 0
 
   const makeInvoice = async () => {
     setBusy(true)
@@ -138,6 +173,26 @@ export function DepositModal({ isOpen, onClose, onFromNode }: Props) {
                     <Copy aria-hidden size={14} />
                   </button>
                 </div>
+                {arrived > 0 ? (
+                  <p className="w-full rounded-xl bg-status-success-subtle p-3 text-center text-caption text-content-primary">
+                    {(seen?.btc_pending_sat ?? 0) > 0
+                      ? tr(
+                          'deposit.seenPending',
+                          'Deposit seen: {{n}} sats. It is available after one confirmation.',
+                          { n: arrived.toLocaleString('en-US') }
+                        )
+                      : tr('deposit.arrived', 'Deposit received: {{n}} sats.', {
+                          n: arrived.toLocaleString('en-US'),
+                        })}
+                  </p>
+                ) : (
+                  <p className="w-full rounded-xl bg-surface-inset p-3 text-center text-caption text-content-secondary">
+                    {tr(
+                      'deposit.waiting',
+                      'Waiting for your deposit… this checks the chain every few seconds.'
+                    )}
+                  </p>
+                )}
                 <p className="text-center text-caption text-content-tertiary">
                   {tr(
                     'deposit.btcNote',

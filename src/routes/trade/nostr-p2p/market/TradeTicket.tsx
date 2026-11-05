@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 
 import {
+  availableSats,
   marketApi,
   type Balance,
   type Info,
@@ -61,7 +62,7 @@ export function TradeTicket({
   const [busy, setBusy] = useState(false)
 
   const have = balance?.assets.find((a) => a.asset_id === asset.asset_id)
-  const btc = balance?.btc_spendable_sat ?? 0
+  const btc = availableSats(balance)
   const amountBase = toBase(amount, asset.precision)
   const { asks, bids } = useMemo(
     () => splitBook(orders.filter((o) => !o.mine)),
