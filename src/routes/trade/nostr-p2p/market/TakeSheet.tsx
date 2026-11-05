@@ -4,12 +4,15 @@ import { toast } from 'react-toastify'
 
 import { Modal } from '../../../../components/ui'
 import {
+  ANSWER_WINDOW_AWAY_SECS,
+  ANSWER_WINDOW_SECS,
   marketApi,
   type AssetFacts,
   type Info,
   type Order,
   type Trade,
 } from '../api'
+import { nextMakers } from '../book'
 import {
   ago,
   fmtPrice,
@@ -22,12 +25,16 @@ import {
 
 import { useTr } from './hooks'
 import { RegistryPanel } from './RegistryPanel'
-import { failureKind, swapProgress, type Stage } from './progress'
+import { failureKind, noAnswer, swapProgress, type Stage } from './progress'
 import { SwapGlyph } from './SwapGlyph'
 import { SummaryRows, Steps, cx, type Step } from './ui'
 
 interface Props {
   orders: Order[]
+  /** Every order in this market, for the makers to try when one does not answer. */
+  book?: Order[]
+  /** Review another order instead (the user confirms its terms like any other). */
+  onSwitch?: (order: Order) => void
   trades: Trade[]
   info: Info
   onClose: () => void
@@ -38,7 +45,15 @@ const order = ['requested', 'signing', 'confirming', 'settled'] as const
 const reached = (stage: Stage, at: (typeof order)[number]) =>
   stage !== 'failed' && order.indexOf(stage) >= order.indexOf(at)
 
-export function TakeSheet({ orders, trades, info, onClose, onChanged }: Props) {
+export function TakeSheet({
+  orders,
+  book = [],
+  onSwitch,
+  trades,
+  info,
+  onClose,
+  onChanged,
+}: Props) {
   const tr = useTr()
   // seconds; trades from earlier attempts at the same order do not count
   const [startedAt, setStartedAt] = useState<number | null>(null)
@@ -58,6 +73,12 @@ export function TakeSheet({ orders, trades, info, onClose, onChanged }: Props) {
       t.ts >= startedAt
   )
   const p = swapProgress(mine)
+
+  // makers that did not answer, and the next ones to try in their place
+  const silent = mine.filter((t) => t.status === 'failed' && noAnswer(t.error))
+  const tried = new Set([...ids, ...silent.map((t) => t.id)])
+  const silentOrder = orders.find((o) => o.order_id === silent[0]?.id)
+  const next = silentOrder ? nextMakers(book, silentOrder, tried) : []
 
   const costs = orders.map(takerCost)
   const assetBase = orders.reduce((s, o) => s + o.amount, 0)
@@ -98,7 +119,14 @@ export function TakeSheet({ orders, trades, info, onClose, onChanged }: Props) {
     setBusy(true)
     const since = Math.floor(Date.now() / 1000) - 2
     const results = await Promise.allSettled(
-      orders.map((o) => marketApi.take(o))
+      // a maker that is around answers fast: do not wait minutes for one that does not
+      orders.map((o) =>
+        marketApi.take(o, {
+          answerWithinSecs: o.away
+            ? ANSWER_WINDOW_AWAY_SECS
+            : ANSWER_WINDOW_SECS,
+        })
+      )
     )
     const failed = results.find(
       (r): r is PromiseRejectedResult => r.status === 'rejected'
@@ -125,7 +153,9 @@ export function TakeSheet({ orders, trades, info, onClose, onChanged }: Props) {
       description:
         p.stage === 'requested'
           ? tr('take.waitMaker', 'Waiting for the other side to answer')
-          : tr('take.accepted', 'The other side accepted'),
+          : p.stage === 'failed' && silent.length > 0
+            ? tr('take.noAnswerStep', 'The other side did not answer')
+            : tr('take.accepted', 'The other side accepted'),
       id: 'req',
       label: tr('take.s1', 'Order accepted'),
       status: reached(p.stage, 'signing')
@@ -359,12 +389,17 @@ export function TakeSheet({ orders, trades, info, onClose, onChanged }: Props) {
                   ),
                 ].map((e) => (
                   <p className="text-content-secondary" key={e}>
-                    {e === 'funds'
+                    {noAnswer(e)
                       ? tr(
-                          'take.noCoin',
-                          'Each swap spends its own coin, and your other swap is still using the only one you have. Try again once it has settled, or split your bitcoin first.'
+                          'take.noAnswer',
+                          'The maker did not answer. Nothing was spent.'
                         )
-                      : e || tr('take.failed', 'The swap did not complete.')}
+                      : e === 'funds'
+                        ? tr(
+                            'take.noCoin',
+                            'Each swap spends its own coin, and your other swap is still using the only one you have. Try again once it has settled, or split your bitcoin first.'
+                          )
+                        : e || tr('take.failed', 'The swap did not complete.')}
                   </p>
                 ))}
                 <p className="text-content-tertiary">
@@ -373,6 +408,43 @@ export function TakeSheet({ orders, trades, info, onClose, onChanged }: Props) {
                     'Nothing was spent: the transaction is only sent once both sides have signed.'
                   )}
                 </p>
+              </div>
+            )}
+            {silentOrder && onSwitch && (
+              <div className="flex flex-col gap-2 rounded-xl bg-surface-inset p-3">
+                <p className="text-caption font-medium text-content-primary">
+                  {next.length > 0
+                    ? tr('take.tryNext', 'Try another maker')
+                    : tr(
+                        'take.noOthers',
+                        'No other maker is offering this right now.'
+                      )}
+                </p>
+                {next.map((o) => (
+                  <button
+                    className="flex items-center justify-between gap-3 rounded-lg bg-surface-raised px-3 py-2 text-left text-caption transition-colors hover:bg-surface-high"
+                    key={o.order_id}
+                    onClick={() => onSwitch(o)}
+                    type="button"
+                  >
+                    <span className="flex items-center gap-2 text-content-primary">
+                      <span
+                        aria-hidden
+                        className={cx(
+                          'h-1.5 w-1.5 rounded-full',
+                          o.away ? 'bg-content-tertiary' : 'bg-status-success'
+                        )}
+                      />
+                      {fmtUnits(o.amount, o.precision)} {tickerOf(o)}
+                    </span>
+                    <span className="tabular-nums text-content-secondary">
+                      {fmtPrice(o.unit_price)} sats ·{' '}
+                      {o.away
+                        ? tr('take.away2', 'away')
+                        : tr('take.online', 'online')}
+                    </span>
+                  </button>
+                ))}
               </div>
             )}
             {p.txids.length > 0 && (

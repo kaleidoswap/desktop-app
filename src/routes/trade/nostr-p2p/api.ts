@@ -122,6 +122,8 @@ export interface Trade {
   /** Blocks on the swap transaction, and how many it needs before it counts as settled. */
   confirmations: number
   required: number
+  /** The maker has answered the request. Absent from an older daemon. */
+  answered?: boolean
   ts: number
 }
 
@@ -143,6 +145,14 @@ const post = <T>(path: string, body: unknown) =>
 export const availableSats = (b: Balance | undefined): number =>
   b ? (b.btc_settled_sat ?? b.btc_spendable_sat) : 0
 
+/**
+ * How long a maker that is online has to answer a request. One that is around answers in seconds;
+ * the taker would rather try the next maker than wait minutes. A maker marked away keeps the long wait.
+ */
+export const ANSWER_WINDOW_SECS = 30
+/** A maker marked away may be back soon, so it gets longer, but not the daemon's full ten minutes. */
+export const ANSWER_WINDOW_AWAY_SECS = 120
+
 export const marketApi = {
   /** Null when the daemon reads no registry. */
   asset: (contractId: string) =>
@@ -161,8 +171,11 @@ export const marketApi = {
   /** Sync the wallet with the chain now, instead of waiting for the next automatic sync. */
   refresh: () => post<void>('/api/refresh', {}),
   // the daemon refuses if the order is no longer on the terms that were reviewed
-  take: (o: Order) =>
+  take: (o: Order, opts?: { answerWithinSecs?: number }) =>
     post<unknown>('/api/take', {
+      ...(opts?.answerWithinSecs
+        ? { answer_within_secs: opts.answerWithinSecs }
+        : {}),
       order_id: o.order_id,
       reviewed: {
         amount: o.amount,

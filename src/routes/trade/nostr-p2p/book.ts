@@ -11,6 +11,37 @@ export function splitBook(orders: Order[]) {
   return { asks, bids }
 }
 
+/**
+ * Other makers to try when the one asked did not answer: the same asset and side, a different maker,
+ * makers that are around first, then the best price for whoever is taking. `tried` are the orders
+ * that already failed or are in play.
+ */
+export function nextMakers(
+  orders: Order[],
+  like: Order,
+  tried: ReadonlySet<string>,
+  limit = 3
+): Order[] {
+  return orders
+    .filter(
+      (o) =>
+        !o.mine &&
+        o.asset_id === like.asset_id &&
+        o.side === like.side &&
+        o.maker !== like.maker &&
+        !tried.has(o.order_id)
+    )
+    .sort(
+      (a, b) =>
+        Number(a.away) - Number(b.away) ||
+        // taking a sell order, the cheapest is best; taking a buy order, the dearest
+        (like.side === 'sell'
+          ? a.unit_price - b.unit_price
+          : b.unit_price - a.unit_price)
+    )
+    .slice(0, limit)
+}
+
 /** Running total of size from the best price outward. */
 export function withDepth(rows: Order[]) {
   let cum = 0

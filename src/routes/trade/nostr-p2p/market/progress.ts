@@ -46,6 +46,10 @@ export function swapProgress(trades: Trade[]): Progress {
   }
   if (!trades.length) return { ...base, stage: 'requested' }
   if (!live.length) return { ...base, stage: 'failed' }
+  // still waiting for the maker: negotiating, and nobody has answered (an older daemon, which does
+  // not say, is taken to have been answered, as before)
+  if (live.every((t) => t.status === 'negotiating' && t.answered === false))
+    return { ...base, stage: 'requested' }
   if (live.every((t) => t.status === 'settled'))
     return { ...base, stage: 'settled' }
   if (through.length === live.length) return { ...base, stage: 'confirming' }
@@ -56,3 +60,7 @@ export function swapProgress(trades: Trade[]): Progress {
 export function failureKind(raw: string): 'funds' | 'other' {
   return /insufficient bitcoin funds/i.test(raw) ? 'funds' : 'other'
 }
+
+/** The maker never answered the request: the signal to try another one. */
+export const noAnswer = (raw: string | null | undefined): boolean =>
+  /timed out waiting for proposal/i.test(raw ?? '')

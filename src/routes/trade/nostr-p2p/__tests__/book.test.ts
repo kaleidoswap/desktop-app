@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { Order } from '../api'
-import { planMarket, splitBook, withDepth } from '../book'
+import { nextMakers, planMarket, splitBook, withDepth } from '../book'
 import { fmtPrice, fmtUnits, takerCost, timeLeft, toBase } from '../format'
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
@@ -198,5 +198,48 @@ describe('numbers', () => {
     expect(timeLeft(at(600), now)).toBe('10m')
     expect(timeLeft(at(7200), now)).toBe('2h')
     expect(timeLeft(at(-5), now)).toBe('expired')
+  })
+})
+
+describe('trying another maker', () => {
+  it('suggests other makers, the ones around first and then the best price', () => {
+    const asked = order('sell', 100, 41_000, { maker: 'asked' })
+    const book = [
+      asked,
+      order('sell', 100, 40_000, { away: true, maker: 'far' }),
+      order('sell', 100, 45_000, { maker: 'near-dear' }),
+      order('sell', 100, 42_000, { maker: 'near-cheap' }),
+      order('buy', 100, 30_000, { maker: 'other-side' }),
+      order('sell', 100, 39_000, { asset_id: 'rgb:B', maker: 'other-asset' }),
+      order('sell', 100, 38_000, { maker: 'me', mine: true }),
+    ]
+    const got = nextMakers(book, asked, new Set([asked.order_id]))
+    expect(got.map((o) => o.maker)).toEqual(['near-cheap', 'near-dear', 'far'])
+  })
+
+  it('does not suggest the same maker or an order already tried', () => {
+    const asked = order('sell', 100, 41_000, { maker: 'asked' })
+    const same = order('sell', 100, 40_000, { maker: 'asked' })
+    const tried = order('sell', 100, 42_000, { maker: 'b' })
+    const fresh = order('sell', 100, 43_000, { maker: 'c' })
+    const got = nextMakers(
+      [asked, same, tried, fresh],
+      asked,
+      new Set([tried.order_id])
+    )
+    expect(got).toEqual([fresh])
+  })
+
+  it('prefers the dearest buyer when taking a buy order', () => {
+    const asked = order('buy', 100, 30_000, { maker: 'asked' })
+    const book = [
+      asked,
+      order('buy', 100, 28_000, { maker: 'b' }),
+      order('buy', 100, 29_000, { maker: 'c' }),
+    ]
+    expect(nextMakers(book, asked, new Set()).map((o) => o.maker)).toEqual([
+      'c',
+      'b',
+    ])
   })
 })

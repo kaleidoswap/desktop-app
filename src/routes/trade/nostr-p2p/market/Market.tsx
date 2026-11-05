@@ -242,12 +242,14 @@ export function Market({ onOpenFunds, node, onRescan }: Props) {
 
       {taking && (
         <TakeSheet
+          book={marketOrders}
           info={inf}
           onChanged={refreshAll}
           onClose={() => {
             setTaking(null)
             refreshAll()
           }}
+          onSwitch={(o) => setTaking([o])}
           orders={taking}
           trades={trades.data ?? []}
         />

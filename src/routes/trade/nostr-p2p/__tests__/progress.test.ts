@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { Trade } from '../api'
-import { failureKind, swapProgress } from '../market/progress'
+import { failureKind, noAnswer, swapProgress } from '../market/progress'
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
 
@@ -88,5 +88,29 @@ describe('how far a swap has got', () => {
       )
     ).toBe('funds')
     expect(failureKind('the maker did not answer')).toBe('other')
+  })
+})
+
+describe('a maker that does not answer', () => {
+  it('is told apart from other failures', () => {
+    expect(noAnswer('timed out waiting for proposal')).toBe(true)
+    expect(noAnswer('Timed out waiting for proposal')).toBe(true)
+    expect(noAnswer('swap aborted by peer: no thanks')).toBe(false)
+    expect(noAnswer(null)).toBe(false)
+  })
+})
+
+describe('a request waiting for the maker', () => {
+  it('is requested until the maker answers, then signing', () => {
+    expect(
+      swapProgress([trade({ answered: false, status: 'negotiating' })]).stage
+    ).toBe('requested')
+    expect(
+      swapProgress([trade({ answered: true, status: 'negotiating' })]).stage
+    ).toBe('signing')
+    // an older daemon does not say
+    expect(swapProgress([trade({ status: 'negotiating' })]).stage).toBe(
+      'signing'
+    )
   })
 })
