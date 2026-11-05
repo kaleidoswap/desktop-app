@@ -31,6 +31,8 @@ export interface P2pStartConfig {
   verified_assets_path?: string
   /** The recovery phrase to create the wallet from. First start only; never replaces a wallet. */
   seed_mnemonic?: string
+  /** Scan every address once at start, to find a deposit the quick sync missed. */
+  rescan?: boolean
 }
 
 export const p2pStatus = () => invoke<P2pStatus>('p2p_status')

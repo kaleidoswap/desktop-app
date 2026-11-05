@@ -72,3 +72,14 @@ export function takerCost(o: Order): {
     ? { fees, pay: o.price_sat + fees, receive: 0 }
     : { fees, pay: 0, receive: o.price_sat }
 }
+
+/** The network as a person names it: the daemon says `signetcustom`, people say Mutinynet. */
+export const networkLabel = (network: string): string =>
+  ({
+    mainnet: 'Mainnet',
+    regtest: 'Regtest',
+    signet: 'Signet',
+    signetcustom: 'Mutinynet',
+    testnet: 'Testnet',
+    testnet4: 'Testnet4',
+  })[network] ?? network

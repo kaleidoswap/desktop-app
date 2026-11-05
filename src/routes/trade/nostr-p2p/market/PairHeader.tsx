@@ -1,7 +1,7 @@
 import { ShieldAlert, ShieldCheck } from 'lucide-react'
 
 import type { Info, RegistryNote } from '../api'
-import { fmtPrice, short } from '../format'
+import { fmtPrice, networkLabel, short } from '../format'
 
 import { useTr } from './hooks'
 import { Pill, cx } from './ui'
@@ -171,10 +171,16 @@ export function PairHeader({
 
       <div className="ml-auto flex flex-wrap items-center gap-3">
         <Pill tone={info.network === 'mainnet' ? 'success' : 'warning'}>
-          {info.network}
+          {networkLabel(info.network)}
         </Pill>
-        <span className="text-tiny text-content-tertiary" title={info.npub}>
-          {info.name} · {short(info.npub, 5)}
+        <span
+          className="text-tiny text-content-tertiary"
+          title={`${info.name} · ${info.npub}`}
+        >
+          {info.name.startsWith('wallet-')
+            ? tr('header.yourWallet', 'Your wallet')
+            : info.name}{' '}
+          · {short(info.npub, 5)}
         </span>
       </div>
     </header>

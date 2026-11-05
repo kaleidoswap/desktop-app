@@ -65,6 +65,9 @@ pub struct P2pStartConfig {
     /// on its stdin, so it never appears in the process list; an existing wallet is never replaced.
     #[serde(default)]
     pub seed_mnemonic: Option<Secret>,
+    /// Scan the whole address chain at start, to find a deposit the quick sync missed. Slower to start.
+    #[serde(default)]
+    pub rescan: bool,
 }
 
 fn default_fee_bps() -> u64 {
@@ -212,6 +215,9 @@ impl P2pProcess {
         if cfg.seed_mnemonic.is_some() {
             cmd.arg("--seed-stdin");
         }
+        if cfg.rescan {
+            cmd.arg("--rescan");
+        }
         #[cfg(target_os = "windows")]
         cmd.creation_flags(CREATE_NO_WINDOW);
 
@@ -232,7 +238,8 @@ impl P2pProcess {
         drop(child_guard);
 
         // the daemon answers once its wallet is up and it is connected to the relays
-        let deadline = Instant::now() + STARTUP_TIMEOUT;
+        // a full scan of the addresses takes much longer than a normal start
+        let deadline = Instant::now() + if cfg.rescan { STARTUP_TIMEOUT * 6 } else { STARTUP_TIMEOUT };
         let addr = SocketAddr::from(([127, 0, 0, 1], port));
         loop {
             if TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok() {
@@ -432,6 +439,7 @@ mod tests {
             min_fee_sat: 1_000,
             verified_assets_path: None,
             seed_mnemonic: None,
+            rescan: false,
         }
     }
 

@@ -31,6 +31,8 @@ interface Props {
   onOpenFunds?: (direction: FundsDirection) => void
   /** Sync the wallet with the chain now. */
   onRefresh?: () => Promise<void>
+  /** Look through the whole address chain for a deposit the quick sync did not find. */
+  onRescan?: () => Promise<void>
 }
 
 /**
@@ -43,6 +45,7 @@ export function WalletCard({
   node,
   onOpenFunds,
   onRefresh,
+  onRescan,
 }: Props) {
   const tr = useTr()
   const [showAddress, setShowAddress] = useState(false)
@@ -58,6 +61,19 @@ export function WalletCard({
     balance?.synced_at && balance.synced_at > 0
       ? Math.max(0, Math.floor(now / 1000) - balance.synced_at)
       : null
+
+  const [rescanning, setRescanning] = useState(false)
+  const rescan = async () => {
+    if (!onRescan || rescanning) return
+    setRescanning(true)
+    try {
+      await onRescan()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e))
+    } finally {
+      setRescanning(false)
+    }
+  }
 
   const refresh = async () => {
     if (!onRefresh || refreshing) return
@@ -143,7 +159,7 @@ export function WalletCard({
         <p className="text-caption text-content-secondary">
           {tr(
             'wallet.empty',
-            'Empty. Move bitcoin (and any RGB asset you want to sell) here from your node to start trading.'
+            'Empty. Deposit bitcoin to start trading, and any RGB asset you want to sell.'
           )}
         </p>
       ) : (
@@ -193,6 +209,26 @@ export function WalletCard({
             {tr('wallet.withdraw', 'Withdraw')}
           </button>
         </div>
+      )}
+
+      {empty && onRescan && (
+        <button
+          className="self-start text-caption text-content-tertiary transition-colors hover:text-content-secondary disabled:opacity-50"
+          disabled={rescanning}
+          onClick={() => void rescan()}
+          title={tr(
+            'wallet.rescanHelp',
+            'Restarts the wallet and looks through every address for a deposit the quick check missed. It takes a little longer.'
+          )}
+          type="button"
+        >
+          {rescanning
+            ? tr('wallet.rescanning', 'Scanning for deposits…')
+            : tr(
+                'wallet.rescan',
+                'Sent bitcoin but nothing shows? Scan for it'
+              )}
+        </button>
       )}
 
       <div className="text-caption">

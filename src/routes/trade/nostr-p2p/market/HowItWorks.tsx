@@ -32,7 +32,11 @@ interface Props {
   onDeposit?: () => void
 }
 
-/** Three steps that say how the market works, and which one the user is on. */
+/**
+ * Where the user is in three steps, in one slim line: which step they are on, one sentence about
+ * it, and the one action that moves them on. Once they have funded the wallet and traded it steps
+ * out of the way.
+ */
 export function HowItWorks({
   funded,
   active,
@@ -41,13 +45,17 @@ export function HowItWorks({
 }: Props) {
   const tr = useTr()
   const [dismissed, setDismissed] = useState(read)
+  const [openAgain, setOpenAgain] = useState(false)
 
   const close = (v: boolean) => {
     setDismissed(v)
+    setOpenAgain(!v)
     write(v)
   }
 
-  if (dismissed) {
+  // someone who has deposited and traded needs no guide unless they ask for it
+  const done = funded && active
+  if ((dismissed || done) && !openAgain) {
     return (
       <button
         className="self-start text-caption text-content-tertiary transition-colors hover:text-content-secondary"
@@ -63,18 +71,16 @@ export function HowItWorks({
     {
       body: tr(
         'guide.s1Body',
-        'The market trades from a separate trading wallet. Move bitcoin there from your node, plus any RGB asset you want to sell.'
+        'Deposit bitcoin from any wallet or exchange, plus any RGB asset you want to sell. Only what is in this wallet can be traded.'
       ),
-      cta: !funded && onDeposit ? tr('guide.s1Cta', 'Deposit now') : null,
       done: funded,
       title: tr('guide.s1', 'Deposit'),
     },
     {
       body: tr(
         'guide.s2Body',
-        'Market: trade right now with the best open orders. Limit: post your own price and wait for someone to take it.'
+        'Market buys or sells right now at the best open price. Limit posts your own price and waits for someone to take it.'
       ),
-      cta: null,
       done: active,
       title: tr('guide.s2', 'Buy or sell'),
     },
@@ -83,65 +89,75 @@ export function HowItWorks({
         confirmations > 0
           ? tr(
               'guide.s3Body',
-              'Swaps are on-chain and settle after {{n}} confirmations. Withdraw back to your node whenever you like.',
+              'Swaps are on-chain and settle after {{n}} confirmations. Withdraw to any address whenever you like.',
               { n: confirmations }
             )
           : tr(
               'guide.s3BodyNow',
-              'Swaps are on-chain. Withdraw back to your node whenever you like.'
+              'Swaps are on-chain. Withdraw to any address whenever you like.'
             ),
-      cta: null,
       done: false,
       title: tr('guide.s3', 'Settle and withdraw'),
     },
   ]
-  const current = steps.findIndex((s) => !s.done)
+  const current = Math.max(
+    0,
+    steps.findIndex((s) => !s.done)
+  )
+  const here = steps[current]!
 
   return (
     <section
       aria-label={tr('guide.title', 'How it works')}
-      className="relative grid gap-3 rounded-2xl bg-surface-card/70 p-3 sm:grid-cols-3"
+      className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl bg-surface-card/70 py-2.5 pl-4 pr-10 relative"
     >
-      {steps.map((s, i) => (
-        <div
-          className={cx(
-            'flex gap-3 rounded-xl p-3',
-            i === current ? 'bg-primary/10' : 'bg-surface-inset/60'
-          )}
-          key={s.title}
-        >
-          <span
-            className={cx(
-              'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-caption font-bold',
-              s.done
-                ? 'bg-primary text-text-on-accent'
-                : i === current
-                  ? 'bg-primary/20 text-primary'
-                  : 'bg-surface-raised text-content-tertiary'
-            )}
-          >
-            {s.done ? <Check aria-hidden size={14} /> : i + 1}
-          </span>
-          <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-body font-medium text-content-primary">
+      <ol className="flex items-center gap-2">
+        {steps.map((s, i) => (
+          <li className="flex items-center gap-2" key={s.title}>
+            <span
+              aria-current={i === current ? 'step' : undefined}
+              className={cx(
+                'flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-tiny font-bold',
+                s.done
+                  ? 'bg-primary text-text-on-accent'
+                  : i === current
+                    ? 'bg-primary/20 text-primary'
+                    : 'bg-surface-raised text-content-tertiary'
+              )}
+            >
+              {s.done ? <Check aria-hidden size={12} /> : i + 1}
+            </span>
+            <span
+              className={cx(
+                'text-caption',
+                i === current
+                  ? 'font-medium text-content-primary'
+                  : 'text-content-tertiary'
+              )}
+            >
               {s.title}
-            </p>
-            <p className="text-caption text-content-secondary">{s.body}</p>
-            {s.cta && (
-              <button
-                className="mt-1 self-start rounded-lg bg-primary px-3 py-1 text-caption font-bold text-text-on-accent hover:opacity-90"
-                onClick={onDeposit}
-                type="button"
-              >
-                {s.cta}
-              </button>
+            </span>
+            {i < steps.length - 1 && (
+              <span aria-hidden className="h-px w-4 bg-surface-raised" />
             )}
-          </div>
-        </div>
-      ))}
+          </li>
+        ))}
+      </ol>
+      <p className="min-w-48 flex-1 text-caption text-content-secondary">
+        {here.body}
+      </p>
+      {current === 0 && onDeposit && (
+        <button
+          className="shrink-0 rounded-lg bg-primary px-3 py-1 text-caption font-bold text-text-on-accent hover:opacity-90"
+          onClick={onDeposit}
+          type="button"
+        >
+          {tr('guide.s1Cta', 'Deposit now')}
+        </button>
+      )}
       <button
         aria-label={tr('guide.hide', 'Hide this guide')}
-        className="absolute right-2 top-2 rounded-md p-1 text-content-tertiary hover:text-content-primary"
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-content-tertiary hover:text-content-primary"
         onClick={() => close(true)}
         type="button"
       >

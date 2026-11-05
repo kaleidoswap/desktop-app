@@ -1,4 +1,4 @@
-import { KeyRound, Power } from 'lucide-react'
+import { KeyRound, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -169,6 +169,14 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
     setPhase('running')
   }
 
+  const rescan = async () => {
+    if (!config) return
+    await p2pStop()
+    runningAccount = null
+    await p2pStart({ ...startConfigFor(account, config), rescan: true })
+    runningAccount = account
+  }
+
   const stop = async () => {
     await p2pStop()
     runningAccount = null
@@ -288,12 +296,16 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
             {t('p2pMarket.recovery', { defaultValue: 'Recovery phrase' })}
           </Button>
           <Button
-            icon={<Power size={14} />}
+            icon={<RefreshCw size={14} />}
             onClick={() => void stop()}
             size="sm"
+            title={t('p2pMarket.restartHelp', {
+              defaultValue:
+                'Restarts the trading wallet. Your open offers are taken off the market and put back.',
+            })}
             variant="outline"
           >
-            {t('p2pMarket.stop')}
+            {t('p2pMarket.restart', { defaultValue: 'Restart' })}
           </Button>
         </div>
         {standalone && tab === 'assets' && <AssetsHistory />}
@@ -309,6 +321,7 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
             onOpenFunds={(d) =>
               d === 'toNode' ? setWithdraw(true) : setDeposit(true)
             }
+            onRescan={rescan}
           />
         )}
         <DepositModal

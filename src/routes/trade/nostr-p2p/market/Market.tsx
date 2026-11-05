@@ -20,10 +20,12 @@ interface Props {
   onOpenFunds?: (direction?: FundsDirection) => void
   /** The user's node balance, when the app has a node to read it from. */
   node?: NodeSummary
+  /** Restart the wallet with a full scan of its addresses. */
+  onRescan?: () => Promise<void>
 }
 
 /** The market: order book, depth, a ticket for market and limit orders, and the user's activity. */
-export function Market({ onOpenFunds, node }: Props) {
+export function Market({ onOpenFunds, node, onRescan }: Props) {
   const tr = useTr()
   const info = usePoll(marketApi.info, 30_000)
   const balance = usePoll(marketApi.balance, 4_000)
@@ -211,6 +213,7 @@ export function Market({ onOpenFunds, node }: Props) {
             node={node}
             onOpenFunds={onOpenFunds}
             onRefresh={syncWallet}
+            onRescan={onRescan}
           />
           {market ? (
             <TradeTicket
