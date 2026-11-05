@@ -2,10 +2,16 @@ import { KeyRound, Power } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useAppDispatch } from '../../../app/store/hooks'
+import { setWalletOverride } from '../../../api/wallet-override'
 import { TradeNav } from '../../../components/Trade'
 import { Alert, Button } from '../../../components/ui'
 import { p2pNetworkOptions, walletAccountFor } from '../../../constants/p2p'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
+
+import { Component as AssetsHistory } from '../../wallet-history/assets'
+import { Component as DepositsHistory } from '../../wallet-history/deposits'
+import { Component as WithdrawalsHistory } from '../../wallet-history/withdrawals'
 
 import { DepositModal } from './DepositModal'
 import { FundsModal, type Direction } from './FundsModal'
@@ -20,6 +26,7 @@ import {
   p2pStop,
   startConfigFor,
 } from './p2p'
+import { createP2pWalletWrapper } from './walletClient'
 import { WalletSetup } from './WalletSetup'
 import { WithdrawModal } from './WithdrawModal'
 
@@ -46,6 +53,8 @@ const saveNetwork = (key: string) => {
 
 /** Which wallet the running daemon belongs to, so coming back to the page does not restart it. */
 let runningAccount: string | null = null
+
+type Tab = 'market' | 'assets' | 'deposits' | 'withdrawals'
 
 type Phase = 'loading' | 'setup' | 'starting' | 'running' | 'error'
 
@@ -74,11 +83,27 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
 
+  // The stand-alone app has no node: while its pages are open the wallet screens read the trading
+  // wallet instead. Inside the node's Trading section the connected node stays what they read.
+  const standalone = !showNav
+  const dispatch = useAppDispatch()
+  const [tab, setTab] = useState<Tab>('market')
+  useEffect(() => {
+    if (!standalone || phase !== 'running') return
+    setWalletOverride(createP2pWalletWrapper())
+    dispatch(nodeApi.util.resetApiState())
+    return () => {
+      setWalletOverride(null)
+      dispatch(nodeApi.util.resetApiState())
+    }
+  }, [standalone, phase, dispatch])
+
   // a node is optional: when one is connected, funds can also move to and from it
   const nodeBtc = nodeApi.endpoints.btcBalance.useQuery(undefined, {
     pollingInterval: 15_000,
+    skip: standalone,
   })
-  const nodeConnected = nodeBtc.data !== undefined
+  const nodeConnected = !standalone && nodeBtc.data !== undefined
 
   const [deposit, setDeposit] = useState(false)
   const [withdraw, setWithdraw] = useState(false)
@@ -193,6 +218,50 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
     body = (
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-end gap-2">
+          {standalone && (
+            <div
+              className="mr-auto flex gap-1 rounded-xl bg-surface-inset p-1"
+              role="tablist"
+            >
+              {(
+                [
+                  [
+                    'market',
+                    t('p2pMarket.tabMarket', { defaultValue: 'Market' }),
+                  ],
+                  [
+                    'assets',
+                    t('p2pMarket.tabAssets', { defaultValue: 'Assets' }),
+                  ],
+                  [
+                    'deposits',
+                    t('p2pMarket.tabDeposits', { defaultValue: 'Deposits' }),
+                  ],
+                  [
+                    'withdrawals',
+                    t('p2pMarket.tabWithdrawals', {
+                      defaultValue: 'Withdrawals',
+                    }),
+                  ],
+                ] as [Tab, string][]
+              ).map(([id, label]) => (
+                <button
+                  aria-selected={tab === id}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    tab === id
+                      ? 'bg-surface-raised text-content-primary'
+                      : 'text-content-tertiary hover:text-content-secondary'
+                  }`}
+                  key={id}
+                  onClick={() => setTab(id)}
+                  role="tab"
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           {options.length > 1 && (
             <select
               aria-label={t('p2pMarket.network', { defaultValue: 'Network' })}
@@ -227,16 +296,21 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
             {t('p2pMarket.stop')}
           </Button>
         </div>
-        <Market
-          node={
-            nodeConnected
-              ? { btc: nodeBtc.data?.vanilla.spendable ?? 0, connected: true }
-              : undefined
-          }
-          onOpenFunds={(d) =>
-            d === 'toNode' ? setWithdraw(true) : setDeposit(true)
-          }
-        />
+        {standalone && tab === 'assets' && <AssetsHistory />}
+        {standalone && tab === 'deposits' && <DepositsHistory />}
+        {standalone && tab === 'withdrawals' && <WithdrawalsHistory />}
+        {(!standalone || tab === 'market') && (
+          <Market
+            node={
+              nodeConnected
+                ? { btc: nodeBtc.data?.vanilla.spendable ?? 0, connected: true }
+                : undefined
+            }
+            onOpenFunds={(d) =>
+              d === 'toNode' ? setWithdraw(true) : setDeposit(true)
+            }
+          />
+        )}
         <DepositModal
           isOpen={deposit}
           onClose={() => setDeposit(false)}

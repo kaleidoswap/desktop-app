@@ -100,6 +100,14 @@ const ALLOWED: &[(&str, &str)] = &[
     ("POST", "/api/btc/send"),
     ("POST", "/api/refresh"),
     ("POST", "/api/recovery-phrase"),
+    // the wallet half of the node API, which the app's wallet screens read
+    ("POST", "/api/rln/btcbalance"),
+    ("POST", "/api/rln/listassets"),
+    ("POST", "/api/rln/assetbalance"),
+    ("POST", "/api/rln/listtransfers"),
+    ("POST", "/api/rln/listtransactions"),
+    ("POST", "/api/rln/listunspents"),
+    ("POST", "/api/rln/sendrgb"),
 ];
 
 /// Whether the app may call `method path`: the market's own routes, nothing from the daemon's
