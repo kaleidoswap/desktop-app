@@ -10,6 +10,7 @@ import {
   Bell,
   Boxes,
   Brain,
+  Coins,
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -23,6 +24,7 @@ import {
   WALLET_REMOTE_PATH,
   WALLET_RESTORE_PATH,
   KALEIDO_MIND_PATH,
+  P2P_WALLET_PATH,
 } from '../../app/router/paths'
 import logoFull from '../../assets/logo-full.svg'
 import logoIcon from '../../assets/logo.svg'
@@ -40,8 +42,11 @@ import { logger } from '../../utils/logger'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
+// The three ways to run the app, plus the P2P market, which needs no node and no mode of its own.
+type LauncherMode = AppMode | 'p2p'
+
 const MODE_OPTIONS: {
-  mode: AppMode
+  mode: LauncherMode
   icon: React.ReactNode
   labelKey: string
   label: string
@@ -64,6 +69,12 @@ const MODE_OPTIONS: {
     labelKey: 'launcher.modes.mind.title',
     mode: 'mind',
   },
+  {
+    icon: <Coins className="w-4 h-4" />,
+    label: 'P2P',
+    labelKey: 'launcher.modes.p2p.title',
+    mode: 'p2p',
+  },
 ]
 
 export const Component = () => {
@@ -73,7 +84,7 @@ export const Component = () => {
   const [nodeType, setNodeType] = useState<'local' | 'remote' | null>(null)
   // Which capabilities the user wants. 'both' (Node + Mind) is the default;
   // 'mind' skips node setup entirely and opens KaleidoMind.
-  const [selectedMode, setSelectedMode] = useState<AppMode>('both')
+  const [selectedMode, setSelectedMode] = useState<LauncherMode>('both')
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
   const { toggleNotificationPanel, notifications } = useNotification()
@@ -311,7 +322,35 @@ export const Component = () => {
                         {mindLaunchError}
                       </p>
                     )}
-                    {selectedMode === 'mind' ? (
+                    {selectedMode === 'p2p' ? (
+                      <div className="flex justify-center slide-in">
+                        <div
+                          className="relative overflow-hidden transition-all duration-300 border-2 rounded-2xl backdrop-blur-sm
+                            hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 cursor-pointer fade-in
+                            bg-surface-elevated/40 hover:bg-surface-elevated/60 border-divider/20 w-full max-w-sm"
+                          onClick={() => navigate(P2P_WALLET_PATH)}
+                        >
+                          <div className="p-6">
+                            <div className="flex items-center gap-4 mb-4">
+                              <div className="p-4 rounded-xl backdrop-blur-sm bg-primary/5 text-primary/80 flex items-center justify-center">
+                                <Coins className="w-6 h-6" strokeWidth={2} />
+                              </div>
+                              <h2 className="text-2xl font-bold text-white">
+                                {t('launcher.p2pCard.title', {
+                                  defaultValue: 'P2P Wallet',
+                                })}
+                              </h2>
+                            </div>
+                            <p className="text-content-secondary text-sm leading-relaxed">
+                              {t('launcher.p2pCard.body', {
+                                defaultValue:
+                                  'Trade RGB assets directly with other people. Its own wallet, kept with a recovery phrase. No node needed.',
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : selectedMode === 'mind' ? (
                       <div className="flex justify-center slide-in">
                         <div
                           className="relative overflow-hidden transition-all duration-300 border-2 rounded-2xl backdrop-blur-sm

@@ -53,7 +53,11 @@ type Phase = 'loading' | 'setup' | 'starting' | 'running' | 'error'
  * The P2P market. It has a wallet of its own, made here and kept with a recovery phrase, so it
  * needs no node: a node only adds a way to move funds in and out.
  */
-export const Component = () => {
+/**
+ * The market page. `showNav` adds the Trade menu, which belongs to the node's sections; the
+ * stand-alone P2P app has no such menu.
+ */
+export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
   const { t } = useTranslation()
   const options = useMemo(p2pNetworkOptions, [])
   const [networkKey, setNetworkKey] = useState(
@@ -272,10 +276,14 @@ export const Component = () => {
 
   return (
     <div className="w-full min-h-full">
-      <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
-        <TradeNav />
-      </div>
+      {showNav && (
+        <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
+          <TradeNav />
+        </div>
+      )}
       <div className="mx-auto w-full max-w-screen-xl px-4 py-4">{body}</div>
     </div>
   )
 }
+
+export const Component = () => <P2pMarketPage />

@@ -45,7 +45,15 @@
       "mind": {
         "title": "Only Mind",
         "desc": "Just the local AI brain. No node required."
+      },
+      "p2p": {
+        "title": "P2P",
+        "desc": "Trade RGB assets peer to peer with a wallet of its own. No node required."
       }
+    },
+    "p2pCard": {
+      "title": "P2P Wallet",
+      "body": "Trade RGB assets directly with other people. Its own wallet, kept with a recovery phrase. No node needed."
     }
   },
   "navigation": {
@@ -2176,17 +2184,11 @@
       },
       "colored": {
         "title": "Colored UTXOs",
-        "bullets": [
-          "Open RGB Lightning channels",
-          "Send on-chain RGB assets"
-        ]
+        "bullets": ["Open RGB Lightning channels", "Send on-chain RGB assets"]
       },
       "normal": {
         "title": "Normal UTXOs",
-        "bullets": [
-          "Open Bitcoin Lightning channels",
-          "Regular transactions"
-        ]
+        "bullets": ["Open Bitcoin Lightning channels", "Regular transactions"]
       },
       "countLabel": "{{count}} UTXOs"
     },
@@ -2337,12 +2339,7 @@
     }
   },
   "updaterModal": {
-    "fileSizes": [
-      "Bytes",
-      "KB",
-      "MB",
-      "GB"
-    ],
+    "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
       "timeout": "The download stopped making progress. Check your internet connection and try again.",
