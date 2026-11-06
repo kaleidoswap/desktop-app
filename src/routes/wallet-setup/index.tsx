@@ -139,11 +139,14 @@ export const Component = () => {
   }, [])
 
   // the P2P market is not bundled on every system (not on Windows yet)
-  const [p2pReady, setP2pReady] = useState<boolean | null>(null)
+  const [p2pWhere, setP2pWhere] = useState<{
+    backend: string | null
+    hint: string | null
+  } | null>(null)
   useEffect(() => {
-    invoke<boolean>('p2p_available')
-      .then(setP2pReady)
-      .catch(() => setP2pReady(false))
+    invoke<{ backend: string | null; hint: string | null }>('p2p_available')
+      .then(setP2pWhere)
+      .catch(() => setP2pWhere({ backend: null, hint: 'unknown' }))
   }, [])
 
   // Handle transitions
@@ -322,15 +325,23 @@ export const Component = () => {
                               defaultValue:
                                 'Trade RGB assets directly with other people, from a wallet of its own kept with a recovery phrase.',
                             })}
-                            disabled={p2pReady === false}
+                            disabled={p2pWhere?.hint === 'image_unpublished'}
                             icon={<Coins className="w-6 h-6" />}
                             onClick={() => navigate(P2P_WALLET_PATH)}
                             tag={
-                              p2pReady === false
-                                ? t('launcher.cards.p2p.unavailable', {
-                                    defaultValue: 'Not on this system yet',
+                              p2pWhere?.hint === 'docker_missing'
+                                ? t('launcher.cards.p2p.needsDocker', {
+                                    defaultValue: 'Needs Docker',
                                   })
-                                : undefined
+                                : p2pWhere?.hint === 'docker_stopped'
+                                  ? t('launcher.cards.p2p.startDocker', {
+                                      defaultValue: 'Start Docker first',
+                                    })
+                                  : p2pWhere?.hint === 'image_unpublished'
+                                    ? t('launcher.cards.p2p.unavailable', {
+                                        defaultValue: 'Not available yet',
+                                      })
+                                    : undefined
                             }
                             title={t('launcher.cards.p2p.title', {
                               defaultValue: 'P2P Wallet',

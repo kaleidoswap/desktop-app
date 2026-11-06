@@ -155,7 +155,6 @@ jobs:
       # repository variables, so the endpoints are changed without a code change. A build without
       # them would ship a page that says there is no market, so it stops here instead.
       - name: Check the P2P network configuration
-        if: matrix.platform != 'windows-latest'
         shell: bash
         env:
           P2P_RELAYS: ${{ vars.P2P_RELAYS }}
@@ -171,7 +170,7 @@ jobs:
           done
 
       # Not on Windows: the daemon uses Unix-only APIs for its key files and signals, so it does not
-      # build there yet. The app says so instead of offering the market.
+      # build there. Windows runs the daemon's Docker image instead (p2pd.image, see p2pd-image.yml).
       - name: Build and sign the P2P market daemon
         if: matrix.platform != 'windows-latest'
         shell: bash

@@ -15,7 +15,7 @@
 
 use std::collections::VecDeque;
 use std::io::{BufRead, BufReader};
-use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::net::TcpListener;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
@@ -24,6 +24,8 @@ use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
+
+use crate::p2p_docker;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -142,10 +144,12 @@ pub struct P2pProcess {
     tail: Arc<Mutex<VecDeque<String>>>,
     /// Where this run's pid is kept, so the next start can remove a daemon that outlived the app.
     pid_file: Arc<Mutex<Option<PathBuf>>>,
+    /// The container's name when the daemon runs under Docker.
+    container: Arc<Mutex<Option<String>>>,
 }
 
 /// 32 random bytes as hex.
-fn new_token() -> String {
+pub(crate) fn new_token() -> String {
     use aes_gcm::aead::OsRng;
     use argon2::password_hash::rand_core::RngCore;
     let mut b = [0u8; 32];
@@ -180,7 +184,6 @@ impl P2pProcess {
             return Ok(self.status());
         }
         validate(cfg)?;
-        let program = resolve_binary(app);
         let data_dir = app
             .path()
             .app_data_dir()
@@ -188,48 +191,68 @@ impl P2pProcess {
             .join("p2pd")
             .join(&cfg.account);
         std::fs::create_dir_all(&data_dir).map_err(|e| format!("{}: {e}", data_dir.display()))?;
-        reap_orphan(&data_dir.join("p2pd.pid"));
         lock(&self.tail).clear();
         let port = free_port()?;
-
         let token = new_token();
-        let mut cmd = Command::new(&program);
-        cmd.env("P2PD_API_TOKEN", &token);
-        cmd.arg("--name")
-            .arg(&cfg.account)
-            .args(["--port", &port.to_string()])
-            .args(["--network", &cfg.network])
-            .args(["--indexer", &cfg.indexer_url])
-            .args(["--proxy", &cfg.proxy_url])
-            .args(["--fee-address", &cfg.fee_address])
-            .args(["--fee-bps", &cfg.fee_bps.to_string()])
-            .args(["--min-fee-sat", &cfg.min_fee_sat.to_string()])
-            .args(["--keystore", "keychain"])
-            .arg("--data-dir")
-            .arg(&data_dir)
-            .stdin(if cfg.seed_mnemonic.is_some() { Stdio::piped() } else { Stdio::null() })
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-        for relay in &cfg.relays {
-            cmd.args(["--relay", relay]);
-        }
-        if let Some(path) = &cfg.verified_assets_path {
-            cmd.args(["--verified-assets", path]);
-        }
-        if cfg.network == "mainnet" {
-            cmd.arg("--allow-mainnet");
-        }
-        if cfg.seed_mnemonic.is_some() {
-            cmd.arg("--seed-stdin");
-        }
-        if cfg.rescan {
-            cmd.arg("--rescan");
-        }
-        #[cfg(target_os = "windows")]
-        cmd.creation_flags(CREATE_NO_WINDOW);
 
-        log::info!("[p2p] starting {program:?} on 127.0.0.1:{port} for {} ({})", cfg.account, cfg.network);
-        let mut child = cmd.spawn().map_err(|e| format!("could not start the P2P daemon ({program:?}): {e}"))?;
+        // the bundled binary where there is one, otherwise the same daemon under Docker
+        let program = resolve_binary(app);
+        let native = runnable(&program, std::env::var_os("PATH").as_deref());
+        let (mut cmd, container) = if native {
+            reap_orphan(&data_dir.join("p2pd.pid"));
+            let mut cmd = Command::new(&program);
+            cmd.env("P2PD_API_TOKEN", &token);
+            cmd.arg("--name")
+                .arg(&cfg.account)
+                .args(["--port", &port.to_string()])
+                .args(["--network", &cfg.network])
+                .args(["--indexer", &cfg.indexer_url])
+                .args(["--proxy", &cfg.proxy_url])
+                .args(["--fee-address", &cfg.fee_address])
+                .args(["--fee-bps", &cfg.fee_bps.to_string()])
+                .args(["--min-fee-sat", &cfg.min_fee_sat.to_string()])
+                .args(["--keystore", "keychain"])
+                .arg("--data-dir")
+                .arg(&data_dir);
+            for relay in &cfg.relays {
+                cmd.args(["--relay", relay]);
+            }
+            if let Some(path) = &cfg.verified_assets_path {
+                cmd.args(["--verified-assets", path]);
+            }
+            if cfg.network == "mainnet" {
+                cmd.arg("--allow-mainnet");
+            }
+            if cfg.seed_mnemonic.is_some() {
+                cmd.arg("--seed-stdin");
+            }
+            if cfg.rescan {
+                cmd.arg("--rescan");
+            }
+            #[cfg(target_os = "windows")]
+            cmd.creation_flags(CREATE_NO_WINDOW);
+            log::info!("[p2p] starting {program:?} on 127.0.0.1:{port} for {} ({})", cfg.account, cfg.network);
+            (cmd, None)
+        } else {
+            match p2p_docker::engine() {
+                p2p_docker::Engine::Ready => {}
+                p2p_docker::Engine::Stopped => return Err("Docker is installed but not running. Start Docker Desktop and try again.".into()),
+                p2p_docker::Engine::Missing => return Err("The P2P market needs Docker on this system. Install Docker Desktop and try again.".into()),
+            }
+            let image = p2p_docker::image()?;
+            p2p_docker::ensure_image(&image)?;
+            p2p_docker::remove_container(&cfg.account);
+            let passphrase = p2p_docker::passphrase(&cfg.account)?;
+            let mut cmd = p2p_docker::docker();
+            cmd.env("P2PD_API_TOKEN", &token)
+                .env("P2PD_PASSPHRASE", &passphrase)
+                .args(p2p_docker::run_args(&cfg.account, &image, port))
+                .args(p2p_docker::daemon_args(cfg, port));
+            log::info!("[p2p] starting {image} in Docker on 127.0.0.1:{port} for {} ({})", cfg.account, cfg.network);
+            (cmd, Some(p2p_docker::container_name(&cfg.account)))
+        };
+        cmd.stdin(if cfg.seed_mnemonic.is_some() { Stdio::piped() } else { Stdio::null() }).stdout(Stdio::piped()).stderr(Stdio::piped());
+        let mut child = cmd.spawn().map_err(|e| format!("could not start the P2P daemon: {e}"))?;
         if let Some(Secret(phrase)) = &cfg.seed_mnemonic {
             use std::io::Write;
             let mut stdin = child.stdin.take().ok_or("could not reach the daemon's stdin")?;
@@ -237,9 +260,12 @@ impl P2pProcess {
             stdin.write_all(body.as_bytes()).map_err(|e| format!("could not hand the recovery phrase to the daemon: {e}"))?;
             // closing stdin is what tells the daemon the phrase is complete
         }
-        let pid_file = data_dir.join("p2pd.pid");
-        let _ = std::fs::write(&pid_file, child.id().to_string());
-        *lock(&self.pid_file) = Some(pid_file);
+        if container.is_none() {
+            let pid_file = data_dir.join("p2pd.pid");
+            let _ = std::fs::write(&pid_file, child.id().to_string());
+            *lock(&self.pid_file) = Some(pid_file);
+        }
+        *lock(&self.container) = container;
         pipe_to_log(child.stdout.take(), "out", Arc::clone(&self.tail));
         pipe_to_log(child.stderr.take(), "err", Arc::clone(&self.tail));
         *child_guard = Some(child);
@@ -250,9 +276,8 @@ impl P2pProcess {
         // the daemon answers once its wallet is up and it is connected to the relays
         // a full scan of the addresses takes much longer than a normal start
         let deadline = Instant::now() + if cfg.rescan { STARTUP_TIMEOUT * 6 } else { STARTUP_TIMEOUT };
-        let addr = SocketAddr::from(([127, 0, 0, 1], port));
         loop {
-            if TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok() {
+            if daemon_answers(port, &token) {
                 return Ok(self.status());
             }
             if !Self::alive(&mut lock(&self.child)) {
@@ -311,6 +336,9 @@ impl P2pProcess {
         let Some(mut child) = lock(&self.child).take() else { return };
         *lock(&self.port) = None;
         *lock(&self.token) = None;
+        if let Some(name) = lock(&self.container).take() {
+            p2p_docker::stop_container(&name);
+        }
         if let Some(f) = lock(&self.pid_file).take() {
             let _ = std::fs::remove_file(f);
         }
@@ -432,10 +460,24 @@ fn runnable(program: &Path, path_var: Option<&std::ffi::OsStr>) -> bool {
     path_var.is_some_and(|p| std::env::split_paths(p).any(|dir| dir.join(program).is_file()))
 }
 
-/// Whether this build has a P2P daemon to start. A packaged build carries one where it could be
-/// built; a development run points at one with `KALEIDO_P2PD_BIN` or has it on the PATH.
-pub fn available(app: &AppHandle) -> bool {
-    runnable(&resolve_binary(app), std::env::var_os("PATH").as_deref())
+/// Whether the daemon answers its API: the port of a container accepts connections before the
+/// daemon inside is up, so a bare connect says nothing.
+fn daemon_answers(port: u16, token: &str) -> bool {
+    reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(2))
+        .build()
+        .and_then(|c| c.get(format!("http://127.0.0.1:{port}/api/info")).bearer_auth(token).send())
+        .is_ok_and(|r| r.status().is_success())
+}
+
+/// Where the daemon can run on this system, or what is in the way. A packaged build carries the
+/// binary where it could be built; a development run points at one with `KALEIDO_P2PD_BIN` or has
+/// it on the PATH; anywhere else it can run under Docker.
+pub fn availability(app: &AppHandle) -> p2p_docker::Availability {
+    let native = runnable(&resolve_binary(app), std::env::var_os("PATH").as_deref());
+    // asking Docker takes a moment, so only when there is no binary
+    let engine = if native { p2p_docker::Engine::Missing } else { p2p_docker::engine() };
+    p2p_docker::decide(native, engine, p2p_docker::image().is_ok())
 }
 
 fn pipe_to_log(stream: Option<impl std::io::Read + Send + 'static>, tag: &'static str, tail: Arc<Mutex<VecDeque<String>>>) {

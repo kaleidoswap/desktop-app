@@ -18,7 +18,8 @@ import { FundsModal, type Direction } from './FundsModal'
 import { Market } from './market/Market'
 import { RecoveryPhraseModal } from './RecoveryPhraseModal'
 import {
-  p2pAvailable,
+  p2pAvailability,
+  type P2pAvailability,
   p2pGenerateSeed,
   p2pProfileGet,
   p2pProfileSet,
@@ -84,6 +85,7 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
   const [phase, setPhase] = useState<Phase>('loading')
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
+  const [hint, setHint] = useState<P2pAvailability['hint']>(null)
 
   // The stand-alone app has no node: while its pages are open the wallet screens read the trading
   // wallet instead. Inside the node's Trading section the connected node stays what they read.
@@ -114,7 +116,9 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
 
   const begin = useCallback(async () => {
     if (!config) return
-    if (!(await p2pAvailable().catch(() => false))) {
+    const where = await p2pAvailability().catch(() => null)
+    if (!where?.backend) {
+      setHint(where?.hint ?? null)
       setPhase('unavailable')
       return
     }
@@ -195,13 +199,34 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
   } else if (!config) {
     body = <Alert variant="info">{t('p2pMarket.noNetwork')}</Alert>
   } else if (phase === 'unavailable') {
+    const why: Record<string, string> = {
+      docker_missing:
+        'The P2P market runs in Docker on this system. Install Docker Desktop, start it, and try again.',
+      docker_stopped:
+        'Docker is installed but not running. Start Docker Desktop and try again.',
+      image_unpublished:
+        'The P2P market cannot start on this system yet: its Docker image is not published.',
+    }
     body = (
-      <Alert variant="info">
-        {t('p2pMarket.unavailable', {
-          defaultValue:
-            'The P2P market is not part of this build yet. It is not included on Windows; it is available on macOS and Linux.',
-        })}
-      </Alert>
+      <div className="mx-auto flex max-w-xl flex-col gap-4 py-16 text-center">
+        <h2 className="text-xl font-bold text-content-primary">
+          {t('p2pMarket.unavailableTitle', {
+            defaultValue: 'The market cannot start here yet',
+          })}
+        </h2>
+        <p className="text-content-secondary">
+          {t(`p2pMarket.unavailable.${hint ?? 'other'}`, {
+            defaultValue:
+              (hint && why[hint]) ||
+              'The P2P market is not part of this build.',
+          })}
+        </p>
+        <div>
+          <Button onClick={() => setAttempt((n) => n + 1)}>
+            {t('p2pMarket.retry', { defaultValue: 'Try again' })}
+          </Button>
+        </div>
+      </div>
     )
   } else if (phase === 'setup') {
     body = (

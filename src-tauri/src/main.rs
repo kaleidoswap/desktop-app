@@ -14,6 +14,7 @@ mod mind_runtime;
 mod node_backend;
 mod nwc;
 mod p2p;
+mod p2p_docker;
 mod rgb_node;
 mod tray;
 
@@ -97,10 +98,13 @@ fn p2p_profile_set(app: AppHandle, account: String, profile: serde_json::Value) 
     p2p::profile_set(&app, &account, &profile)
 }
 
-/// Whether this build can run the P2P daemon at all (it is not bundled on Windows yet).
+/// Where the P2P daemon can run on this system: the bundled binary, Docker, or neither (and why).
 #[tauri::command]
-fn p2p_available(app: AppHandle) -> bool {
-    p2p::available(&app)
+async fn p2p_available(app: AppHandle) -> Result<p2p_docker::Availability, String> {
+    // asking Docker can take a moment, so not on the main thread
+    tauri::async_runtime::spawn_blocking(move || p2p::availability(&app))
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
