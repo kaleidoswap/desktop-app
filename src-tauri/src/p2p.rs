@@ -124,6 +124,8 @@ const ALLOWED: &[(&str, &str)] = &[
     ("POST", "/api/rln/listtransactions"),
     ("POST", "/api/rln/listunspents"),
     ("POST", "/api/rln/sendrgb"),
+    ("POST", "/api/rln/createutxos"),
+    ("POST", "/api/rln/issueassetnia"),
 ];
 
 /// Whether the app may call `method path`: the market's own routes, nothing from the daemon's
@@ -751,6 +753,8 @@ mod tests {
             ("POST", "/api/take"),
             ("POST", "/api/orders"),
             ("POST", "/api/btc/send"),
+            ("POST", "/api/rln/createutxos"),
+            ("POST", "/api/rln/issueassetnia"),
             ("DELETE", "/api/orders/aB3-_9"),
             (
                 "GET",
