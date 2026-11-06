@@ -179,7 +179,7 @@ in development the app finds it through `KALEIDO_P2PD_BIN` (or the `PATH`). To s
 app:
 
 ```sh
-P2PD_SRC=/path/to/rgb-onchain-swaps/p2p make p2p-bundle     # or P2PD_REPO_URL + P2PD_REF
+P2PD_SRC=/path/to/the/daemon/p2p make p2p-bundle     # or P2PD_REPO_URL + P2PD_REF
 pnpm tauri build --config src-tauri/tauri.p2p.conf.json
 ```
 

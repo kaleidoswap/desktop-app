@@ -1,8 +1,8 @@
 name: 'P2P daemon image'
 
 # Builds the P2P market daemon as a Docker image and publishes it. Systems where the daemon is not
-# bundled (Windows) run this image. The daemon lives in a private repository, so the source is
-# fetched with a read-only token (P2PD_REPO_TOKEN, the same one the app build uses).
+# bundled (Windows) run this image. The source is fetched from P2PD_REPO (a repository variable) with
+# a read-only token (P2PD_REPO_TOKEN, the same one the app build uses).
 #
 # Run it by hand with the commit or tag of the daemon to build. It prints the image reference with
 # its digest: put that line in p2pd.image so the app runs exactly this image.
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'rgb-onchain-swaps commit or tag to build (the one in p2pd.ref)'
+        description: 'Daemon commit or tag to build (the one in p2pd.ref)'
         required: true
         type: string
 
@@ -24,11 +24,13 @@ jobs:
         shell: bash
         env:
           P2PD_REPO_TOKEN: ${{ secrets.P2PD_REPO_TOKEN }}
+          P2PD_REPO: ${{ vars.P2PD_REPO }}
           REF: ${{ inputs.ref }}
         run: |
           : "${P2PD_REPO_TOKEN:?the P2PD_REPO_TOKEN secret is not set}"
+          : "${P2PD_REPO:?the P2PD_REPO variable is not set}"
           echo "::add-mask::$P2PD_REPO_TOKEN"
-          git clone --quiet "https://oauth2:${P2PD_REPO_TOKEN}@gitlab.com/kaleidoswap/rgb-onchain-swaps.git" daemon-src
+          git clone --quiet "https://oauth2:${P2PD_REPO_TOKEN}@${P2PD_REPO}" daemon-src
           git -C daemon-src checkout --quiet "$REF"
           echo "SHORT=$(git -C daemon-src rev-parse --short=12 HEAD)" >> "$GITHUB_ENV"
 
