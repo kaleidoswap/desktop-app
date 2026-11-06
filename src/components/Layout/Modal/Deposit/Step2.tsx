@@ -26,6 +26,7 @@ import { toast } from 'react-toastify'
 import { useAppSelector } from '../../../../app/store/hooks'
 import { useSettings } from '../../../../hooks/useSettings'
 import btcLogo from '../../../../assets/bitcoin-logo.svg'
+import { getWalletOverride } from '../../../../api/wallet-override'
 import lightningLogo from '../../../../assets/lightning-logo.svg'
 import rgbLogo from '../../../../assets/rgb-logo.svg'
 import { CreateUTXOModal } from '../../../../components/CreateUTXOModal'
@@ -761,8 +762,8 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         />
       ) : (
         <div className="space-y-4">
-          {/* Network selection — RGB assets only */}
-          {!isBtc && (
+          {/* Network selection — RGB assets only; the P2P wallet has no Lightning */}
+          {!isBtc && !getWalletOverride() && (
             <div className="grid grid-cols-2 gap-1 p-1 bg-surface-overlay/50 rounded-xl border border-border-default">
               {(['on-chain', 'lightning'] as const).map((type) => {
                 const isDisabled = type === 'lightning' && !assetId
@@ -819,11 +820,11 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                 </p>
               </div>
               <button
+                aria-checked={usePrivacy}
+                aria-label={t('depositModal.step2.privacy.title')}
                 className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full
                   transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40
                   ${usePrivacy ? 'bg-primary' : 'bg-surface-elevated'}`}
-                aria-checked={usePrivacy}
-                aria-label={t('depositModal.step2.privacy.title')}
                 onClick={() => setUsePrivacy(!usePrivacy)}
                 role="switch"
                 type="button"

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useAppDispatch } from '../../../app/store/hooks'
+import { uiSliceActions } from '../../../slices/ui/ui.slice'
 import { setWalletOverride } from '../../../api/wallet-override'
 import { TradeNav } from '../../../components/Trade'
 import { Alert, Button } from '../../../components/ui'
@@ -368,7 +369,17 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
                 : undefined
             }
             onOpenFunds={(d) =>
-              d === 'toNode' ? setWithdraw(true) : setDeposit(true)
+              d === 'toNode'
+                ? setWithdraw(true)
+                : standalone
+                  ? // the app's own deposit screen, which reads the trading wallet while this page is open
+                    dispatch(
+                      uiSliceActions.setModal({
+                        assetId: undefined,
+                        type: 'deposit',
+                      })
+                    )
+                  : setDeposit(true)
             }
             onRescan={rescan}
           />
