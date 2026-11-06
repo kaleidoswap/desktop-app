@@ -153,7 +153,7 @@ jobs:
       # where, P2PD_REPO_TOKEN is a read-only token for it, and p2pd.ref pins the commit bundled.
 
       # Not on Windows: the daemon uses Unix-only APIs for its key files and signals, so it does not
-      # build there. Windows runs the daemon's Docker image instead (p2pd.image, see p2pd-image.yml).
+      # build there. Windows runs the daemon's Docker image instead (pinned in p2pd.image).
       - name: Build and sign the P2P market daemon
         if: matrix.platform != 'windows-latest'
         shell: bash
