@@ -1,3 +1,18 @@
+## [Version 0.7.0] - Unreleased
+
+### P2P trading (beta, Mutinynet)
+
+- New **P2P Wallet** on the start screen: trade RGB assets directly with other people, with no node and no account. It has a wallet of its own, kept with a 12-word recovery phrase that is shown and checked when you create it, and can be restored from. The phrase restores bitcoin; RGB assets also depend on this computer's data.
+- Market with an order book, depth chart, market and limit orders, and a trade sheet that shows exactly what you pay before anything is signed. Swaps are on-chain and settle after three confirmations.
+- Deposit by address or RGB invoice from any wallet, and withdraw to any address or invoice. A deposit shows as waiting as soon as it is seen, with a button to update the balance.
+- The order book shows which makers are online. If a maker does not answer, the app offers the next one.
+- Assets, Deposits and Withdrawals use the same history screens as the node wallet.
+- Available on macOS and Linux. Not on Windows yet.
+
+### Start screen
+
+- Four ways in instead of a mode picker: P2P Wallet and KaleidoMind (no node needed), and Connect a node or Run a node here.
+
 ## [Version 0.6.0] - 2026-10-13
 
 A clearer desktop experience for managing an RGB Lightning node, trading assets and using KaleidoMind. These notes cover the complete upgrade from 0.5.0, including the changes previously listed under 0.5.1.

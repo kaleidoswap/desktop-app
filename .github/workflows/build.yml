@@ -151,6 +151,25 @@ jobs:
 
       # The P2P market daemon lives in a private repository. P2PD_REPO_TOKEN is a read-only token
       # for it; p2pd.ref pins the commit that is bundled.
+      # The P2P market is configured at build time (relay, esplora, RGB proxy, fee address). Those are
+      # repository variables, so the endpoints are changed without a code change. A build without
+      # them would ship a page that says there is no market, so it stops here instead.
+      - name: Check the P2P network configuration
+        if: matrix.platform != 'windows-latest'
+        shell: bash
+        env:
+          P2P_RELAYS: ${{ vars.P2P_RELAYS }}
+          P2P_ESPLORA_URL: ${{ vars.P2P_ESPLORA_URL }}
+          P2P_PROXY_URL: ${{ vars.P2P_PROXY_URL }}
+          P2P_FEE_ADDRESS: ${{ vars.P2P_FEE_ADDRESS }}
+        run: |
+          for v in P2P_RELAYS P2P_ESPLORA_URL P2P_PROXY_URL P2P_FEE_ADDRESS; do
+            if [ -z "${!v}" ]; then
+              echo "::error::the repository variable $v is not set; the P2P market would have no network"
+              exit 1
+            fi
+          done
+
       # Not on Windows: the daemon uses Unix-only APIs for its key files and signals, so it does not
       # build there yet. The app says so instead of offering the market.
       - name: Build and sign the P2P market daemon
@@ -212,6 +231,11 @@ jobs:
           APPLE_ID: ${{ startsWith(matrix.platform, 'macos-') && secrets.APPLE_ID || '' }}
           APPLE_PASSWORD: ${{ startsWith(matrix.platform, 'macos-') && secrets.APPLE_PASSWORD || '' }}
           APPLE_TEAM_ID: ${{ startsWith(matrix.platform, 'macos-') && secrets.APPLE_TEAM_ID || '' }}
+          # P2P market network (Mutinynet), baked into the frontend build; see the check step above
+          VITE_P2P_SIGNETCUSTOM_RELAYS: ${{ vars.P2P_RELAYS }}
+          VITE_P2P_SIGNETCUSTOM_ESPLORA_URL: ${{ vars.P2P_ESPLORA_URL }}
+          VITE_P2P_SIGNETCUSTOM_PROXY_URL: ${{ vars.P2P_PROXY_URL }}
+          VITE_P2P_SIGNETCUSTOM_FEE_ADDRESS: ${{ vars.P2P_FEE_ADDRESS }}
           # Skip rgb-lightning-node build on Windows since it's not supported
           BUILD_AND_RUN_RGB_LIGHTNING_NODE: ${{ matrix.platform != 'windows-latest' && 'true' || 'false' }}
         id: tauri_build
