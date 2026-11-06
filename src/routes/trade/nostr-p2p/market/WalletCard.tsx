@@ -29,6 +29,10 @@ interface Props {
   info: Info
   /** Opens the funds dialog on the given direction. */
   onOpenFunds?: (direction: FundsDirection) => void
+  /** Opens the coins (UTXO) manager. */
+  onManageCoins?: () => void
+  /** Opens the dialog that issues a new asset. */
+  onIssueAsset?: () => void
   /** Sync the wallet with the chain now. */
   onRefresh?: () => Promise<void>
   /** Look through the whole address chain for a deposit the quick sync did not find. */
@@ -43,6 +47,8 @@ export function WalletCard({
   balance,
   info,
   node,
+  onIssueAsset,
+  onManageCoins,
   onOpenFunds,
   onRefresh,
   onRescan,
@@ -208,6 +214,29 @@ export function WalletCard({
             <ArrowUpFromLine aria-hidden size={14} />
             {tr('wallet.withdraw', 'Withdraw')}
           </button>
+        </div>
+      )}
+
+      {(onManageCoins || onIssueAsset) && (
+        <div className="flex items-center gap-4 text-caption">
+          {onManageCoins && (
+            <button
+              className="text-content-secondary transition-colors hover:text-content-primary"
+              onClick={onManageCoins}
+              type="button"
+            >
+              {tr('wallet.coins', 'Manage coins')}
+            </button>
+          )}
+          {onIssueAsset && (
+            <button
+              className="text-content-secondary transition-colors hover:text-content-primary"
+              onClick={onIssueAsset}
+              type="button"
+            >
+              {tr('wallet.issue', 'Issue an asset')}
+            </button>
+          )}
         </div>
       )}
 

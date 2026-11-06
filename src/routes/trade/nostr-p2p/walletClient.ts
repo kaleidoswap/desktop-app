@@ -53,6 +53,8 @@ export function createP2pWalletClient(): RlnClient {
       return { ...out, batch_transfer_idx: 0 }
     },
 
+    createUtxos: (body: unknown) => post('/api/rln/createutxos', body),
+
     getAddress: async () => ({ address: (await marketApi.info()).address }),
 
     getAssetBalance: (body: { asset_id: string }) =>
@@ -87,6 +89,8 @@ export function createP2pWalletClient(): RlnClient {
         rgb_htlc_min_msat: 0,
       }
     },
+
+    issueAssetNIA: (body: unknown) => post('/api/rln/issueassetnia', body),
 
     listAssets: () => post('/api/rln/listassets'),
 

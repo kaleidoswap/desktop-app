@@ -20,12 +20,22 @@ interface Props {
   onOpenFunds?: (direction?: FundsDirection) => void
   /** The user's node balance, when the app has a node to read it from. */
   node?: NodeSummary
+  /** Opens the coins (UTXO) manager. */
+  onManageCoins?: () => void
+  /** Opens the dialog that issues a new asset. */
+  onIssueAsset?: () => void
   /** Restart the wallet with a full scan of its addresses. */
   onRescan?: () => Promise<void>
 }
 
 /** The market: order book, depth, a ticket for market and limit orders, and the user's activity. */
-export function Market({ onOpenFunds, node, onRescan }: Props) {
+export function Market({
+  onIssueAsset,
+  onManageCoins,
+  onOpenFunds,
+  node,
+  onRescan,
+}: Props) {
   const tr = useTr()
   const info = usePoll(marketApi.info, 30_000)
   const balance = usePoll(marketApi.balance, 4_000)
@@ -211,6 +221,8 @@ export function Market({ onOpenFunds, node, onRescan }: Props) {
             balance={balance.data}
             info={inf}
             node={node}
+            onIssueAsset={onIssueAsset}
+            onManageCoins={onManageCoins}
             onOpenFunds={onOpenFunds}
             onRefresh={syncWallet}
             onRescan={onRescan}

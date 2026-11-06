@@ -45,6 +45,23 @@ describe('the trading wallet as a node client', () => {
     })
   })
 
+  it('makes coins and issues assets through the daemon', async () => {
+    const calls = fake()
+    const c = createP2pWalletClient() as any
+    await c.createUtxos({ fee_rate: 2, num: 2, up_to: false })
+    await c.issueAssetNIA({
+      amounts: [100],
+      name: 'Test',
+      precision: 0,
+      ticker: 'TST',
+    })
+    expect(calls.map((x) => x.path)).toEqual([
+      '/api/rln/createutxos',
+      '/api/rln/issueassetnia',
+    ])
+    expect(calls[1].body).toMatchObject({ ticker: 'TST' })
+  })
+
   it('turns a node-style bitcoin send into the daemon’s', async () => {
     const calls = fake()
     const c = createP2pWalletClient() as any

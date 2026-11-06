@@ -5,6 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { useAppDispatch } from '../../../app/store/hooks'
 import { uiSliceActions } from '../../../slices/ui/ui.slice'
 import { setWalletOverride } from '../../../api/wallet-override'
+import { IssueAssetModal } from '../../../components/IssueAssetModal'
+import { UTXOManagementModal } from '../../../components/UTXOManagementModal'
+import { useSettings } from '../../../hooks/useSettings'
+import { marketApi } from './api'
 import { TradeNav } from '../../../components/Trade'
 import { Alert, Button } from '../../../components/ui'
 import { type P2pNetworkOption, walletAccountFor } from '../../../constants/p2p'
@@ -119,6 +123,9 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
 
   const [deposit, setDeposit] = useState(false)
   const [withdraw, setWithdraw] = useState(false)
+  const [coins, setCoins] = useState(false)
+  const [issue, setIssue] = useState(false)
+  const { bitcoinUnit } = useSettings()
   const [nodeTransfer, setNodeTransfer] = useState<Direction | null>(null)
   const [recovery, setRecovery] = useState(false)
 
@@ -368,6 +375,8 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
                 ? { btc: nodeBtc.data?.vanilla.spendable ?? 0, connected: true }
                 : undefined
             }
+            onIssueAsset={standalone ? () => setIssue(true) : undefined}
+            onManageCoins={standalone ? () => setCoins(true) : undefined}
             onOpenFunds={(d) =>
               d === 'toNode'
                 ? setWithdraw(true)
@@ -382,6 +391,18 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
                   : setDeposit(true)
             }
             onRescan={rescan}
+          />
+        )}
+        {coins && (
+          <UTXOManagementModal
+            bitcoinUnit={bitcoinUnit}
+            onClose={() => setCoins(false)}
+          />
+        )}
+        {issue && (
+          <IssueAssetModal
+            onClose={() => setIssue(false)}
+            onSuccess={() => void marketApi.refresh()}
           />
         )}
         <DepositModal
