@@ -34,7 +34,8 @@ pub fn docker() -> Command {
 
 /// The image to run, or why there is none. `KALEIDO_P2PD_IMAGE` overrides the pinned one in development.
 pub fn image() -> Result<String, String> {
-    let named = std::env::var("KALEIDO_P2PD_IMAGE").unwrap_or_else(|_| IMAGE_FILE.trim().to_string());
+    let named =
+        std::env::var("KALEIDO_P2PD_IMAGE").unwrap_or_else(|_| IMAGE_FILE.trim().to_string());
     pinned(&named)
 }
 
@@ -58,13 +59,24 @@ pub enum Engine {
 /// Whether Docker can run a container right now. `docker info` talks to the engine, so it fails
 /// both when the program is missing and when the engine is down; a hung engine is cut off.
 pub fn engine() -> Engine {
-    let Ok(mut child) = docker().args(["info", "--format", "{{.ServerVersion}}"]).stdout(Stdio::null()).stderr(Stdio::null()).spawn() else {
+    let Ok(mut child) = docker()
+        .args(["info", "--format", "{{.ServerVersion}}"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+    else {
         return Engine::Missing;
     };
     let deadline = Instant::now() + Duration::from_secs(6);
     loop {
         match child.try_wait() {
-            Ok(Some(status)) => return if status.success() { Engine::Ready } else { Engine::Stopped },
+            Ok(Some(status)) => {
+                return if status.success() {
+                    Engine::Ready
+                } else {
+                    Engine::Stopped
+                }
+            }
             Ok(None) if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(100)),
             _ => {
                 let _ = child.kill();
@@ -86,13 +98,28 @@ pub struct Availability {
 
 pub fn decide(native: bool, engine: Engine, image_ok: bool) -> Availability {
     if native {
-        return Availability { backend: Some("native"), hint: None };
+        return Availability {
+            backend: Some("native"),
+            hint: None,
+        };
     }
     match (engine, image_ok) {
-        (Engine::Ready, true) => Availability { backend: Some("docker"), hint: None },
-        (Engine::Ready, false) => Availability { backend: None, hint: Some("image_unpublished") },
-        (Engine::Stopped, _) => Availability { backend: None, hint: Some("docker_stopped") },
-        (Engine::Missing, _) => Availability { backend: None, hint: Some("docker_missing") },
+        (Engine::Ready, true) => Availability {
+            backend: Some("docker"),
+            hint: None,
+        },
+        (Engine::Ready, false) => Availability {
+            backend: None,
+            hint: Some("image_unpublished"),
+        },
+        (Engine::Stopped, _) => Availability {
+            backend: None,
+            hint: Some("docker_stopped"),
+        },
+        (Engine::Missing, _) => Availability {
+            backend: None,
+            hint: Some("docker_missing"),
+        },
     }
 }
 
@@ -184,27 +211,46 @@ pub fn passphrase(account: &str) -> Result<String, String> {
 
 /// Pull the image if it is not here yet. The first start downloads it, which takes a while.
 pub fn ensure_image(image: &str) -> Result<(), String> {
-    let have = docker().args(["image", "inspect", image]).stdout(Stdio::null()).stderr(Stdio::null()).status().is_ok_and(|s| s.success());
+    let have = docker()
+        .args(["image", "inspect", image])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok_and(|s| s.success());
     if have {
         return Ok(());
     }
     log::info!("[p2p] pulling {image}");
-    let out = docker().args(["pull", "--quiet", image]).output().map_err(|e| format!("could not run docker: {e}"))?;
+    let out = docker()
+        .args(["pull", "--quiet", image])
+        .output()
+        .map_err(|e| format!("could not run docker: {e}"))?;
     if out.status.success() {
         Ok(())
     } else {
-        Err(format!("could not pull the P2P daemon image: {}", String::from_utf8_lossy(&out.stderr).trim()))
+        Err(format!(
+            "could not pull the P2P daemon image: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ))
     }
 }
 
 /// A container of this name left over from an earlier run holds the name and the wallet's volume.
 pub fn remove_container(account: &str) {
-    let _ = docker().args(["rm", "-f", &container_name(account)]).stdout(Stdio::null()).stderr(Stdio::null()).status();
+    let _ = docker()
+        .args(["rm", "-f", &container_name(account)])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
 }
 
 /// Ask the container to leave: the daemon takes its offers off the market first.
 pub fn stop_container(name: &str) {
-    let _ = docker().args(["stop", "-t", "8", name]).stdout(Stdio::null()).stderr(Stdio::null()).status();
+    let _ = docker()
+        .args(["stop", "-t", "8", name])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
 }
 
 #[cfg(test)]
@@ -220,7 +266,11 @@ mod tests {
 
     #[test]
     fn the_container_publishes_its_port_on_loopback_only_and_keeps_the_wallet_in_a_volume() {
-        let a = run_args("wallet-signetcustom", "kaleidoswap/p2pd:1@sha256:abc", 51234);
+        let a = run_args(
+            "wallet-signetcustom",
+            "kaleidoswap/p2pd:1@sha256:abc",
+            51234,
+        );
         assert!(a.contains(&"127.0.0.1:51234:51234".to_string()));
         assert!(a.contains(&"kaleido-p2pd-wallet-signetcustom-data:/data".to_string()));
         assert_eq!(a.last().unwrap(), "kaleidoswap/p2pd:1@sha256:abc");
@@ -229,10 +279,18 @@ mod tests {
 
     #[test]
     fn secrets_go_by_name_never_by_value() {
-        let args = [run_args("a", "img", 1), daemon_args(&cfg(), 1)].concat().join(" ");
+        let args = [run_args("a", "img", 1), daemon_args(&cfg(), 1)]
+            .concat()
+            .join(" ");
         assert!(args.contains("-e P2PD_API_TOKEN") && args.contains("-e P2PD_PASSPHRASE"));
-        assert!(!args.contains("abandon"), "the recovery phrase is not an argument");
-        assert!(!args.contains("P2PD_API_TOKEN="), "no value is given with the name");
+        assert!(
+            !args.contains("abandon"),
+            "the recovery phrase is not an argument"
+        );
+        assert!(
+            !args.contains("P2PD_API_TOKEN="),
+            "no value is given with the name"
+        );
     }
 
     #[test]
@@ -245,14 +303,20 @@ mod tests {
         assert_eq!(at("--keystore"), Some("encrypted"));
         assert_eq!(a.iter().filter(|x| *x == "--relay").count(), 2);
         assert!(a.contains(&"--seed-stdin".to_string()));
-        assert!(!a.iter().any(|x| x.contains("/host/only.json")), "a path on the host means nothing in the container");
+        assert!(
+            !a.iter().any(|x| x.contains("/host/only.json")),
+            "a path on the host means nothing in the container"
+        );
     }
 
     #[test]
     fn an_unpublished_image_is_refused_with_a_reason() {
         assert!(pinned("kaleidoswap/p2pd:unpublished").is_err());
         assert!(pinned("").is_err());
-        assert_eq!(pinned("kaleidoswap/p2pd:1@sha256:abc").unwrap(), "kaleidoswap/p2pd:1@sha256:abc");
+        assert_eq!(
+            pinned("kaleidoswap/p2pd:1@sha256:abc").unwrap(),
+            "kaleidoswap/p2pd:1@sha256:abc"
+        );
     }
 
     #[test]
@@ -260,8 +324,17 @@ mod tests {
         let native = decide(true, Engine::Missing, false);
         assert_eq!(native.backend, Some("native"));
         assert_eq!(decide(false, Engine::Ready, true).backend, Some("docker"));
-        assert_eq!(decide(false, Engine::Ready, false).hint, Some("image_unpublished"));
-        assert_eq!(decide(false, Engine::Stopped, true).hint, Some("docker_stopped"));
-        assert_eq!(decide(false, Engine::Missing, true).hint, Some("docker_missing"));
+        assert_eq!(
+            decide(false, Engine::Ready, false).hint,
+            Some("image_unpublished")
+        );
+        assert_eq!(
+            decide(false, Engine::Stopped, true).hint,
+            Some("docker_stopped")
+        );
+        assert_eq!(
+            decide(false, Engine::Missing, true).hint,
+            Some("docker_missing")
+        );
     }
 }

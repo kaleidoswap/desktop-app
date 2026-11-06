@@ -124,11 +124,16 @@ pub fn route_allowed(method: &str, path: &str) -> bool {
     }
     // the market's own ids: an order id, or an RGB contract id (`rgb:` and dashes, `~` and `_`)
     let named = |prefix: &str, ok: fn(char) -> bool| {
-        path.strip_prefix(prefix).is_some_and(|id| !id.is_empty() && id.len() <= 128 && id.chars().all(ok))
+        path.strip_prefix(prefix)
+            .is_some_and(|id| !id.is_empty() && id.len() <= 128 && id.chars().all(ok))
     };
     match method {
-        "DELETE" => named("/api/orders/", |c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_')),
-        "GET" => named("/api/asset/", |c| c.is_ascii_alphanumeric() || matches!(c, ':' | '-' | '_' | '~')),
+        "DELETE" => named("/api/orders/", |c| {
+            c.is_ascii_alphanumeric() || matches!(c, '-' | '_')
+        }),
+        "GET" => named("/api/asset/", |c| {
+            c.is_ascii_alphanumeric() || matches!(c, ':' | '-' | '_' | '~')
+        }),
         _ => false,
     }
 }
@@ -173,11 +178,19 @@ impl P2pProcess {
     pub fn status(&self) -> P2pStatus {
         let running = Self::alive(&mut lock(&self.child));
         let port = if running { *lock(&self.port) } else { None };
-        P2pStatus { running, port, url: port.map(|p| format!("http://127.0.0.1:{p}")) }
+        P2pStatus {
+            running,
+            port,
+            url: port.map(|p| format!("http://127.0.0.1:{p}")),
+        }
     }
 
     /// Start the daemon if it is not running and wait until it answers. Idempotent.
-    pub fn ensure_started(&self, app: &AppHandle, cfg: &P2pStartConfig) -> Result<P2pStatus, String> {
+    pub fn ensure_started(
+        &self,
+        app: &AppHandle,
+        cfg: &P2pStartConfig,
+    ) -> Result<P2pStatus, String> {
         let mut child_guard = lock(&self.child);
         if Self::alive(&mut child_guard) {
             drop(child_guard);
@@ -231,7 +244,11 @@ impl P2pProcess {
             }
             #[cfg(target_os = "windows")]
             cmd.creation_flags(CREATE_NO_WINDOW);
-            log::info!("[p2p] starting {program:?} on 127.0.0.1:{port} for {} ({})", cfg.account, cfg.network);
+            log::info!(
+                "[p2p] starting {program:?} on 127.0.0.1:{port} for {} ({})",
+                cfg.account,
+                cfg.network
+            );
             (cmd, None)
         } else {
             match p2p_docker::engine() {
@@ -248,16 +265,33 @@ impl P2pProcess {
                 .env("P2PD_PASSPHRASE", &passphrase)
                 .args(p2p_docker::run_args(&cfg.account, &image, port))
                 .args(p2p_docker::daemon_args(cfg, port));
-            log::info!("[p2p] starting {image} in Docker on 127.0.0.1:{port} for {} ({})", cfg.account, cfg.network);
+            log::info!(
+                "[p2p] starting {image} in Docker on 127.0.0.1:{port} for {} ({})",
+                cfg.account,
+                cfg.network
+            );
             (cmd, Some(p2p_docker::container_name(&cfg.account)))
         };
-        cmd.stdin(if cfg.seed_mnemonic.is_some() { Stdio::piped() } else { Stdio::null() }).stdout(Stdio::piped()).stderr(Stdio::piped());
-        let mut child = cmd.spawn().map_err(|e| format!("could not start the P2P daemon: {e}"))?;
+        cmd.stdin(if cfg.seed_mnemonic.is_some() {
+            Stdio::piped()
+        } else {
+            Stdio::null()
+        })
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+        let mut child = cmd
+            .spawn()
+            .map_err(|e| format!("could not start the P2P daemon: {e}"))?;
         if let Some(Secret(phrase)) = &cfg.seed_mnemonic {
             use std::io::Write;
-            let mut stdin = child.stdin.take().ok_or("could not reach the daemon's stdin")?;
+            let mut stdin = child
+                .stdin
+                .take()
+                .ok_or("could not reach the daemon's stdin")?;
             let body = serde_json::json!({ "mnemonic": phrase }).to_string();
-            stdin.write_all(body.as_bytes()).map_err(|e| format!("could not hand the recovery phrase to the daemon: {e}"))?;
+            stdin
+                .write_all(body.as_bytes())
+                .map_err(|e| format!("could not hand the recovery phrase to the daemon: {e}"))?;
             // closing stdin is what tells the daemon the phrase is complete
         }
         if container.is_none() {
@@ -275,7 +309,12 @@ impl P2pProcess {
 
         // the daemon answers once its wallet is up and it is connected to the relays
         // a full scan of the addresses takes much longer than a normal start
-        let deadline = Instant::now() + if cfg.rescan { STARTUP_TIMEOUT * 6 } else { STARTUP_TIMEOUT };
+        let deadline = Instant::now()
+            + if cfg.rescan {
+                STARTUP_TIMEOUT * 6
+            } else {
+                STARTUP_TIMEOUT
+            };
         loop {
             if daemon_answers(port, &token) {
                 return Ok(self.status());
@@ -283,7 +322,14 @@ impl P2pProcess {
             if !Self::alive(&mut lock(&self.child)) {
                 // give the output threads a moment to hand over the last lines
                 thread::sleep(Duration::from_millis(200));
-                let why = lock(&self.tail).iter().rev().take(4).rev().cloned().collect::<Vec<_>>().join(" / ");
+                let why = lock(&self.tail)
+                    .iter()
+                    .rev()
+                    .take(4)
+                    .rev()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(" / ");
                 return Err(if why.is_empty() {
                     "the P2P daemon exited while starting (a first start with the OS keychain may ask for permission)".into()
                 } else {
@@ -300,12 +346,19 @@ impl P2pProcess {
 
     /// Call one of the daemon's allowed endpoints. The daemon refuses requests that carry a browser
     /// `Origin`; this one does not, because it is made from here.
-    pub fn request(&self, method: &str, path: &str, body: Option<serde_json::Value>) -> Result<serde_json::Value, String> {
+    pub fn request(
+        &self,
+        method: &str,
+        path: &str,
+        body: Option<serde_json::Value>,
+    ) -> Result<serde_json::Value, String> {
         if !route_allowed(method, path) {
             return Err(format!("{method} {path} is not available from the app"));
         }
         let port = self.status().port.ok_or("the P2P daemon is not running")?;
-        let token = lock(&self.token).clone().ok_or("the P2P daemon is not running")?;
+        let token = lock(&self.token)
+            .clone()
+            .ok_or("the P2P daemon is not running")?;
         let client = reqwest::blocking::Client::builder()
             .timeout(Duration::from_secs(120))
             .build()
@@ -313,27 +366,38 @@ impl P2pProcess {
         let url = format!("http://127.0.0.1:{port}{path}");
         let req = match method {
             "GET" => client.get(url),
-            "POST" => client.post(url).json(&body.unwrap_or(serde_json::Value::Null)),
+            "POST" => client
+                .post(url)
+                .json(&body.unwrap_or(serde_json::Value::Null)),
             "DELETE" => client.delete(url),
             other => return Err(format!("unsupported method {other}")),
         }
         .bearer_auth(token);
-        let res = req.send().map_err(|e| format!("the P2P daemon did not answer: {e}"))?;
+        let res = req
+            .send()
+            .map_err(|e| format!("the P2P daemon did not answer: {e}"))?;
         let status = res.status();
         let text = res.text().map_err(|e| e.to_string())?;
         if !status.is_success() {
-            return Err(if text.is_empty() { status.to_string() } else { text });
+            return Err(if text.is_empty() {
+                status.to_string()
+            } else {
+                text
+            });
         }
         if text.is_empty() {
             return Ok(serde_json::Value::Null);
         }
-        serde_json::from_str(&text).map_err(|e| format!("unexpected answer from the P2P daemon: {e}"))
+        serde_json::from_str(&text)
+            .map_err(|e| format!("unexpected answer from the P2P daemon: {e}"))
     }
 
     /// Stop the daemon. It is asked to leave (SIGTERM) so that it withdraws its open offers from
     /// the relays first; if it has not gone after a few seconds it is killed.
     pub fn stop(&self) {
-        let Some(mut child) = lock(&self.child).take() else { return };
+        let Some(mut child) = lock(&self.child).take() else {
+            return;
+        };
         *lock(&self.port) = None;
         *lock(&self.token) = None;
         if let Some(name) = lock(&self.container).take() {
@@ -362,11 +426,17 @@ impl P2pProcess {
 }
 
 fn account_ok(account: &str) -> bool {
-    !account.is_empty() && account.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_'))
+    !account.is_empty()
+        && account
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_'))
 }
 
 fn networks_ok(network: &str) -> bool {
-    matches!(network, "regtest" | "signet" | "signetcustom" | "testnet" | "testnet4" | "mainnet")
+    matches!(
+        network,
+        "regtest" | "signet" | "signetcustom" | "testnet" | "testnet4" | "mainnet"
+    )
 }
 
 /// A new recovery phrase from the daemon's own generator, so the app and the daemon agree on what a
@@ -378,22 +448,44 @@ pub fn generate_seed(app: &AppHandle, network: &str) -> Result<String, String> {
     }
     let program = resolve_binary(app);
     let mut cmd = Command::new(&program);
-    cmd.args(["--generate-seed", "--network", network, "--fee-address", "unused"]).stdin(Stdio::null());
+    cmd.args([
+        "--generate-seed",
+        "--network",
+        network,
+        "--fee-address",
+        "unused",
+    ])
+    .stdin(Stdio::null());
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);
-    let out = cmd.output().map_err(|e| format!("could not run the P2P daemon ({program:?}): {e}"))?;
+    let out = cmd
+        .output()
+        .map_err(|e| format!("could not run the P2P daemon ({program:?}): {e}"))?;
     if !out.status.success() {
-        return Err(format!("the P2P daemon could not make a phrase: {}", String::from_utf8_lossy(&out.stderr).trim()));
+        return Err(format!(
+            "the P2P daemon could not make a phrase: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
     }
-    let v: serde_json::Value = serde_json::from_slice(&out.stdout).map_err(|e| format!("unexpected answer from the P2P daemon: {e}"))?;
-    v.get("mnemonic").and_then(|m| m.as_str()).map(str::to_string).ok_or_else(|| "the P2P daemon sent no phrase".into())
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout)
+        .map_err(|e| format!("unexpected answer from the P2P daemon: {e}"))?;
+    v.get("mnemonic")
+        .and_then(|m| m.as_str())
+        .map(str::to_string)
+        .ok_or_else(|| "the P2P daemon sent no phrase".into())
 }
 
 fn profile_path(app: &AppHandle, account: &str) -> Result<PathBuf, String> {
     if !account_ok(account) {
         return Err("the account name must be letters, digits, - or _".into());
     }
-    Ok(app.path().app_data_dir().map_err(|e| format!("no app data dir: {e}"))?.join("p2pd").join(account).join("profile.json"))
+    Ok(app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("no app data dir: {e}"))?
+        .join("p2pd")
+        .join(account)
+        .join("profile.json"))
 }
 
 /// Whether this trading wallet was set up here, and whether its phrase was confirmed. The app keeps
@@ -407,7 +499,11 @@ pub fn profile_get(app: &AppHandle, account: &str) -> Result<Option<serde_json::
     }
 }
 
-pub fn profile_set(app: &AppHandle, account: &str, profile: &serde_json::Value) -> Result<(), String> {
+pub fn profile_set(
+    app: &AppHandle,
+    account: &str,
+    profile: &serde_json::Value,
+) -> Result<(), String> {
     let path = profile_path(app, account)?;
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
@@ -422,7 +518,11 @@ fn validate(cfg: &P2pStartConfig) -> Result<(), String> {
     if !networks_ok(&cfg.network) {
         return Err(format!("unknown network {:?}", cfg.network));
     }
-    if cfg.relays.is_empty() || cfg.fee_address.is_empty() || cfg.indexer_url.is_empty() || cfg.proxy_url.is_empty() {
+    if cfg.relays.is_empty()
+        || cfg.fee_address.is_empty()
+        || cfg.indexer_url.is_empty()
+        || cfg.proxy_url.is_empty()
+    {
         return Err("relays, indexer, proxy and fee address are all required".into());
     }
     Ok(())
@@ -430,22 +530,36 @@ fn validate(cfg: &P2pStartConfig) -> Result<(), String> {
 
 fn free_port() -> Result<u16, String> {
     let listener = TcpListener::bind(("127.0.0.1", 0)).map_err(|e| format!("no free port: {e}"))?;
-    listener.local_addr().map(|a| a.port()).map_err(|e| e.to_string())
+    listener
+        .local_addr()
+        .map(|a| a.port())
+        .map_err(|e| e.to_string())
 }
 
 /// Where the bundler may have put the daemon. `../bin/p2pd` lands under `_up_/bin` on macOS and
 /// Linux and next to the other resources on Windows, like the RGB node.
 fn binary_candidates(resources: &Path, exe: &str) -> Vec<PathBuf> {
-    vec![resources.join("_up_").join("bin").join(exe), resources.join("bin").join(exe), resources.join(exe)]
+    vec![
+        resources.join("_up_").join("bin").join(exe),
+        resources.join("bin").join(exe),
+        resources.join(exe),
+    ]
 }
 
 fn resolve_binary(app: &AppHandle) -> PathBuf {
     if let Some(path) = std::env::var_os("KALEIDO_P2PD_BIN") {
         return PathBuf::from(path);
     }
-    let exe = if cfg!(target_os = "windows") { "p2pd.exe" } else { "p2pd" };
+    let exe = if cfg!(target_os = "windows") {
+        "p2pd.exe"
+    } else {
+        "p2pd"
+    };
     if let Ok(res) = app.path().resource_dir() {
-        if let Some(bundled) = binary_candidates(&res, exe).into_iter().find(|p| p.is_file()) {
+        if let Some(bundled) = binary_candidates(&res, exe)
+            .into_iter()
+            .find(|p| p.is_file())
+        {
             return bundled;
         }
     }
@@ -466,7 +580,11 @@ fn daemon_answers(port: u16, token: &str) -> bool {
     reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(2))
         .build()
-        .and_then(|c| c.get(format!("http://127.0.0.1:{port}/api/info")).bearer_auth(token).send())
+        .and_then(|c| {
+            c.get(format!("http://127.0.0.1:{port}/api/info"))
+                .bearer_auth(token)
+                .send()
+        })
         .is_ok_and(|r| r.status().is_success())
 }
 
@@ -476,11 +594,19 @@ fn daemon_answers(port: u16, token: &str) -> bool {
 pub fn availability(app: &AppHandle) -> p2p_docker::Availability {
     let native = runnable(&resolve_binary(app), std::env::var_os("PATH").as_deref());
     // asking Docker takes a moment, so only when there is no binary
-    let engine = if native { p2p_docker::Engine::Missing } else { p2p_docker::engine() };
+    let engine = if native {
+        p2p_docker::Engine::Missing
+    } else {
+        p2p_docker::engine()
+    };
     p2p_docker::decide(native, engine, p2p_docker::image().is_ok())
 }
 
-fn pipe_to_log(stream: Option<impl std::io::Read + Send + 'static>, tag: &'static str, tail: Arc<Mutex<VecDeque<String>>>) {
+fn pipe_to_log(
+    stream: Option<impl std::io::Read + Send + 'static>,
+    tag: &'static str,
+    tail: Arc<Mutex<VecDeque<String>>>,
+) {
     let Some(stream) = stream else { return };
     thread::spawn(move || {
         for line in BufReader::new(stream).lines().map_while(Result::ok) {
@@ -501,7 +627,12 @@ fn pipe_to_log(stream: Option<impl std::io::Read + Send + 'static>, tag: &'stati
 /// process that is still a `p2pd` is touched: a pid that was reused by something else is left alone.
 #[cfg(unix)]
 fn reap_orphan(pid_file: &Path) {
-    let Some(pid) = std::fs::read_to_string(pid_file).ok().and_then(|t| t.trim().parse::<i32>().ok()) else { return };
+    let Some(pid) = std::fs::read_to_string(pid_file)
+        .ok()
+        .and_then(|t| t.trim().parse::<i32>().ok())
+    else {
+        return;
+    };
     let is_p2pd = Command::new("ps")
         .args(["-p", &pid.to_string(), "-o", "command="])
         .output()
@@ -511,7 +642,12 @@ fn reap_orphan(pid_file: &Path) {
         // SAFETY: `kill` only signals the pid we just confirmed is a p2pd.
         unsafe { libc::kill(pid, libc::SIGTERM) };
         let deadline = Instant::now() + STOP_GRACE;
-        while Instant::now() < deadline && Command::new("kill").args(["-0", &pid.to_string()]).output().is_ok_and(|o| o.status.success()) {
+        while Instant::now() < deadline
+            && Command::new("kill")
+                .args(["-0", &pid.to_string()])
+                .output()
+                .is_ok_and(|o| o.status.success())
+        {
             thread::sleep(Duration::from_millis(200));
         }
         // SAFETY: as above; a no-op if it is already gone.
@@ -561,21 +697,40 @@ mod tests {
     #[test]
     fn an_account_name_cannot_escape_the_data_directory() {
         for bad in ["", "../x", "a/b", "a b", "a;b"] {
-            let c = P2pStartConfig { account: bad.into(), ..cfg() };
+            let c = P2pStartConfig {
+                account: bad.into(),
+                ..cfg()
+            };
             assert!(validate(&c).is_err(), "{bad:?}");
         }
     }
 
     #[test]
     fn mutinynet_is_its_own_network_not_signet() {
-        assert!(validate(&P2pStartConfig { network: "signetcustom".into(), ..cfg() }).is_ok());
+        assert!(validate(&P2pStartConfig {
+            network: "signetcustom".into(),
+            ..cfg()
+        })
+        .is_ok());
     }
 
     #[test]
     fn an_unknown_network_or_a_missing_piece_is_refused() {
-        assert!(validate(&P2pStartConfig { network: "moon".into(), ..cfg() }).is_err());
-        assert!(validate(&P2pStartConfig { relays: vec![], ..cfg() }).is_err());
-        assert!(validate(&P2pStartConfig { fee_address: String::new(), ..cfg() }).is_err());
+        assert!(validate(&P2pStartConfig {
+            network: "moon".into(),
+            ..cfg()
+        })
+        .is_err());
+        assert!(validate(&P2pStartConfig {
+            relays: vec![],
+            ..cfg()
+        })
+        .is_err());
+        assert!(validate(&P2pStartConfig {
+            fee_address: String::new(),
+            ..cfg()
+        })
+        .is_err());
     }
 
     #[test]
@@ -589,7 +744,18 @@ mod tests {
 
     #[test]
     fn only_the_market_routes_are_reachable_from_the_app() {
-        for (m, p) in [("GET", "/api/info"), ("GET", "/api/book"), ("POST", "/api/take"), ("POST", "/api/orders"), ("POST", "/api/btc/send"), ("DELETE", "/api/orders/aB3-_9"), ("GET", "/api/asset/rgb:4bU8bbHe-171EgfO-0q6Hy8Q-_xczpHF-56GrDjt-KNMyzCA")] {
+        for (m, p) in [
+            ("GET", "/api/info"),
+            ("GET", "/api/book"),
+            ("POST", "/api/take"),
+            ("POST", "/api/orders"),
+            ("POST", "/api/btc/send"),
+            ("DELETE", "/api/orders/aB3-_9"),
+            (
+                "GET",
+                "/api/asset/rgb:4bU8bbHe-171EgfO-0q6Hy8Q-_xczpHF-56GrDjt-KNMyzCA",
+            ),
+        ] {
             assert!(route_allowed(m, p), "{m} {p}");
         }
         for (m, p) in [
@@ -617,7 +783,9 @@ mod tests {
 
     #[test]
     fn a_request_to_a_stopped_daemon_is_an_error_not_a_hang() {
-        let err = P2pProcess::new().request("GET", "/api/info", None).unwrap_err();
+        let err = P2pProcess::new()
+            .request("GET", "/api/info", None)
+            .unwrap_err();
         assert!(err.contains("not running"), "{err}");
     }
 
@@ -636,9 +804,18 @@ mod tests {
         let exe = dir.join("p2pd-test-bin");
         std::fs::write(&exe, b"").unwrap();
         assert!(runnable(&exe, None), "a file path");
-        assert!(!runnable(&dir.join("missing"), None), "a path with nothing at the end");
-        assert!(runnable(Path::new("p2pd-test-bin"), Some(dir.as_os_str())), "a bare name on the PATH");
-        assert!(!runnable(Path::new("p2pd-test-bin"), None), "a bare name with no PATH");
+        assert!(
+            !runnable(&dir.join("missing"), None),
+            "a path with nothing at the end"
+        );
+        assert!(
+            runnable(Path::new("p2pd-test-bin"), Some(dir.as_os_str())),
+            "a bare name on the PATH"
+        );
+        assert!(
+            !runnable(Path::new("p2pd-test-bin"), None),
+            "a bare name with no PATH"
+        );
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -647,7 +824,10 @@ mod tests {
         let json = r#"{"account":"a","network":"signet","indexer_url":"i","proxy_url":"p","relays":["r"],"fee_address":"f","seed_mnemonic":"abandon ability able"}"#;
         let cfg: P2pStartConfig = serde_json::from_str(json).unwrap();
         assert!(cfg.seed_mnemonic.is_some());
-        assert!(!format!("{cfg:?}").contains("abandon"), "a logged config must not leak the phrase");
+        assert!(
+            !format!("{cfg:?}").contains("abandon"),
+            "a logged config must not leak the phrase"
+        );
         assert!(route_allowed("POST", "/api/recovery-phrase"));
         assert!(!route_allowed("GET", "/api/recovery-phrase"));
     }

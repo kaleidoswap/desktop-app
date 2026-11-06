@@ -45,7 +45,31 @@
       "mind": {
         "title": "Mind만",
         "desc": "로컬 AI 두뇌만. 노드가 필요 없습니다."
+      },
+      "p2p": {
+        "title": "P2P",
+        "desc": "Trade RGB assets peer to peer with a wallet of its own. No node required."
       }
+    },
+    "groups": {
+      "noNode": "Start without a node",
+      "node": "Use an RGB Lightning node"
+    },
+    "cards": {
+      "p2p": {
+        "title": "P2P Wallet",
+        "body": "Trade RGB assets directly with other people, from a wallet of its own kept with a recovery phrase."
+      },
+      "mind": {
+        "body": "Run local AI models on this desktop. You can connect a node any time later."
+      },
+      "remote": "Connect a node",
+      "local": "Run a node here"
+    },
+    "recommended": "Recommended",
+    "p2pCard": {
+      "title": "P2P Wallet",
+      "body": "Trade RGB assets directly with other people. Its own wallet, kept with a recovery phrase. No node needed."
     }
   },
   "navigation": {
@@ -2176,17 +2200,11 @@
       },
       "colored": {
         "title": "컬러된 UTXO",
-        "bullets": [
-          "RGB Lightning 채널 개설",
-          "온체인 RGB 자산 전송"
-        ]
+        "bullets": ["RGB Lightning 채널 개설", "온체인 RGB 자산 전송"]
       },
       "normal": {
         "title": "일반 UTXO",
-        "bullets": [
-          "Bitcoin Lightning 채널 개설",
-          "일반 거래"
-        ]
+        "bullets": ["Bitcoin Lightning 채널 개설", "일반 거래"]
       },
       "countLabel": "{{count}}개 UTXO"
     },
@@ -2337,12 +2355,7 @@
     }
   },
   "updaterModal": {
-    "fileSizes": [
-      "Bytes",
-      "KB",
-      "MB",
-      "GB"
-    ],
+    "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
       "timeout": "다운로드가 더 이상 진행되지 않습니다. 인터넷 연결을 확인하고 다시 시도하세요.",

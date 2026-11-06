@@ -45,7 +45,31 @@
       "mind": {
         "title": "Mind uniquement",
         "desc": "Uniquement le cerveau IA local. Aucun nœud requis."
+      },
+      "p2p": {
+        "title": "P2P",
+        "desc": "Trade RGB assets peer to peer with a wallet of its own. No node required."
       }
+    },
+    "groups": {
+      "noNode": "Start without a node",
+      "node": "Use an RGB Lightning node"
+    },
+    "cards": {
+      "p2p": {
+        "title": "P2P Wallet",
+        "body": "Trade RGB assets directly with other people, from a wallet of its own kept with a recovery phrase."
+      },
+      "mind": {
+        "body": "Run local AI models on this desktop. You can connect a node any time later."
+      },
+      "remote": "Connect a node",
+      "local": "Run a node here"
+    },
+    "recommended": "Recommended",
+    "p2pCard": {
+      "title": "P2P Wallet",
+      "body": "Trade RGB assets directly with other people. Its own wallet, kept with a recovery phrase. No node needed."
     }
   },
   "navigation": {
@@ -2337,12 +2361,7 @@
     }
   },
   "updaterModal": {
-    "fileSizes": [
-      "Octets",
-      "Ko",
-      "Mo",
-      "Go"
-    ],
+    "fileSizes": ["Octets", "Ko", "Mo", "Go"],
     "fileSizeZero": "0 octet",
     "errors": {
       "timeout": "Le téléchargement ne progresse plus. Vérifiez votre connexion internet et réessayez.",

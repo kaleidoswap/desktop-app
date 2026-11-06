@@ -45,7 +45,31 @@
       "mind": {
         "title": "Nur Mind",
         "desc": "Nur das lokale KI-Brain. Kein Node erforderlich."
+      },
+      "p2p": {
+        "title": "P2P",
+        "desc": "Trade RGB assets peer to peer with a wallet of its own. No node required."
       }
+    },
+    "groups": {
+      "noNode": "Start without a node",
+      "node": "Use an RGB Lightning node"
+    },
+    "cards": {
+      "p2p": {
+        "title": "P2P Wallet",
+        "body": "Trade RGB assets directly with other people, from a wallet of its own kept with a recovery phrase."
+      },
+      "mind": {
+        "body": "Run local AI models on this desktop. You can connect a node any time later."
+      },
+      "remote": "Connect a node",
+      "local": "Run a node here"
+    },
+    "recommended": "Recommended",
+    "p2pCard": {
+      "title": "P2P Wallet",
+      "body": "Trade RGB assets directly with other people. Its own wallet, kept with a recovery phrase. No node needed."
     }
   },
   "navigation": {
@@ -2176,17 +2200,11 @@
       },
       "colored": {
         "title": "Gefärbte UTXOs",
-        "bullets": [
-          "RGB-Lightning-Kanäle öffnen",
-          "RGB-Assets on-chain senden"
-        ]
+        "bullets": ["RGB-Lightning-Kanäle öffnen", "RGB-Assets on-chain senden"]
       },
       "normal": {
         "title": "Normale UTXOs",
-        "bullets": [
-          "Bitcoin-Lightning-Kanäle öffnen",
-          "Reguläre Transaktionen"
-        ]
+        "bullets": ["Bitcoin-Lightning-Kanäle öffnen", "Reguläre Transaktionen"]
       },
       "countLabel": "{{count}} UTXOs"
     },
@@ -2337,12 +2355,7 @@
     }
   },
   "updaterModal": {
-    "fileSizes": [
-      "Bytes",
-      "KB",
-      "MB",
-      "GB"
-    ],
+    "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
       "timeout": "Der Download kommt nicht mehr voran. Prüfe deine Internetverbindung und versuche es erneut.",

@@ -15,8 +15,10 @@ mod node_backend;
 mod nwc;
 mod p2p;
 mod p2p_docker;
-mod secret_store;
+// kept as it is on main; only the daemon container's passphrase uses it here
 mod rgb_node;
+#[allow(dead_code)]
+mod secret_store;
 mod tray;
 
 use dca::{DcaOrderInfo, DcaScheduler};
@@ -53,7 +55,11 @@ fn mind_send(
 // Its UI is served by the daemon itself on a local port (see p2p.rs).
 
 #[tauri::command]
-async fn p2p_start(app: AppHandle, p2p: State<'_, Arc<P2pProcess>>, config: P2pStartConfig) -> Result<P2pStatus, String> {
+async fn p2p_start(
+    app: AppHandle,
+    p2p: State<'_, Arc<P2pProcess>>,
+    config: P2pStartConfig,
+) -> Result<P2pStatus, String> {
     let p2p = Arc::clone(&*p2p);
     tauri::async_runtime::spawn_blocking(move || p2p.ensure_started(&app, &config))
         .await
@@ -95,7 +101,11 @@ fn p2p_profile_get(app: AppHandle, account: String) -> Result<Option<serde_json:
 }
 
 #[tauri::command]
-fn p2p_profile_set(app: AppHandle, account: String, profile: serde_json::Value) -> Result<(), String> {
+fn p2p_profile_set(
+    app: AppHandle,
+    account: String,
+    profile: serde_json::Value,
+) -> Result<(), String> {
     p2p::profile_set(&app, &account, &profile)
 }
 
