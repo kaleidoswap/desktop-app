@@ -165,7 +165,7 @@ jobs:
           : "${P2PD_REPO_TOKEN:?the P2PD_REPO_TOKEN secret is not set}"
           : "${P2PD_REPO:?the P2PD_REPO secret is not set}"
           echo "::add-mask::$P2PD_REPO_TOKEN"
-          export P2PD_REPO_URL="https://oauth2:${P2PD_REPO_TOKEN}@${P2PD_REPO}"
+          export P2PD_REPO_URL="https://x-access-token:${P2PD_REPO_TOKEN}@${P2PD_REPO}"
           export P2PD_REF="$(tr -d '[:space:]' < p2pd.ref)"
           scripts/prepare-p2p-bundle.sh
           ls -lh bin/p2pd*

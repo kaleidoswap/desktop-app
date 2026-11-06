@@ -8,7 +8,7 @@
 #   scripts/prepare-p2p-bundle.sh
 #   pnpm tauri build --config src-tauri/tauri.p2p.conf.json
 #
-# The daemon lives in its own repository. Point P2PD_SRC at a checkout of its `p2p/`
+# The daemon lives in its own repository. Point P2PD_SRC at a checkout of its source
 # directory, or set P2PD_REPO_URL and P2PD_REF (a tag or commit) to have it cloned into
 # .p2pd-src. A normal dev build does not need any of this: the app finds p2pd through
 # KALEIDO_P2PD_BIN or the PATH.
@@ -18,15 +18,15 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="${P2PD_SRC:-}"
 
 if [ -z "$SRC" ]; then
-  : "${P2PD_REPO_URL:?set P2PD_SRC to a checkout of p2p/, or P2PD_REPO_URL and P2PD_REF}"
+  : "${P2PD_REPO_URL:?set P2PD_SRC to a checkout of its source, or P2PD_REPO_URL and P2PD_REF}"
   : "${P2PD_REF:?set P2PD_REF to the tag or commit to bundle}"
   CLONE="$ROOT/.p2pd-src"
   rm -rf "$CLONE"
   git clone --quiet "$P2PD_REPO_URL" "$CLONE"
   git -C "$CLONE" checkout --quiet "$P2PD_REF"
-  SRC="$CLONE/p2p"
+  SRC="$CLONE"
 fi
-[ -f "$SRC/Cargo.toml" ] || { echo "no p2p crate at $SRC" >&2; exit 1; }
+[ -f "$SRC/Cargo.toml" ] || { echo "no daemon crate at $SRC" >&2; exit 1; }
 
 EXE="p2pd"
 case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) EXE="p2pd.exe" ;; esac
