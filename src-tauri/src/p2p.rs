@@ -13,6 +13,7 @@
 //! The daemon's keys live in the OS keychain (`--keystore keychain`), so no passphrase is passed
 //! around. Its data (wallet, orders, trades) is kept per account under the app data directory.
 
+use std::collections::VecDeque;
 use std::io::{BufRead, BufReader};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
@@ -137,6 +138,10 @@ pub struct P2pProcess {
     /// Fresh for every start and known only to this process and the daemon it started: the daemon
     /// answers nothing that does not carry it, so another process that finds the port gets nothing.
     token: Arc<Mutex<Option<String>>>,
+    /// The last lines the daemon printed, so a start that fails can say why instead of "see the log".
+    tail: Arc<Mutex<VecDeque<String>>>,
+    /// Where this run's pid is kept, so the next start can remove a daemon that outlived the app.
+    pid_file: Arc<Mutex<Option<PathBuf>>>,
 }
 
 /// 32 random bytes as hex.
@@ -183,6 +188,8 @@ impl P2pProcess {
             .join("p2pd")
             .join(&cfg.account);
         std::fs::create_dir_all(&data_dir).map_err(|e| format!("{}: {e}", data_dir.display()))?;
+        reap_orphan(&data_dir.join("p2pd.pid"));
+        lock(&self.tail).clear();
         let port = free_port()?;
 
         let token = new_token();
@@ -230,8 +237,11 @@ impl P2pProcess {
             stdin.write_all(body.as_bytes()).map_err(|e| format!("could not hand the recovery phrase to the daemon: {e}"))?;
             // closing stdin is what tells the daemon the phrase is complete
         }
-        pipe_to_log(child.stdout.take(), "out");
-        pipe_to_log(child.stderr.take(), "err");
+        let pid_file = data_dir.join("p2pd.pid");
+        let _ = std::fs::write(&pid_file, child.id().to_string());
+        *lock(&self.pid_file) = Some(pid_file);
+        pipe_to_log(child.stdout.take(), "out", Arc::clone(&self.tail));
+        pipe_to_log(child.stderr.take(), "err", Arc::clone(&self.tail));
         *child_guard = Some(child);
         *lock(&self.port) = Some(port);
         *lock(&self.token) = Some(token.clone());
@@ -246,7 +256,14 @@ impl P2pProcess {
                 return Ok(self.status());
             }
             if !Self::alive(&mut lock(&self.child)) {
-                return Err("the P2P daemon exited while starting; see the log (a first start with the OS keychain may ask for permission)".into());
+                // give the output threads a moment to hand over the last lines
+                thread::sleep(Duration::from_millis(200));
+                let why = lock(&self.tail).iter().rev().take(4).rev().cloned().collect::<Vec<_>>().join(" / ");
+                return Err(if why.is_empty() {
+                    "the P2P daemon exited while starting (a first start with the OS keychain may ask for permission)".into()
+                } else {
+                    format!("the P2P daemon exited while starting: {why}")
+                });
             }
             if Instant::now() > deadline {
                 self.stop();
@@ -294,6 +311,9 @@ impl P2pProcess {
         let Some(mut child) = lock(&self.child).take() else { return };
         *lock(&self.port) = None;
         *lock(&self.token) = None;
+        if let Some(f) = lock(&self.pid_file).take() {
+            let _ = std::fs::remove_file(f);
+        }
         #[cfg(unix)]
         // SAFETY: `kill` only sends a signal to the child pid we spawned.
         unsafe {
@@ -404,15 +424,63 @@ fn resolve_binary(app: &AppHandle) -> PathBuf {
     PathBuf::from(exe)
 }
 
-fn pipe_to_log(stream: Option<impl std::io::Read + Send + 'static>, tag: &'static str) {
+/// Whether `program` can be run: a path that is a file, or a bare name found on `path_var`.
+fn runnable(program: &Path, path_var: Option<&std::ffi::OsStr>) -> bool {
+    if program.components().count() > 1 {
+        return program.is_file();
+    }
+    path_var.is_some_and(|p| std::env::split_paths(p).any(|dir| dir.join(program).is_file()))
+}
+
+/// Whether this build has a P2P daemon to start. A packaged build carries one where it could be
+/// built; a development run points at one with `KALEIDO_P2PD_BIN` or has it on the PATH.
+pub fn available(app: &AppHandle) -> bool {
+    runnable(&resolve_binary(app), std::env::var_os("PATH").as_deref())
+}
+
+fn pipe_to_log(stream: Option<impl std::io::Read + Send + 'static>, tag: &'static str, tail: Arc<Mutex<VecDeque<String>>>) {
     let Some(stream) = stream else { return };
     thread::spawn(move || {
         for line in BufReader::new(stream).lines().map_while(Result::ok) {
             if !line.trim().is_empty() {
                 log::info!("[p2pd:{tag}] {line}");
+                let mut t = lock(&tail);
+                if t.len() >= 12 {
+                    t.pop_front();
+                }
+                t.push_back(line);
             }
         }
     });
+}
+
+/// A daemon left over from an earlier run of the app (the app was killed, or crashed) still holds
+/// the wallet's database and port, and the new one cannot start beside it. Stop it first. Only a
+/// process that is still a `p2pd` is touched: a pid that was reused by something else is left alone.
+#[cfg(unix)]
+fn reap_orphan(pid_file: &Path) {
+    let Some(pid) = std::fs::read_to_string(pid_file).ok().and_then(|t| t.trim().parse::<i32>().ok()) else { return };
+    let is_p2pd = Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "command="])
+        .output()
+        .is_ok_and(|o| String::from_utf8_lossy(&o.stdout).contains("p2pd"));
+    if is_p2pd {
+        log::warn!("[p2p] stopping a daemon left over from an earlier run (pid {pid})");
+        // SAFETY: `kill` only signals the pid we just confirmed is a p2pd.
+        unsafe { libc::kill(pid, libc::SIGTERM) };
+        let deadline = Instant::now() + STOP_GRACE;
+        while Instant::now() < deadline && Command::new("kill").args(["-0", &pid.to_string()]).output().is_ok_and(|o| o.status.success()) {
+            thread::sleep(Duration::from_millis(200));
+        }
+        // SAFETY: as above; a no-op if it is already gone.
+        unsafe { libc::kill(pid, libc::SIGKILL) };
+    }
+    let _ = std::fs::remove_file(pid_file);
+}
+
+#[cfg(not(unix))]
+fn reap_orphan(pid_file: &Path) {
+    let _ = std::fs::remove_file(pid_file);
 }
 
 #[cfg(test)]
@@ -517,6 +585,19 @@ mod tests {
         let s = p.status();
         assert!(!s.running && s.port.is_none() && s.url.is_none());
         p.stop(); // and stopping it is harmless
+    }
+
+    #[test]
+    fn a_daemon_is_found_by_path_or_by_name_on_the_path() {
+        let dir = std::env::temp_dir().join(format!("p2p-runnable-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let exe = dir.join("p2pd-test-bin");
+        std::fs::write(&exe, b"").unwrap();
+        assert!(runnable(&exe, None), "a file path");
+        assert!(!runnable(&dir.join("missing"), None), "a path with nothing at the end");
+        assert!(runnable(Path::new("p2pd-test-bin"), Some(dir.as_os_str())), "a bare name on the PATH");
+        assert!(!runnable(Path::new("p2pd-test-bin"), None), "a bare name with no PATH");
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

@@ -97,6 +97,12 @@ fn p2p_profile_set(app: AppHandle, account: String, profile: serde_json::Value) 
     p2p::profile_set(&app, &account, &profile)
 }
 
+/// Whether this build can run the P2P daemon at all (it is not bundled on Windows yet).
+#[tauri::command]
+fn p2p_available(app: AppHandle) -> bool {
+    p2p::available(&app)
+}
+
 #[tauri::command]
 fn p2p_status(p2p: State<Arc<P2pProcess>>) -> P2pStatus {
     p2p.status()
@@ -150,6 +156,7 @@ fn main() {
     let nwc_manager = Arc::new(NwcManager::new());
     let mind_process = Arc::new(MindProcess::new());
     let p2p_process = Arc::new(P2pProcess::new());
+    let p2p_for_exit = Arc::clone(&p2p_process);
 
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -312,9 +319,16 @@ fn main() {
             p2p_generate_seed,
             p2p_profile_get,
             p2p_profile_set,
+            p2p_available,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(move |_app, event| {
+            // leave the P2P daemon cleanly, so it takes its offers off the market and does not outlive the app
+            if let tauri::RunEvent::Exit = event {
+                p2p_for_exit.stop();
+            }
+        });
 }
 
 #[tauri::command]

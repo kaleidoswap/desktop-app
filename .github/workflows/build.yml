@@ -151,7 +151,10 @@ jobs:
 
       # The P2P market daemon lives in a private repository. P2PD_REPO_TOKEN is a read-only token
       # for it; p2pd.ref pins the commit that is bundled.
+      # Not on Windows: the daemon uses Unix-only APIs for its key files and signals, so it does not
+      # build there yet. The app says so instead of offering the market.
       - name: Build and sign the P2P market daemon
+        if: matrix.platform != 'windows-latest'
         shell: bash
         env:
           P2PD_REPO_TOKEN: ${{ secrets.P2PD_REPO_TOKEN }}
@@ -243,7 +246,8 @@ jobs:
           prerelease: ${{ startsWith(github.ref, 'refs/tags/test-v') }}
           includeUpdaterJson: true
           updaterJsonPreferNsis: false
-          args: ${{ matrix.args }} --config src-tauri/tauri.p2p.conf.json
+          # the overlay adds the daemon to the bundle, so it is passed only where the daemon was built
+          args: ${{ matrix.args }}${{ matrix.platform != 'windows-latest' && ' --config src-tauri/tauri.p2p.conf.json' || '' }}
 
       - name: Preserve installers if release upload fails
         if: failure()

@@ -18,6 +18,7 @@ import { FundsModal, type Direction } from './FundsModal'
 import { Market } from './market/Market'
 import { RecoveryPhraseModal } from './RecoveryPhraseModal'
 import {
+  p2pAvailable,
   p2pGenerateSeed,
   p2pProfileGet,
   p2pProfileSet,
@@ -56,7 +57,8 @@ let runningAccount: string | null = null
 
 type Tab = 'market' | 'assets' | 'deposits' | 'withdrawals'
 
-type Phase = 'loading' | 'setup' | 'starting' | 'running' | 'error'
+type Phase =
+  'loading' | 'unavailable' | 'setup' | 'starting' | 'running' | 'error'
 
 /**
  * The P2P market. It has a wallet of its own, made here and kept with a recovery phrase, so it
@@ -112,6 +114,10 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
 
   const begin = useCallback(async () => {
     if (!config) return
+    if (!(await p2pAvailable().catch(() => false))) {
+      setPhase('unavailable')
+      return
+    }
     const status = await p2pStatus().catch(() => null)
     if (status?.running && runningAccount === account) {
       setPhase('running')
@@ -188,6 +194,15 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
     body = <Alert variant="info">{t('p2pMarket.desktopOnly')}</Alert>
   } else if (!config) {
     body = <Alert variant="info">{t('p2pMarket.noNetwork')}</Alert>
+  } else if (phase === 'unavailable') {
+    body = (
+      <Alert variant="info">
+        {t('p2pMarket.unavailable', {
+          defaultValue:
+            'The P2P market is not part of this build yet. It is not included on Windows; it is available on macOS and Linux.',
+        })}
+      </Alert>
+    )
   } else if (phase === 'setup') {
     body = (
       <WalletSetup

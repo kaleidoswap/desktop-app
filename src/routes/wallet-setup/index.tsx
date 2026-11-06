@@ -138,6 +138,14 @@ export const Component = () => {
     checkCapabilities()
   }, [])
 
+  // the P2P market is not bundled on every system (not on Windows yet)
+  const [p2pReady, setP2pReady] = useState<boolean | null>(null)
+  useEffect(() => {
+    invoke<boolean>('p2p_available')
+      .then(setP2pReady)
+      .catch(() => setP2pReady(false))
+  }, [])
+
   // Handle transitions
   const handleNodeTypeChange = (type: 'local' | 'remote' | null) => {
     if (type !== nodeType && !isTransitioning) {
@@ -314,8 +322,16 @@ export const Component = () => {
                               defaultValue:
                                 'Trade RGB assets directly with other people, from a wallet of its own kept with a recovery phrase.',
                             })}
+                            disabled={p2pReady === false}
                             icon={<Coins className="w-6 h-6" />}
                             onClick={() => navigate(P2P_WALLET_PATH)}
+                            tag={
+                              p2pReady === false
+                                ? t('launcher.cards.p2p.unavailable', {
+                                    defaultValue: 'Not on this system yet',
+                                  })
+                                : undefined
+                            }
                             title={t('launcher.cards.p2p.title', {
                               defaultValue: 'P2P Wallet',
                             })}

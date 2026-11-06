@@ -40,6 +40,9 @@ export const p2pStart = (config: P2pStartConfig) =>
   invoke<P2pStatus>('p2p_start', { config })
 export const p2pStop = () => invoke<void>('p2p_stop')
 
+/** Whether this build has a daemon to run: it is not bundled on Windows yet. */
+export const p2pAvailable = () => invoke<boolean>('p2p_available')
+
 /** A new recovery phrase. Nothing is created until a wallet is started from it. */
 export const p2pGenerateSeed = (network: string) =>
   invoke<string>('p2p_generate_seed', { network })
