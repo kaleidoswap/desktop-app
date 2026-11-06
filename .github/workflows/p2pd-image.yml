@@ -1,7 +1,7 @@
 name: 'P2P daemon image'
 
 # Builds the P2P market daemon as a Docker image and publishes it. Systems where the daemon is not
-# bundled (Windows) run this image. The source is fetched from P2PD_REPO (a repository variable) with
+# bundled (Windows) run this image. The source is fetched from P2PD_REPO (a repository secret) with
 # a read-only token (P2PD_REPO_TOKEN, the same one the app build uses).
 #
 # Run it by hand with the commit or tag of the daemon to build. It prints the image reference with
@@ -24,11 +24,11 @@ jobs:
         shell: bash
         env:
           P2PD_REPO_TOKEN: ${{ secrets.P2PD_REPO_TOKEN }}
-          P2PD_REPO: ${{ vars.P2PD_REPO }}
+          P2PD_REPO: ${{ secrets.P2PD_REPO }}
           REF: ${{ inputs.ref }}
         run: |
           : "${P2PD_REPO_TOKEN:?the P2PD_REPO_TOKEN secret is not set}"
-          : "${P2PD_REPO:?the P2PD_REPO variable is not set}"
+          : "${P2PD_REPO:?the P2PD_REPO secret is not set}"
           echo "::add-mask::$P2PD_REPO_TOKEN"
           git clone --quiet "https://oauth2:${P2PD_REPO_TOKEN}@${P2PD_REPO}" daemon-src
           git -C daemon-src checkout --quiet "$REF"
@@ -39,7 +39,7 @@ jobs:
 
       - uses: docker/login-action@v3
         with:
-          username: ${{ vars.DOCKERHUB_USERNAME }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
@@ -50,12 +50,13 @@ jobs:
           file: daemon-src/p2p/deploy/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: kaleidoswap/p2pd:${{ env.SHORT }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/p2pd:${{ env.SHORT }}
 
       - name: The reference to pin
         shell: bash
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
+          HUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
           {
             echo "### P2P daemon image"
@@ -63,6 +64,6 @@ jobs:
             echo "Put this line in \`p2pd.image\`:"
             echo
             echo '```'
-            echo "kaleidoswap/p2pd:${SHORT}@${DIGEST}"
+            echo "${HUB_USER}/p2pd:${SHORT}@${DIGEST}"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

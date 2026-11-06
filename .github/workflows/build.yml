@@ -149,7 +149,7 @@ jobs:
           echo "# Placeholder file for Windows - RGB Lightning Node not supported on Windows" > bin/rgb-lightning-node
         shell: bash
 
-      # The P2P market daemon is built from its own source. P2PD_REPO (a repository variable) says
+      # The P2P market daemon is built from its own source. P2PD_REPO (a repository secret) says
       # where, P2PD_REPO_TOKEN is a read-only token for it, and p2pd.ref pins the commit bundled.
       # The P2P market is configured at build time (relay, esplora, RGB proxy, fee address). Those are
       # repository variables, so the endpoints are changed without a code change. A build without
@@ -176,11 +176,11 @@ jobs:
         shell: bash
         env:
           P2PD_REPO_TOKEN: ${{ secrets.P2PD_REPO_TOKEN }}
-          P2PD_REPO: ${{ vars.P2PD_REPO }}
+          P2PD_REPO: ${{ secrets.P2PD_REPO }}
           APPLE_SIGNING_IDENTITY: ${{ startsWith(matrix.platform, 'macos-') && secrets.APPLE_SIGNING_IDENTITY || '' }}
         run: |
           : "${P2PD_REPO_TOKEN:?the P2PD_REPO_TOKEN secret is not set}"
-          : "${P2PD_REPO:?the P2PD_REPO variable is not set}"
+          : "${P2PD_REPO:?the P2PD_REPO secret is not set}"
           echo "::add-mask::$P2PD_REPO_TOKEN"
           export P2PD_REPO_URL="https://oauth2:${P2PD_REPO_TOKEN}@${P2PD_REPO}"
           export P2PD_REF="$(tr -d '[:space:]' < p2pd.ref)"
