@@ -30,7 +30,7 @@ jobs:
           : "${P2PD_REPO_TOKEN:?the P2PD_REPO_TOKEN secret is not set}"
           : "${P2PD_REPO:?the P2PD_REPO secret is not set}"
           echo "::add-mask::$P2PD_REPO_TOKEN"
-          git clone --quiet "https://oauth2:${P2PD_REPO_TOKEN}@${P2PD_REPO}" daemon-src
+          git clone --quiet "https://x-access-token:${P2PD_REPO_TOKEN}@${P2PD_REPO}" daemon-src
           git -C daemon-src checkout --quiet "$REF"
           echo "SHORT=$(git -C daemon-src rev-parse --short=12 HEAD)" >> "$GITHUB_ENV"
 
@@ -46,8 +46,8 @@ jobs:
         id: push
         uses: docker/build-push-action@v6
         with:
-          context: daemon-src/p2p
-          file: daemon-src/p2p/deploy/Dockerfile
+          context: daemon-src
+          file: daemon-src/deploy/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/p2pd:${{ env.SHORT }}
