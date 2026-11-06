@@ -15,6 +15,7 @@ mod node_backend;
 mod nwc;
 mod p2p;
 mod p2p_docker;
+mod secret_store;
 mod rgb_node;
 mod tray;
 
