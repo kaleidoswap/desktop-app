@@ -43,14 +43,8 @@ describe('recovery phrase handling', () => {
 
 describe('trading wallet account', () => {
   it('is one per network, whatever node is connected', () => {
-    expect(
-      walletAccountFor({
-        feeAddress: 'tb1q',
-        indexerUrl: 'https://x',
-        network: 'signetcustom',
-        proxyUrl: 'https://p',
-        relays: ['wss://r'],
-      })
-    ).toBe('wallet-signetcustom')
+    expect(walletAccountFor({ network: 'signetcustom' })).toBe(
+      'wallet-signetcustom'
+    )
   })
 })

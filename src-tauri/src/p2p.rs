@@ -41,29 +41,29 @@ const STOP_GRACE: Duration = Duration::from_secs(8);
 #[serde(transparent)]
 pub struct Secret(String);
 
+impl Secret {
+    #[cfg(test)]
+    pub fn new(s: impl Into<String>) -> Self {
+        Self(s.into())
+    }
+}
+
 impl std::fmt::Debug for Secret {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("Secret(..)")
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct P2pStartConfig {
+/// What the page may ask for: which network and which wallet, and the one-time secrets that are the
+/// user's own. Everything else (relays, esplora, proxy, the fee address) is the app's choice, made
+/// in [`crate::p2p_networks`]; a request that tries to carry any of it is refused.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct P2pStartRequest {
     /// Names the data directory and the keychain entry.
     pub account: String,
-    /// `regtest`, `signet`, `signetcustom` (Mutinynet), `testnet` or `mainnet`.
-    pub network: String,
-    pub indexer_url: String,
-    pub proxy_url: String,
-    pub relays: Vec<String>,
-    pub fee_address: String,
-    #[serde(default = "default_fee_bps")]
-    pub fee_bps: u64,
-    #[serde(default = "default_min_fee")]
-    pub min_fee_sat: u64,
-    /// JSON list of the assets to show as verified.
-    #[serde(default)]
-    pub verified_assets_path: Option<String>,
+    /// The app's name for the network (`SignetCustom` for Mutinynet).
+    pub network_key: String,
     /// The recovery phrase to create the wallet from, on its first start only. Handed to the daemon
     /// on its stdin, so it never appears in the process list; an existing wallet is never replaced.
     #[serde(default)]
@@ -73,12 +73,22 @@ pub struct P2pStartConfig {
     pub rescan: bool,
 }
 
-fn default_fee_bps() -> u64 {
-    100
-}
-
-fn default_min_fee() -> u64 {
-    1_000
+/// How the daemon is started: what the app resolved from a [`P2pStartRequest`].
+#[derive(Debug, Clone)]
+pub struct P2pStartConfig {
+    pub account: String,
+    /// `regtest`, `signet`, `signetcustom` (Mutinynet), `testnet` or `mainnet`.
+    pub network: String,
+    pub indexer_url: String,
+    pub proxy_url: String,
+    pub relays: Vec<String>,
+    pub fee_address: String,
+    pub fee_bps: u64,
+    pub min_fee_sat: u64,
+    /// JSON list of the assets to show as verified.
+    pub verified_assets_path: Option<String>,
+    pub seed_mnemonic: Option<Secret>,
+    pub rescan: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -734,15 +744,6 @@ mod tests {
     }
 
     #[test]
-    fn the_config_reads_from_the_json_the_ui_sends_with_defaults() {
-        let c: P2pStartConfig = serde_json::from_str(
-            r#"{"account":"a","network":"signet","indexer_url":"i","proxy_url":"p","relays":["r"],"fee_address":"f"}"#,
-        )
-        .unwrap();
-        assert_eq!((c.fee_bps, c.min_fee_sat), (100, 1_000));
-    }
-
-    #[test]
     fn only_the_market_routes_are_reachable_from_the_app() {
         for (m, p) in [
             ("GET", "/api/info"),
@@ -821,9 +822,10 @@ mod tests {
 
     #[test]
     fn the_recovery_phrase_never_prints_and_is_only_asked_for_with_a_post() {
-        let json = r#"{"account":"a","network":"signet","indexer_url":"i","proxy_url":"p","relays":["r"],"fee_address":"f","seed_mnemonic":"abandon ability able"}"#;
-        let cfg: P2pStartConfig = serde_json::from_str(json).unwrap();
-        assert!(cfg.seed_mnemonic.is_some());
+        let cfg = P2pStartConfig {
+            seed_mnemonic: Some(Secret::new("abandon ability able")),
+            ..cfg()
+        };
         assert!(
             !format!("{cfg:?}").contains("abandon"),
             "a logged config must not leak the phrase"

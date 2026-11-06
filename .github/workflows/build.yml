@@ -151,23 +151,6 @@ jobs:
 
       # The P2P market daemon is built from its own source. P2PD_REPO (a repository secret) says
       # where, P2PD_REPO_TOKEN is a read-only token for it, and p2pd.ref pins the commit bundled.
-      # The P2P market is configured at build time (relay, esplora, RGB proxy, fee address). Those are
-      # repository variables, so the endpoints are changed without a code change. A build without
-      # them would ship a page that says there is no market, so it stops here instead.
-      - name: Check the P2P network configuration
-        shell: bash
-        env:
-          P2P_RELAYS: ${{ vars.P2P_RELAYS }}
-          P2P_ESPLORA_URL: ${{ vars.P2P_ESPLORA_URL }}
-          P2P_PROXY_URL: ${{ vars.P2P_PROXY_URL }}
-          P2P_FEE_ADDRESS: ${{ vars.P2P_FEE_ADDRESS }}
-        run: |
-          for v in P2P_RELAYS P2P_ESPLORA_URL P2P_PROXY_URL P2P_FEE_ADDRESS; do
-            if [ -z "${!v}" ]; then
-              echo "::error::the repository variable $v is not set; the P2P market would have no network"
-              exit 1
-            fi
-          done
 
       # Not on Windows: the daemon uses Unix-only APIs for its key files and signals, so it does not
       # build there. Windows runs the daemon's Docker image instead (p2pd.image, see p2pd-image.yml).
@@ -195,22 +178,22 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "Extracting changelog for version $VERSION"
-          
+
           # Extract the changelog section for this version
           CHANGELOG=$(awk -v heading="## [Version $VERSION]" '
             index($0, heading) == 1 { found = 1; next }
             found && /^## \[Version / { exit }
             found { print }
           ' CHANGELOG.md)
-          
+
           # If changelog is empty, provide a default message
           if [ -z "$CHANGELOG" ]; then
             CHANGELOG="See the CHANGELOG.md for details about this release."
           fi
-          
+
           # Save to file for multiline content
           echo "$CHANGELOG" > /tmp/changelog.txt
-          
+
           # Set output using the recommended method for multiline strings
           {
             echo 'CHANGELOG<<EOF'
@@ -232,11 +215,6 @@ jobs:
           APPLE_ID: ${{ startsWith(matrix.platform, 'macos-') && secrets.APPLE_ID || '' }}
           APPLE_PASSWORD: ${{ startsWith(matrix.platform, 'macos-') && secrets.APPLE_PASSWORD || '' }}
           APPLE_TEAM_ID: ${{ startsWith(matrix.platform, 'macos-') && secrets.APPLE_TEAM_ID || '' }}
-          # P2P market network (Mutinynet), baked into the frontend build; see the check step above
-          VITE_P2P_SIGNETCUSTOM_RELAYS: ${{ vars.P2P_RELAYS }}
-          VITE_P2P_SIGNETCUSTOM_ESPLORA_URL: ${{ vars.P2P_ESPLORA_URL }}
-          VITE_P2P_SIGNETCUSTOM_PROXY_URL: ${{ vars.P2P_PROXY_URL }}
-          VITE_P2P_SIGNETCUSTOM_FEE_ADDRESS: ${{ vars.P2P_FEE_ADDRESS }}
           # Skip rgb-lightning-node build on Windows since it's not supported
           BUILD_AND_RUN_RGB_LIGHTNING_NODE: ${{ matrix.platform != 'windows-latest' && 'true' || 'false' }}
         id: tauri_build
@@ -245,7 +223,7 @@ jobs:
           releaseName: ${{ startsWith(github.ref, 'refs/tags/v') && format('KaleidoSwap {0}', github.ref_name) || (github.ref == 'refs/heads/test-build' && 'Test App v__VERSION__' || 'App v__VERSION__') }}
           releaseBody: |
             ${{ startsWith(github.ref, 'refs/tags/v') && format('Release {0}', github.ref_name) || format('Release v{0}', env.VERSION) }}
-            
+
             See the assets to download and install this version.
 
             ${{ startsWith(github.ref, 'refs/tags/v') && steps.changelog.outputs.CHANGELOG || 'Changes in this version:
@@ -262,9 +240,9 @@ jobs:
             - macOS Intel (x86_64): Download and extract the `.app.tar.gz` asset; native Intel build, code signed and notarized
             - Linux: Use .AppImage or .deb as preferred
             - Windows: Use the provided installer
-            
+
             All macOS builds install without security warnings!
-            
+
             **Verification:**
             - GPG signatures (`.asc` files) will be added shortly after release
           releaseDraft: ${{ !startsWith(github.ref, 'refs/tags/v') }}
@@ -301,8 +279,8 @@ jobs:
           git push origin latest
 
       - name: Create manifest file
-        if: matrix.platform != 'windows-latest'  # Skip on Windows
-        shell: bash  # Explicitly use bash for this step
+        if: matrix.platform != 'windows-latest' # Skip on Windows
+        shell: bash # Explicitly use bash for this step
         run: |
           echo "Creating manifest.txt for signing..."
           echo "App version: ${{ env.VERSION }}" > manifest.txt
@@ -337,7 +315,7 @@ jobs:
           cat manifest.txt
 
       - name: Upload manifest.txt
-        if: matrix.platform != 'windows-latest'  # Skip on Windows
+        if: matrix.platform != 'windows-latest' # Skip on Windows
         uses: actions/upload-artifact@v4
         with:
           name: manifest-${{ github.ref_name || 'build' }}-${{ matrix.platform }}-${{ matrix.args != '' && format('{0}', matrix.args) || 'default' }}

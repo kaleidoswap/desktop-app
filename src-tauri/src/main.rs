@@ -15,6 +15,7 @@ mod node_backend;
 mod nwc;
 mod p2p;
 mod p2p_docker;
+mod p2p_networks;
 // kept as it is on main; only the daemon container's passphrase uses it here
 mod rgb_node;
 #[allow(dead_code)]
@@ -25,7 +26,7 @@ use dca::{DcaOrderInfo, DcaScheduler};
 use docker_node::{DockerEnvironment, DockerNodeManager, DockerSpawnConfig};
 use mind::MindProcess;
 use nwc::NwcManager;
-use p2p::{P2pProcess, P2pStartConfig, P2pStatus};
+use p2p::{P2pProcess, P2pStartRequest, P2pStatus};
 use rgb_node::{NodeProcess, NodeState};
 
 #[derive(Default)]
@@ -58,12 +59,18 @@ fn mind_send(
 async fn p2p_start(
     app: AppHandle,
     p2p: State<'_, Arc<P2pProcess>>,
-    config: P2pStartConfig,
+    config: P2pStartRequest,
 ) -> Result<P2pStatus, String> {
+    let config = p2p_networks::resolve(config)?;
     let p2p = Arc::clone(&*p2p);
     tauri::async_runtime::spawn_blocking(move || p2p.ensure_started(&app, &config))
         .await
         .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+fn p2p_networks() -> Vec<p2p_networks::NetworkInfo> {
+    p2p_networks::list()
 }
 
 #[tauri::command]
@@ -335,6 +342,7 @@ fn main() {
             p2p_profile_get,
             p2p_profile_set,
             p2p_available,
+            p2p_networks,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

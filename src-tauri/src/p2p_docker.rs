@@ -258,10 +258,19 @@ mod tests {
     use super::*;
 
     fn cfg() -> P2pStartConfig {
-        serde_json::from_str(
-            r#"{"account":"wallet-signetcustom","network":"signetcustom","indexer_url":"https://e","proxy_url":"https://p","relays":["wss://r1","wss://r2"],"fee_address":"tb1q","verified_assets_path":"/host/only.json","seed_mnemonic":"abandon ability able"}"#,
-        )
-        .unwrap()
+        P2pStartConfig {
+            account: "wallet-signetcustom".into(),
+            network: "signetcustom".into(),
+            indexer_url: "https://e".into(),
+            proxy_url: "https://p".into(),
+            relays: vec!["wss://r1".into(), "wss://r2".into()],
+            fee_address: "tb1q".into(),
+            fee_bps: 100,
+            min_fee_sat: 1_000,
+            verified_assets_path: Some("/host/only.json".into()),
+            seed_mnemonic: Some(crate::p2p::Secret::new("abandon ability able")),
+            rescan: false,
+        }
     }
 
     #[test]

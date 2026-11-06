@@ -9,7 +9,7 @@
 
 import { invoke } from '@tauri-apps/api/core'
 
-import type { P2pNetworkConfig } from '../../../constants/p2p'
+import type { P2pNetworkOption } from '../../../constants/p2p'
 
 import { transport } from './transport'
 
@@ -19,24 +19,21 @@ export interface P2pStatus {
   url: string | null
 }
 
-export interface P2pStartConfig {
+/** What the page asks for: a network and a wallet. The endpoints are the app's own choice. */
+export interface P2pStartRequest {
   account: string
-  network: string
-  indexer_url: string
-  proxy_url: string
-  relays: string[]
-  fee_address: string
-  fee_bps?: number
-  min_fee_sat?: number
-  verified_assets_path?: string
+  network_key: string
   /** The recovery phrase to create the wallet from. First start only; never replaces a wallet. */
   seed_mnemonic?: string
   /** Scan every address once at start, to find a deposit the quick sync missed. */
   rescan?: boolean
 }
 
+/** The networks the app has a market for. */
+export const p2pNetworks = () => invoke<P2pNetworkOption[]>('p2p_networks')
+
 export const p2pStatus = () => invoke<P2pStatus>('p2p_status')
-export const p2pStart = (config: P2pStartConfig) =>
+export const p2pStart = (config: P2pStartRequest) =>
   invoke<P2pStatus>('p2p_start', { config })
 export const p2pStop = () => invoke<void>('p2p_stop')
 
@@ -83,14 +80,10 @@ export const daemonAccountName = (name: string): string =>
 
 export const startConfigFor = (
   account: string,
-  cfg: P2pNetworkConfig
-): P2pStartConfig => ({
+  option: Pick<P2pNetworkOption, 'key'>
+): P2pStartRequest => ({
   account: daemonAccountName(account),
-  fee_address: cfg.feeAddress,
-  indexer_url: cfg.indexerUrl,
-  network: cfg.network,
-  proxy_url: cfg.proxyUrl,
-  relays: cfg.relays,
+  network_key: option.key,
 })
 
 /** What the daemon exposes to the app: the funds endpoints, called through Rust. */

@@ -1,12 +1,12 @@
 import { KeyRound, RefreshCw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useAppDispatch } from '../../../app/store/hooks'
 import { setWalletOverride } from '../../../api/wallet-override'
 import { TradeNav } from '../../../components/Trade'
 import { Alert, Button } from '../../../components/ui'
-import { p2pNetworkOptions, walletAccountFor } from '../../../constants/p2p'
+import { type P2pNetworkOption, walletAccountFor } from '../../../constants/p2p'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 
 import { Component as AssetsHistory } from '../../wallet-history/assets'
@@ -26,6 +26,7 @@ import {
   p2pStart,
   p2pStatus,
   p2pStop,
+  p2pNetworks,
   startConfigFor,
 } from './p2p'
 import { createP2pWalletWrapper } from './walletClient'
@@ -71,15 +72,21 @@ type Phase =
  */
 export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
   const { t } = useTranslation()
-  const options = useMemo(p2pNetworkOptions, [])
-  const [networkKey, setNetworkKey] = useState(
-    () =>
-      options.find((o) => o.key === savedNetwork())?.key ??
-      options[0]?.key ??
-      ''
-  )
-  const option = options.find((o) => o.key === networkKey) ?? options[0]
-  const config = option?.config
+  const [options, setOptions] = useState<P2pNetworkOption[] | null>(null)
+  useEffect(() => {
+    if (!isTauri()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOptions([])
+      return
+    }
+    p2pNetworks()
+      .then(setOptions)
+      .catch(() => setOptions([]))
+  }, [])
+  const [networkKey, setNetworkKey] = useState(() => savedNetwork() ?? '')
+  const list = options ?? []
+  const option = list.find((o) => o.key === networkKey) ?? list[0]
+  const config = option
   const account = config ? walletAccountFor(config) : ''
 
   const [phase, setPhase] = useState<Phase>('loading')
@@ -196,6 +203,8 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
   let body
   if (!isTauri()) {
     body = <Alert variant="info">{t('p2pMarket.desktopOnly')}</Alert>
+  } else if (options === null) {
+    body = null
   } else if (!config) {
     body = <Alert variant="info">{t('p2pMarket.noNetwork')}</Alert>
   } else if (phase === 'unavailable') {
@@ -310,7 +319,7 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
               ))}
             </div>
           )}
-          {options.length > 1 && (
+          {list.length > 1 && (
             <select
               aria-label={t('p2pMarket.network', { defaultValue: 'Network' })}
               className="rounded-lg bg-surface-inset px-3 py-1.5 text-caption text-content-primary outline-none"
@@ -320,7 +329,7 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
               }}
               value={networkKey}
             >
-              {options.map((o) => (
+              {list.map((o) => (
                 <option key={o.key} value={o.key}>
                   {o.label}
                 </option>

@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { P2pNetworkConfig } from '../../../../constants/p2p'
 import {
   assetToNode,
   assetToTrading,
@@ -242,21 +241,10 @@ describe('amounts and config', () => {
     expect(toBaseUnits('-1', 2)).toBe(0)
   })
 
-  it('builds the daemon config from a network entry', () => {
-    const cfg: P2pNetworkConfig = {
-      feeAddress: 'tb1qfee',
-      indexerUrl: 'https://esplora.example/api',
-      network: 'signet',
-      proxyUrl: 'https://proxy.example/json-rpc',
-      relays: ['wss://relay.example'],
-    }
-    expect(startConfigFor('alice', cfg)).toEqual({
+  it('asks for a network by name and carries no endpoint', () => {
+    expect(startConfigFor('alice', { key: 'SignetCustom' })).toEqual({
       account: 'alice',
-      fee_address: 'tb1qfee',
-      indexer_url: 'https://esplora.example/api',
-      network: 'signet',
-      proxy_url: 'https://proxy.example/json-rpc',
-      relays: ['wss://relay.example'],
+      network_key: 'SignetCustom',
     })
   })
 
