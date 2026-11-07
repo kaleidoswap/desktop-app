@@ -1,5 +1,6 @@
 import { KaleidoClient } from 'kaleido-sdk'
 import { NodeApiWrapper } from './node-api-wrapper'
+import { getWalletOverride } from './wallet-override'
 
 export interface MinimalState {
   nodeSettings: {
@@ -94,6 +95,10 @@ export const getMakerClient = async (
 export const getNodeApiWrapper = async (
   state: MinimalState
 ): Promise<NodeApiWrapper> => {
+  // the P2P wallet answers in place of a node while its pages are open
+  const override = getWalletOverride()
+  if (override) return override
+
   // Ensure client is initialized
   await getKaleidoClient(state)
 

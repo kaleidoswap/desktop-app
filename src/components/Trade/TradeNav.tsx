@@ -2,7 +2,7 @@
 // Nostr P2P, DCA, Limit Orders) one consistent tab strip instead of each page
 // inventing its own header.
 
-import { ArrowLeftRight, Store, Target, TrendingUp } from 'lucide-react'
+import { ArrowLeftRight, Radio, Store, Target, TrendingUp } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
@@ -13,6 +13,7 @@ import {
   TRADE_MANUAL_PATH,
   TRADE_DCA_PATH,
   TRADE_LIMIT_PATH,
+  TRADE_NOSTR_P2P_PATH,
 } from '../../app/router/paths'
 
 const TABS: {
@@ -45,6 +46,12 @@ const TABS: {
     icon: <Target className="h-4 w-4" />,
     labelKey: 'navigation.limitOrders',
     to: TRADE_LIMIT_PATH,
+  },
+  {
+    fallback: 'Nostr P2P',
+    icon: <Radio className="h-4 w-4" />,
+    labelKey: 'navigation.nostrP2P',
+    to: TRADE_NOSTR_P2P_PATH,
   },
 ]
 
