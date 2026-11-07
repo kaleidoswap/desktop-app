@@ -3406,6 +3406,22 @@
         "inFlight": "{{n}} in flight",
         "moveFunds": "Move funds from your node"
       },
+      "swap": {
+        "confirming": "承認中",
+        "requested": "リクエスト",
+        "settled": "完了",
+        "signing": "署名",
+        "failedFunds": "スワップと手数料をまかなうビットコインが足りません。資金を追加して再試行してください。",
+        "failedNoAnswer": "メーカーが応答しませんでした。何も使われていません。別の注文をお試しください。",
+        "failed": "スワップは完了しませんでした。何も使われていません。",
+        "waitMaker": "メーカーの応答を待っています。メーカーはオンラインである必要があります。",
+        "requestIn": "リクエストを受信しました。",
+        "waitTaker": "相手側の署名を待っています。",
+        "signingNow": "双方が署名中です。",
+        "confirmBlocks": "オンチェーン：{{need}}件中{{have}}件の承認。",
+        "onChain": "オンチェーン、承認待ちです。",
+        "steps": "スワップの進行状況"
+      },
       "take": {
         "copied": "Copied",
         "waitMaker": "Waiting for the other side to answer",

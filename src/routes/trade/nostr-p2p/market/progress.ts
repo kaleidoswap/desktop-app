@@ -64,3 +64,44 @@ export function failureKind(raw: string): 'funds' | 'other' {
 /** The maker never answered the request: the signal to try another one. */
 export const noAnswer = (raw: string | null | undefined): boolean =>
   /timed out waiting for proposal/i.test(raw ?? '')
+
+/** The steps of a swap, in order. A failed swap sits at none of them. */
+export const STEPS = ['requested', 'signing', 'confirming', 'settled'] as const
+
+export interface TradeStage {
+  stage: Stage
+  /** Index in [`STEPS`] of the step the swap is on; -1 for a failed one. */
+  step: number
+  /** Who the swap is waiting for, when it is waiting on the other side. */
+  waitingOn: 'maker' | 'taker' | null
+  /** Why a failed swap failed, in the daemon's words, and whether the user can act on it. */
+  failure?: { error: string; kind: 'funds' | 'noAnswer' | 'other' }
+}
+
+/** Where one swap stands, for the row that shows it. */
+export function tradeStage(t: Trade): TradeStage {
+  const { stage } = swapProgress([t])
+  const step = stage === 'failed' ? -1 : STEPS.indexOf(stage)
+  // a taker waits for the maker's proposal; a maker, once it has sent one, for the taker's signature
+  const waitingOn =
+    stage === 'requested' && t.role === 'taker'
+      ? 'maker'
+      : stage === 'signing' && t.role === 'maker'
+        ? 'taker'
+        : null
+  if (stage !== 'failed') return { stage, step, waitingOn }
+  const error = t.error ?? ''
+  return {
+    failure: {
+      error,
+      kind: noAnswer(error)
+        ? 'noAnswer'
+        : failureKind(error) === 'funds'
+          ? 'funds'
+          : 'other',
+    },
+    stage,
+    step,
+    waitingOn: null,
+  }
+}

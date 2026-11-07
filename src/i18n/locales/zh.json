@@ -3397,6 +3397,22 @@
         "inFlight": "{{n}} in flight",
         "moveFunds": "Move funds from your node"
       },
+      "swap": {
+        "confirming": "确认中",
+        "requested": "已请求",
+        "settled": "已完成",
+        "signing": "签名",
+        "failedFunds": "比特币不足以支付交换及其费用。请充值后重试。",
+        "failedNoAnswer": "做市方没有回应。未花费任何资金；请尝试其他订单。",
+        "failed": "交换未完成。未花费任何资金。",
+        "waitMaker": "正在等待做市方回应。做市方必须在线。",
+        "requestIn": "已收到请求。",
+        "waitTaker": "正在等待对方签名。",
+        "signingNow": "双方正在签名。",
+        "confirmBlocks": "链上：{{need}} 个确认中的 {{have}} 个。",
+        "onChain": "已上链，等待确认。",
+        "steps": "交换进度"
+      },
       "take": {
         "copied": "Copied",
         "waitMaker": "Waiting for the other side to answer",

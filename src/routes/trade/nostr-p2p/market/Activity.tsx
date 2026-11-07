@@ -14,6 +14,7 @@ import {
 } from '../format'
 
 import { useTr } from './hooks'
+import { SwapSteps } from './SwapSteps'
 import { EmptyState, Panel, Pill, cx, type Tone } from './ui'
 
 type Tab = 'orders' | 'trades' | 'balances'
@@ -204,6 +205,7 @@ export function Activity({
                       {t.txid ? short(t.txid, 4) : ago(t.ts)}
                     </span>
                   </span>
+                  <SwapSteps trade={t} />
                 </li>
               )
             })}

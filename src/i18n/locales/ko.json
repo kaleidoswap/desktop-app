@@ -3400,6 +3400,22 @@
         "inFlight": "{{n}} in flight",
         "moveFunds": "Move funds from your node"
       },
+      "swap": {
+        "confirming": "확인 중",
+        "requested": "요청됨",
+        "settled": "완료",
+        "signing": "서명",
+        "failedFunds": "스왑과 수수료를 충당할 비트코인이 부족합니다. 자금을 추가하고 다시 시도하세요.",
+        "failedNoAnswer": "메이커가 응답하지 않았습니다. 아무것도 사용되지 않았습니다. 다른 주문을 시도하세요.",
+        "failed": "스왑이 완료되지 않았습니다. 아무것도 사용되지 않았습니다.",
+        "waitMaker": "메이커의 응답을 기다리는 중입니다. 메이커는 온라인이어야 합니다.",
+        "requestIn": "요청을 받았습니다.",
+        "waitTaker": "상대방의 서명을 기다리는 중입니다.",
+        "signingNow": "양측이 서명 중입니다.",
+        "confirmBlocks": "온체인: {{need}}개 중 {{have}}개 확인.",
+        "onChain": "온체인, 확인을 기다리는 중입니다.",
+        "steps": "스왑 진행 상황"
+      },
       "take": {
         "copied": "Copied",
         "waitMaker": "Waiting for the other side to answer",

@@ -3400,6 +3400,22 @@
         "inFlight": "{{n}} in flight",
         "moveFunds": "Move funds from your node"
       },
+      "swap": {
+        "confirming": "Bestätigung",
+        "requested": "Angefragt",
+        "settled": "Abgeschlossen",
+        "signing": "Signatur",
+        "failedFunds": "Nicht genug Bitcoin für den Swap und seine Gebühren. Guthaben hinzufügen und erneut versuchen.",
+        "failedNoAnswer": "Der Maker hat nicht geantwortet. Es wurde nichts ausgegeben; versuche eine andere Order.",
+        "failed": "Der Swap wurde nicht abgeschlossen. Es wurde nichts ausgegeben.",
+        "waitMaker": "Warte auf die Antwort des Makers. Der Maker muss online sein.",
+        "requestIn": "Anfrage erhalten.",
+        "waitTaker": "Warte auf die Signatur der Gegenseite.",
+        "signingNow": "Beide Seiten signieren.",
+        "confirmBlocks": "On-Chain: {{have}} von {{need}} Bestätigungen.",
+        "onChain": "On-Chain, warte auf Bestätigungen.",
+        "steps": "Swap-Fortschritt"
+      },
       "take": {
         "copied": "Copied",
         "waitMaker": "Waiting for the other side to answer",

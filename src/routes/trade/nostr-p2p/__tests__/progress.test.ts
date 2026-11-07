@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { Trade } from '../api'
-import { failureKind, noAnswer, swapProgress } from '../market/progress'
+import {
+  failureKind,
+  noAnswer,
+  swapProgress,
+  tradeStage,
+} from '../market/progress'
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
 
@@ -112,5 +117,53 @@ describe('a request waiting for the maker', () => {
     expect(swapProgress([trade({ status: 'negotiating' })]).stage).toBe(
       'signing'
     )
+  })
+})
+
+describe('where one swap is, for its row', () => {
+  it('a taker waits for the maker until the maker has answered', () => {
+    expect(
+      tradeStage(trade({ answered: false, status: 'negotiating' }))
+    ).toMatchObject({ stage: 'requested', step: 0, waitingOn: 'maker' })
+  })
+
+  it('is signing once there is an answer, and a maker waits for the taker to sign', () => {
+    expect(
+      tradeStage(trade({ answered: true, status: 'negotiating' }))
+    ).toMatchObject({ stage: 'signing', step: 1, waitingOn: null })
+    expect(
+      tradeStage(
+        trade({ answered: true, role: 'maker', status: 'negotiating' })
+      )
+    ).toMatchObject({ stage: 'signing', waitingOn: 'taker' })
+  })
+
+  it('confirms on chain, then settles', () => {
+    expect(
+      tradeStage(trade({ confirmations: 1, status: 'broadcast', txid: 'ab' }))
+    ).toMatchObject({ stage: 'confirming', step: 2 })
+    expect(tradeStage(trade({ status: 'settled', txid: 'ab' }))).toMatchObject({
+      stage: 'settled',
+      step: 3,
+    })
+  })
+
+  it('says why a swap failed, in a way the user can act on', () => {
+    expect(
+      tradeStage(
+        trade({
+          error: 'rgb-lib: Insufficient bitcoin funds: needed 9000',
+          status: 'failed',
+        })
+      )
+    ).toMatchObject({ failure: { kind: 'funds' }, stage: 'failed', step: -1 })
+    expect(
+      tradeStage(
+        trade({ error: 'timed out waiting for proposal', status: 'failed' })
+      )
+    ).toMatchObject({ failure: { kind: 'noAnswer' } })
+    expect(
+      tradeStage(trade({ error: 'boom', status: 'failed' }))
+    ).toMatchObject({ failure: { error: 'boom', kind: 'other' } })
   })
 })

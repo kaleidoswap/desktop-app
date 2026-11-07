@@ -3406,6 +3406,22 @@
         "inFlight": "{{n}} in flight",
         "moveFunds": "Move funds from your node"
       },
+      "swap": {
+        "confirming": "Confirmation",
+        "requested": "Demandé",
+        "settled": "Terminé",
+        "signing": "Signature",
+        "failedFunds": "Pas assez de bitcoin pour couvrir le swap et ses frais. Ajoutez des fonds et réessayez.",
+        "failedNoAnswer": "Le maker n'a pas répondu. Rien n'a été dépensé ; essayez un autre ordre.",
+        "failed": "Le swap n'a pas abouti. Rien n'a été dépensé.",
+        "waitMaker": "En attente de la réponse du maker. Le maker doit être en ligne.",
+        "requestIn": "Demande reçue.",
+        "waitTaker": "En attente de la signature de l'autre partie.",
+        "signingNow": "Les deux parties signent.",
+        "confirmBlocks": "Sur la chaîne : {{have}} confirmations sur {{need}}.",
+        "onChain": "Sur la chaîne, en attente de confirmations.",
+        "steps": "Progression du swap"
+      },
       "take": {
         "copied": "Copied",
         "waitMaker": "Waiting for the other side to answer",
