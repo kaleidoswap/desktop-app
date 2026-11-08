@@ -236,7 +236,7 @@ impl P2pProcess {
                 .args(["--fee-address", &cfg.fee_address])
                 .args(["--fee-bps", &cfg.fee_bps.to_string()])
                 .args(["--min-fee-sat", &cfg.min_fee_sat.to_string()])
-                .args(["--keystore", "keychain"])
+                .args(["--keystore", if cfg!(target_os = "macos") { "keychain-biometric" } else { "keychain" }])
                 .arg("--data-dir")
                 .arg(&data_dir);
             for relay in &cfg.relays {
