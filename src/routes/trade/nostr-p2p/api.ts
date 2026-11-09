@@ -114,6 +114,11 @@ export interface Trade {
   asset_id: string
   ticker: string | null
   amount: number
+  /**
+   * Display decimals for `amount`, which is in base units. Absent from an older
+   * daemon: look the asset up on screen instead of guessing a scale.
+   */
+  precision?: number
   price_sat: number
   fee_sat: number
   status: TradeStatus

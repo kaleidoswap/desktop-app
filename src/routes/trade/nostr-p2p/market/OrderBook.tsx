@@ -12,11 +12,21 @@ interface Props {
   orders: Order[]
   ticker: string
   onPick: (o: Order) => void
+  /** Own orders published locally that the relay book has not echoed yet. */
+  pendingRelay?: ReadonlySet<string>
+  /** True until the first book read, so an empty book is not shown early. */
+  loading?: boolean
 }
 
 const ROWS = 9
 
-export function OrderBook({ orders, ticker, onPick }: Props) {
+export function OrderBook({
+  orders,
+  ticker,
+  onPick,
+  pendingRelay,
+  loading = false,
+}: Props) {
   const tr = useTr()
   const { asks, bids } = useMemo(() => splitBook(orders), [orders])
   const askRows = useMemo(() => withDepth(asks).slice(0, ROWS), [asks])
@@ -34,6 +44,7 @@ export function OrderBook({ orders, ticker, onPick }: Props) {
   }, [orders])
   const onlineMakers = [...makers.values()].filter(Boolean).length
 
+  const reaching = orders.some((o) => pendingRelay?.has(o.order_id))
   const bestAsk = asks[0]?.unit_price
   const bestBid = bids[0]?.unit_price
   const both = bestAsk !== undefined && bestBid !== undefined
@@ -103,7 +114,9 @@ export function OrderBook({ orders, ticker, onPick }: Props) {
             {fmtPrice(o.unit_price)}
             {o.mine && (
               <span className="rounded-full bg-primary/15 px-1.5 text-tiny text-primary">
-                {tr('book.you', 'you')}
+                {pendingRelay?.has(o.order_id)
+                  ? tr('book.youLive', 'you · live')
+                  : tr('book.you', 'you')}
               </span>
             )}
             {!o.mine && o.impersonates && (
@@ -132,12 +145,12 @@ export function OrderBook({ orders, ticker, onPick }: Props) {
       aria-label={tr('book.title', 'Order book')}
       className="flex h-full flex-col rounded-2xl bg-surface-card/70 p-3"
     >
-      <header className="flex items-baseline justify-between px-2 pb-2">
+      <header className="flex items-baseline justify-between gap-3 px-2 pb-2">
         <h2 className="text-subhead font-medium text-content-primary">
           {tr('book.title', 'Order book')}
         </h2>
         <span
-          className="text-caption text-content-tertiary"
+          className="text-right text-caption text-content-tertiary"
           title={tr(
             'book.presenceHelp',
             'A maker is online when its offers were refreshed in the last few minutes. Away makers may answer slowly.'
@@ -151,48 +164,19 @@ export function OrderBook({ orders, ticker, onPick }: Props) {
             : tr('book.open', '{{n}} open', { n: asks.length + bids.length })}
         </span>
       </header>
-      <div className="grid grid-cols-[1.2fr_1fr_1fr] gap-2 px-2 pb-1 text-tiny text-content-tertiary">
-        <span>{tr('book.price', 'Price (sats)')}</span>
-        <span className="text-right">
-          {tr('book.size', 'Size ({{ticker}})', { ticker })}
-        </span>
-        <span className="text-right">{tr('book.total', 'Total (sats)')}</span>
-      </div>
-
-      <ul className="flex flex-col justify-end">
-        {askRows.length ? (
-          [...askRows].reverse().map((r) => row(r, 'ask'))
-        ) : (
-          <li className="px-2 py-3 text-caption text-content-tertiary">
-            {tr('book.noSellers', 'No sellers yet')}
-          </li>
-        )}
-      </ul>
-
-      <div className="my-1 flex items-baseline justify-between rounded-xl bg-surface-inset px-3 py-2">
-        <strong className="text-subhead tabular-nums text-content-primary">
-          {mid !== undefined ? fmtPrice(mid) : '–'}
-        </strong>
-        <span className="text-caption text-content-tertiary tabular-nums">
-          {spreadPct !== undefined
-            ? tr('book.spread', 'spread {{pct}}%', {
-                pct: spreadPct.toFixed(spreadPct < 10 ? 2 : 1),
-              })
-            : tr('book.perUnit', 'sats per {{ticker}}', { ticker })}
-        </span>
-      </div>
-
-      <ul className="flex flex-col">
-        {bidRows.length ? (
-          bidRows.map((r) => row(r, 'bid'))
-        ) : (
-          <li className="px-2 py-3 text-caption text-content-tertiary">
-            {tr('book.noBuyers', 'No buyers yet')}
-          </li>
-        )}
-      </ul>
-
-      {!orders.length && (
+      {reaching && (
+        <p className="mx-2 mb-2 rounded-lg bg-primary/10 px-2.5 py-1.5 text-tiny text-content-secondary">
+          {tr(
+            'book.yoursLive',
+            'Your order is live on this computer. It can take a few seconds to show up for everyone else.'
+          )}
+        </p>
+      )}
+      {loading && !orders.length ? (
+        <p className="px-2 py-8 text-center text-caption text-content-tertiary">
+          {tr('book.loading', 'Loading the order book…')}
+        </p>
+      ) : !orders.length ? (
         <EmptyState
           description={tr(
             'book.emptyBody',
@@ -202,6 +186,50 @@ export function OrderBook({ orders, ticker, onPick }: Props) {
             ticker,
           })}
         />
+      ) : (
+        <>
+          <div className="grid grid-cols-[1.2fr_1fr_1fr] gap-2 px-2 pb-1 text-tiny text-content-tertiary">
+            <span>{tr('book.price', 'Price (sats)')}</span>
+            <span className="text-right">
+              {tr('book.size', 'Size ({{ticker}})', { ticker })}
+            </span>
+            <span className="text-right">
+              {tr('book.total', 'Total (sats)')}
+            </span>
+          </div>
+          <ul className="flex flex-col justify-end">
+            {askRows.length ? (
+              [...askRows].reverse().map((r) => row(r, 'ask'))
+            ) : (
+              <li className="px-2 py-3 text-caption text-content-tertiary">
+                {tr('book.noSellers', 'No sellers yet')}
+              </li>
+            )}
+          </ul>
+
+          <div className="my-1 flex items-baseline justify-between rounded-xl bg-surface-inset px-3 py-2">
+            <strong className="text-subhead tabular-nums text-content-primary">
+              {mid !== undefined ? fmtPrice(mid) : '–'}
+            </strong>
+            <span className="text-caption tabular-nums text-content-tertiary">
+              {spreadPct !== undefined
+                ? tr('book.spread', 'spread {{pct}}%', {
+                    pct: spreadPct.toFixed(spreadPct < 10 ? 2 : 1),
+                  })
+                : tr('book.perUnit', 'sats per {{ticker}}', { ticker })}
+            </span>
+          </div>
+
+          <ul className="flex flex-col">
+            {bidRows.length ? (
+              bidRows.map((r) => row(r, 'bid'))
+            ) : (
+              <li className="px-2 py-3 text-caption text-content-tertiary">
+                {tr('book.noBuyers', 'No buyers yet')}
+              </li>
+            )}
+          </ul>
+        </>
       )}
       <footer className="mt-auto px-2 pt-2 text-tiny text-content-tertiary">
         {tr('book.foot', 'Orders fill whole. Click one to trade it.')}

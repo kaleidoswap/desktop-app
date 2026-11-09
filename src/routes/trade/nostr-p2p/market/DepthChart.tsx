@@ -11,12 +11,21 @@ const H = 150
 export function DepthChart({
   orders,
   ticker,
+  loading = false,
 }: {
   orders: Order[]
   ticker: string
+  loading?: boolean
 }) {
   const tr = useTr()
   const { asks, bids } = splitBook(orders)
+  if (loading && !asks.length && !bids.length) {
+    return (
+      <div className="flex h-full min-h-36 items-center justify-center text-caption text-content-tertiary">
+        {tr('depth.loading', 'Loading depth…')}
+      </div>
+    )
+  }
   if (!asks.length && !bids.length) {
     return (
       <div className="flex h-full min-h-36 items-center justify-center text-caption text-content-tertiary">

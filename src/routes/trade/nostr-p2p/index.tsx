@@ -11,7 +11,11 @@ import { useSettings } from '../../../hooks/useSettings'
 import { marketApi } from './api'
 import { TradeNav } from '../../../components/Trade'
 import { Alert, Button } from '../../../components/ui'
-import { type P2pNetworkOption, walletAccountFor } from '../../../constants/p2p'
+import {
+  allocateWalletId,
+  type P2pNetworkOption,
+  walletAccountFor,
+} from '../../../constants/p2p'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 
 import { Component as AssetsHistory } from '../../wallet-history/assets'
@@ -36,6 +40,16 @@ import {
 } from './p2p'
 import { createP2pWalletWrapper } from './walletClient'
 import { WalletSetup } from './WalletSetup'
+import { WalletSwitch } from './WalletSwitch'
+import {
+  originalWallet,
+  readSelectedWalletId,
+  readWalletList,
+  removeWallet,
+  saveWallet,
+  writeSelectedWalletId,
+  type TradingWallet,
+} from './wallets'
 import { WithdrawModal } from './WithdrawModal'
 
 const isTauri = () =>
@@ -92,7 +106,33 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
   const list = options ?? []
   const option = list.find((o) => o.key === networkKey) ?? list[0]
   const config = option
-  const account = config ? walletAccountFor(config) : ''
+  const network = config?.network ?? ''
+  const [walletLists, setWalletLists] = useState<
+    Record<string, TradingWallet[]>
+  >({})
+  const [selection, setSelection] = useState<{
+    network: string
+    id: string
+  } | null>(null)
+  const [draft, setDraft] = useState<{
+    network: string
+    id: string
+    label: string
+  } | null>(null)
+  const wallets = network
+    ? (walletLists[network] ?? readWalletList(network))
+    : [originalWallet()]
+  const savedWalletId = network ? readSelectedWalletId(network) : ''
+  const walletId =
+    draft && draft.network === network
+      ? draft.id
+      : selection && selection.network === network
+        ? selection.id
+        : savedWalletId
+  const account = config ? walletAccountFor(config, walletId) : ''
+  const walletLabel =
+    wallets.find((w) => w.id === walletId)?.label ??
+    (draft?.network === network ? draft.label : undefined)
 
   const [phase, setPhase] = useState<Phase>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -190,8 +230,40 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
       created_at: Date.now(),
       version: 1,
     })
+    setDraft(null)
     runningAccount = account
     setPhase('running')
+  }
+
+  const chooseWallet = (id: string) => {
+    if (!config) return
+    writeSelectedWalletId(config.network, id)
+    setDraft(null)
+    setSelection({ id, network: config.network })
+  }
+
+  const addWallet = (name: string) => {
+    if (!config) return
+    const id = allocateWalletId(
+      name,
+      wallets.map((w) => w.id)
+    )
+    const label =
+      name.trim() || `Wallet ${wallets.filter((w) => w.id).length + 2}`
+    const next = saveWallet(config.network, { id, label })
+    writeSelectedWalletId(config.network, id)
+    setWalletLists((m) => ({ ...m, [config.network]: next }))
+    setDraft({ id, label, network: config.network })
+    setSelection({ id, network: config.network })
+  }
+
+  const leaveUnfinishedWallet = () => {
+    if (!config || !walletId) return
+    const next = removeWallet(config.network, walletId)
+    setWalletLists((m) => ({ ...m, [config.network]: next }))
+    writeSelectedWalletId(config.network, '')
+    setDraft(null)
+    setSelection({ id: '', network: config.network })
   }
 
   const rescan = async () => {
@@ -250,7 +322,9 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
       <WalletSetup
         generate={() => p2pGenerateSeed(config.network)}
         networkLabel={option?.label ?? config.network}
+        onCancel={walletId ? leaveUnfinishedWallet : undefined}
         onComplete={createWallet}
+        walletLabel={walletId ? walletLabel : undefined}
       />
     )
   } else if (phase === 'error') {
@@ -327,6 +401,12 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
               ))}
             </div>
           )}
+          <WalletSwitch
+            onCreate={addWallet}
+            onSelect={chooseWallet}
+            selectedId={walletId}
+            wallets={wallets}
+          />
           {list.length > 1 && (
             <select
               aria-label={t('p2pMarket.network', { defaultValue: 'Network' })}
@@ -391,6 +471,7 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
                   : setDeposit(true)
             }
             onRescan={rescan}
+            walletLabel={walletLabel}
           />
         )}
         {coins && (

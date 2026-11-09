@@ -118,6 +118,12 @@ export function TakeSheet({
   const confirm = async () => {
     setBusy(true)
     const since = Math.floor(Date.now() / 1000) - 2
+    // The stepper only counts trades at or after `startedAt`, and it is hidden
+    // until that is set. Set it before take() so Requested and Signing can
+    // show while the call is in flight: the trade is polled every 1.5s, and an
+    // empty list is itself the "requested" stage. POST /api/take is not what
+    // advances the stepper.
+    setStartedAt(since)
     const results = await Promise.allSettled(
       // a maker that is around answers fast: do not wait minutes for one that does not
       orders.map((o) =>
@@ -137,7 +143,8 @@ export function TakeSheet({
           ? failed.reason.message
           : String(failed.reason)
       )
-    if (results.some((r) => r.status === 'fulfilled')) setStartedAt(since)
+    // A refusal before any trade exists is not a swap in progress.
+    if (!results.some((r) => r.status === 'fulfilled')) setStartedAt(null)
     setBusy(false)
     onChanged()
   }

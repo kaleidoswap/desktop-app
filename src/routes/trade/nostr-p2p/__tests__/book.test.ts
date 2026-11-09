@@ -1,8 +1,24 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { Order } from '../api'
-import { nextMakers, planMarket, splitBook, withDepth } from '../book'
-import { fmtPrice, fmtUnits, takerCost, timeLeft, toBase } from '../format'
+import {
+  nextMakers,
+  ordersAwaitingRelay,
+  ordersOnScreen,
+  planMarket,
+  splitBook,
+  withDepth,
+} from '../book'
+import {
+  fmtPrice,
+  fmtTradeAmount,
+  fmtUnits,
+  takerCost,
+  timeLeft,
+  toBase,
+  tradePrecision,
+  tradeUnitPrice,
+} from '../format'
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
 
@@ -241,5 +257,73 @@ describe('trying another maker', () => {
       'c',
       'b',
     ])
+  })
+})
+
+describe('a limit the relays have not echoed yet', () => {
+  it('shows this wallet’s own open order when the book is still empty', () => {
+    const mine = order('sell', 100, 50_000, {
+      mine: true,
+      order_id: 'mine',
+      state: 'open',
+    })
+    const shown = ordersOnScreen([], [mine])
+    expect(shown.map((o) => o.order_id)).toEqual(['mine'])
+    expect(shown[0]?.mine).toBe(true)
+    expect(ordersAwaitingRelay([], [mine])).toEqual(['mine'])
+  })
+
+  it('does not duplicate an order the book already has, or invent anyone else’s', () => {
+    const theirs = order('buy', 100, 40_000, { maker: 'them', order_id: 't' })
+    const echoed = order('sell', 100, 50_000, {
+      away: true,
+      order_id: 'mine',
+    })
+    const local = order('sell', 100, 50_000, {
+      away: false,
+      mine: true,
+      order_id: 'mine',
+      state: 'open',
+    })
+    const shown = ordersOnScreen([theirs, echoed], [local])
+    expect(shown.map((o) => o.order_id)).toEqual(['t', 'mine'])
+    expect(shown.find((o) => o.order_id === 'mine')?.away).toBe(true)
+    expect(ordersAwaitingRelay([theirs, echoed], [local])).toEqual([])
+  })
+
+  it('leaves out an own order that is no longer open', () => {
+    const done = order('sell', 100, 50_000, {
+      mine: true,
+      order_id: 'mine',
+      state: 'filled',
+    })
+    expect(ordersOnScreen([], [done])).toEqual([])
+    expect(ordersAwaitingRelay([], [done])).toEqual([])
+  })
+})
+
+describe('trade amounts', () => {
+  it('uses the precision the trade carries', () => {
+    const trade = { amount: 150, asset_id: 'rgb:A', precision: 2 }
+    expect(tradePrecision(trade, [])).toBe(2)
+    expect(fmtTradeAmount(trade.amount, 2)).toBe('1.5')
+    expect(tradeUnitPrice({ ...trade, price_sat: 3000 })).toBe(2000)
+  })
+
+  it('looks up a missing precision from an asset already on screen', () => {
+    const trade = { amount: 100_000_000, asset_id: 'rgb:A', price_sat: 50_000 }
+    const known = [{ asset_id: 'rgb:A', precision: 8 }]
+    expect(tradePrecision(trade, known)).toBe(8)
+    expect(fmtTradeAmount(trade.amount, tradePrecision(trade, known))).toBe('1')
+    expect(tradeUnitPrice(trade, known)).toBe(50_000)
+  })
+
+  it('does not invent a scale when nothing on screen knows the asset', () => {
+    const trade = { amount: 150, asset_id: 'rgb:missing', price_sat: 3000 }
+    expect(tradePrecision(trade, [{ asset_id: 'rgb:A', precision: 8 }])).toBe(
+      null
+    )
+    expect(fmtTradeAmount(trade.amount, null)).toBe('150')
+    expect(tradeUnitPrice(trade, [])).toBeUndefined()
   })
 })

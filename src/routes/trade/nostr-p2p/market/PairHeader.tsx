@@ -26,6 +26,8 @@ interface Props {
   info: Info
   /** What the registry lists for this market's asset, when the daemon reads one. */
   registry?: RegistryNote | null
+  /** The trading wallet that is open, so two wallets on one computer are easy to tell apart. */
+  walletLabel?: string
 }
 
 const Stat = ({
@@ -60,6 +62,7 @@ export function PairHeader({
   open,
   info,
   registry,
+  walletLabel,
 }: Props) {
   const tr = useTr()
   const market = markets.find((m) => m.asset_id === selected)
@@ -113,41 +116,51 @@ export function PairHeader({
             }
 
   return (
-    <header className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl bg-surface-card/70 px-4 py-2.5">
-      <div className="flex items-center gap-3">
-        <label className="sr-only" htmlFor="p2p-market">
-          {tr('header.market', 'Market')}
-        </label>
-        <select
-          className="rounded-xl bg-surface-inset px-3 py-2 text-subhead font-medium text-content-primary outline-none focus:ring-2 focus:ring-primary/40"
-          disabled={!markets.length}
-          id="p2p-market"
-          onChange={(e) => onSelect(e.target.value)}
-          value={selected ?? ''}
-        >
-          {markets.length === 0 && (
-            <option>{tr('header.noMarkets', 'No markets yet')}</option>
+    <header className="flex flex-col gap-4 rounded-2xl bg-surface-card/70 px-4 py-3 lg:flex-row lg:items-center lg:gap-8">
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="sr-only" htmlFor="p2p-market">
+            {tr('header.market', 'Market')}
+          </label>
+          <select
+            className="rounded-xl bg-surface-inset px-3 py-2 text-body font-semibold text-content-primary outline-none focus:ring-2 focus:ring-primary/40"
+            disabled={!markets.length}
+            id="p2p-market"
+            onChange={(e) => onSelect(e.target.value)}
+            value={selected ?? ''}
+          >
+            {markets.length === 0 && (
+              <option>{tr('header.noMarkets', 'No markets yet')}</option>
+            )}
+            {markets.map((m) => (
+              <option key={m.asset_id} value={m.asset_id}>
+                {m.ticker} / BTC
+              </option>
+            ))}
+          </select>
+          {registryFlag && (
+            <Pill tone={registryFlag.tone}>{registryFlag.text}</Pill>
           )}
-          {markets.map((m) => (
-            <option key={m.asset_id} value={m.asset_id}>
-              {m.ticker} / BTC
-            </option>
-          ))}
-        </select>
-        {registryFlag && (
-          <Pill tone={registryFlag.tone}>{registryFlag.text}</Pill>
-        )}
-        {flag && (
-          <span title={market?.asset_id}>
-            <Pill tone={flag.tone}>
-              <flag.icon aria-hidden size={12} /> {flag.text}
-            </Pill>
-          </span>
+          {flag && (
+            <span title={market?.asset_id}>
+              <Pill tone={flag.tone}>
+                <flag.icon aria-hidden size={12} /> {flag.text}
+              </Pill>
+            </span>
+          )}
+        </div>
+        {market && (
+          <p
+            className="truncate font-mono text-tiny text-content-tertiary"
+            title={market.asset_id}
+          >
+            {short(market.asset_id, 10)}
+          </p>
         )}
       </div>
 
       {market && (
-        <dl className="flex flex-wrap gap-x-6 gap-y-2">
+        <dl className="grid flex-1 grid-cols-2 gap-x-5 gap-y-2 sm:grid-cols-4">
           <Stat
             label={tr('header.bestBuy', 'Best buy')}
             tone="text-status-success"
@@ -169,18 +182,16 @@ export function PairHeader({
         </dl>
       )}
 
-      <div className="ml-auto flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
         <Pill tone={info.network === 'mainnet' ? 'success' : 'warning'}>
           {networkLabel(info.network)}
         </Pill>
-        <span
-          className="text-tiny text-content-tertiary"
-          title={`${info.name} · ${info.npub}`}
-        >
-          {info.name.startsWith('wallet-')
-            ? tr('header.yourWallet', 'Your wallet')
-            : info.name}{' '}
-          · {short(info.npub, 5)}
+        <span className="text-tiny text-content-tertiary" title={info.npub}>
+          {walletLabel ??
+            (info.name.startsWith('wallet-')
+              ? tr('header.yourWallet', 'Your wallet')
+              : info.name)}{' '}
+          · {short(info.npub, 6)}
         </span>
       </div>
     </header>

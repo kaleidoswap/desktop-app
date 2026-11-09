@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Copy } from 'lucide-react'
+import { ArrowRightLeft, Copy, Loader2 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
@@ -157,12 +157,9 @@ export function DepositModal({ isOpen, onClose, onFromNode }: Props) {
                 <div className="rounded-xl bg-white p-3">
                   <QRCodeSVG size={168} value={address} />
                 </div>
-                <div className="flex w-full items-center gap-2 rounded-xl bg-surface-inset px-3 py-2">
-                  <code
-                    className="min-w-0 flex-1 truncate text-caption text-content-secondary"
-                    title={address}
-                  >
-                    {short(address, 14)}
+                <div className="flex w-full items-start gap-2 rounded-xl bg-surface-inset px-3 py-2">
+                  <code className="min-w-0 flex-1 break-all text-left font-mono text-tiny text-content-secondary">
+                    {address}
                   </code>
                   <button
                     aria-label={tr('deposit.copyAddress', 'Copy address')}
@@ -186,7 +183,12 @@ export function DepositModal({ isOpen, onClose, onFromNode }: Props) {
                         })}
                   </p>
                 ) : (
-                  <p className="w-full rounded-xl bg-surface-inset p-3 text-center text-caption text-content-secondary">
+                  <p className="flex w-full items-center justify-center gap-2 rounded-xl bg-surface-inset p-3 text-center text-caption text-content-secondary">
+                    <Loader2
+                      aria-hidden
+                      className="shrink-0 animate-spin"
+                      size={14}
+                    />
                     {tr(
                       'deposit.waiting',
                       'Waiting for your deposit… this checks the chain every few seconds.'
@@ -201,7 +203,8 @@ export function DepositModal({ isOpen, onClose, onFromNode }: Props) {
                 </p>
               </>
             ) : (
-              <p className="text-caption text-content-tertiary">
+              <p className="flex items-center gap-2 py-6 text-caption text-content-tertiary">
+                <Loader2 aria-hidden className="animate-spin" size={14} />
                 {tr('deposit.loading', 'Loading the address…')}
               </p>
             )}
