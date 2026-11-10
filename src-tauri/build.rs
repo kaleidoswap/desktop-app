@@ -1,3 +1,5 @@
+mod build_config;
+
 use dotenvy::dotenv;
 use serde_json::Value;
 use std::env;
@@ -28,6 +30,12 @@ fn main() {
     // Load the Tauri configuration template
     let template_path = PathBuf::from(manifest_dir).join("tauri.conf.json");
     let mut config = TauriConfig::load(&template_path);
+    // Tauri CLI passes --config overlays here. Preserve their version, resources,
+    // signing and window settings before applying platform-specific adjustments.
+    if let Ok(overlay) = env::var("TAURI_CONFIG") {
+        let overlay = serde_json::from_str(&overlay).expect("invalid TAURI_CONFIG overlay");
+        build_config::merge_config(&mut config.config, overlay);
+    }
 
     // If we need to build rgb-lightning-node
     if build_rgb_lightning_node {

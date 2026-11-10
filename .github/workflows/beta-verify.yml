@@ -1,0 +1,163 @@
+name: Beta verification (no release)
+
+on:
+  push:
+    branches: [codex/p2p-beta-verification]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: beta-verify-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            bundles: app,dmg
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            bundles: app,dmg
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: deb,appimage
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis,msi
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify private daemon access configuration
+        if: runner.os != 'Windows'
+        env:
+          P2PD_REPO: ${{ secrets.P2PD_REPO }}
+          P2PD_REPO_TOKEN: ${{ secrets.P2PD_REPO_TOKEN }}
+        run: |
+          test -n "$P2PD_REPO" || { echo 'Missing P2PD_REPO'; exit 1; }
+          test -n "$P2PD_REPO_TOKEN" || { echo 'Missing P2PD_REPO_TOKEN'; exit 1; }
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev pkg-config
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
+        with:
+          arch: x64
+      - name: Install frontend and check P2P backend
+        run: |
+          pnpm install --frozen-lockfile
+          cargo test --locked --manifest-path src-tauri/Cargo.toml p2p
+          cargo test --locked --manifest-path src-tauri/Cargo.toml --test build_config
+      - name: Import Developer ID certificate into an ephemeral keychain
+        if: runner.os == 'macOS'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          : "${APPLE_CERTIFICATE:?missing Apple certificate}"
+          : "${APPLE_SIGNING_IDENTITY:?missing signing identity}"
+          : "${KEYCHAIN_PASSWORD:?missing keychain password}"
+          : "${APPLE_ID:?missing notarization Apple ID}"
+          : "${APPLE_PASSWORD:?missing notarization credential}"
+          : "${APPLE_TEAM_ID:?missing Apple team}"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/beta-certificate.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/beta-signing.keychain-db"
+          security set-keychain-settings -lut 21600 "$RUNNER_TEMP/beta-signing.keychain-db"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/beta-signing.keychain-db"
+          security import "$RUNNER_TEMP/beta-certificate.p12" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -k "$RUNNER_TEMP/beta-signing.keychain-db"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/beta-signing.keychain-db"
+          security list-keychains -d user -s "$RUNNER_TEMP/beta-signing.keychain-db" "$HOME/Library/Keychains/login.keychain-db"
+          python3 scripts/check-beta-signing.py
+      - name: Build bundled Lightning node
+        if: runner.os != 'Windows'
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+        run: make release
+      - name: Stage Windows placeholder for unsupported native Lightning node
+        if: runner.os == 'Windows'
+        run: |
+          mkdir -p bin
+          printf '%s\n' 'Native RGB Lightning Node is unavailable on Windows.' > bin/rgb-lightning-node
+      - name: Checkout and stage the exact private daemon revision
+        if: runner.os != 'Windows'
+        env:
+          P2PD_REPO: ${{ secrets.P2PD_REPO }}
+          P2PD_REPO_TOKEN: ${{ secrets.P2PD_REPO_TOKEN }}
+          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+        run: |
+          bash scripts/checkout-p2pd.sh
+          P2PD_SRC="$PWD/.p2pd-src" bash scripts/prepare-p2p-bundle.sh
+      - name: Build and notarize without a GitHub release or updater upload
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+          APPLE_ID: ${{ runner.os == 'macOS' && secrets.APPLE_ID || '' }}
+          APPLE_PASSWORD: ${{ runner.os == 'macOS' && secrets.APPLE_PASSWORD || '' }}
+          APPLE_TEAM_ID: ${{ runner.os == 'macOS' && secrets.APPLE_TEAM_ID || '' }}
+        run: |
+          extra=()
+          if [[ "$RUNNER_OS" != Windows ]]; then extra+=(--config src-tauri/tauri.p2p.conf.json); fi
+          pnpm exec tauri build --target '${{ matrix.target }}' --bundles '${{ matrix.bundles }}' --config src-tauri/tauri.beta.conf.json "${extra[@]}"
+      - name: Verify notarization and Gatekeeper
+        if: runner.os == 'macOS'
+        run: |
+          app="src-tauri/target/${{ matrix.target }}/release/bundle/macos/KaleidoSwap Beta.app"
+          codesign --verify --deep --strict "$app"
+          xcrun stapler validate "$app"
+          spctl --assess --type execute --verbose "$app"
+      # No release, registry push, updater JSON, or artifact upload.
+      - name: Clean ephemeral signing and private checkout files
+        if: always()
+        run: |
+          rm -rf .p2pd-src
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            security delete-keychain "$RUNNER_TEMP/beta-signing.keychain-db" || true
+            rm -f "$RUNNER_TEMP/beta-certificate.p12"
+          fi
+
+  docker-linux-amd64:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout pinned private daemon
+        env:
+          P2PD_REPO: ${{ secrets.P2PD_REPO }}
+          P2PD_REPO_TOKEN: ${{ secrets.P2PD_REPO_TOKEN }}
+        run: bash scripts/checkout-p2pd.sh
+      - name: Build Linux daemon locally in the runner (no registry push)
+        run: docker build --platform linux/amd64 -t p2pd:beta-verify -f .p2pd-src/deploy/Dockerfile .p2pd-src
+      - name: Test the desktop Docker launch contract on signet
+        run: python3 scripts/test-p2p-docker.py --image p2pd:beta-verify --report docker-smoke.json
+      - name: Show non-secret smoke result
+        if: always()
+        run: test ! -f docker-smoke.json || cat docker-smoke.json
