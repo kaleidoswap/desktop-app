@@ -2,6 +2,11 @@
   "version": "0.7.0-beta.1",
   "productName": "KaleidoSwap Beta",
   "bundle": {
-    "createUpdaterArtifacts": false
+    "createUpdaterArtifacts": false,
+    "windows": {
+      "wix": {
+        "version": "0.7.0.1"
+      }
+    }
   }
 }
