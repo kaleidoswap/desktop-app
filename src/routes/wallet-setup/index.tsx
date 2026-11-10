@@ -8,8 +8,8 @@ import {
   ArrowLeft,
   HelpCircle,
   Bell,
-  Boxes,
   Brain,
+  Coins,
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -23,6 +23,7 @@ import {
   WALLET_REMOTE_PATH,
   WALLET_RESTORE_PATH,
   KALEIDO_MIND_PATH,
+  P2P_WALLET_PATH,
 } from '../../app/router/paths'
 import logoFull from '../../assets/logo-full.svg'
 import logoIcon from '../../assets/logo.svg'
@@ -30,50 +31,56 @@ import { AppVersion } from '../../components/AppVersion'
 import { Layout } from '../../components/Layout'
 import { SupportModal } from '../../components/SupportModal'
 import { Toolbar } from '../../components/Toolbar'
-import {
-  NodeOption,
-  WalletAction,
-  IconWrapper,
-} from '../../components/wallet-setup'
-import { setAppMode, type AppMode } from '../../slices/settings/settings.slice'
+import { WalletAction, IconWrapper } from '../../components/wallet-setup'
+import { setAppMode } from '../../slices/settings/settings.slice'
 import { logger } from '../../utils/logger'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
-const MODE_OPTIONS: {
-  mode: AppMode
+/** One way into the app: an icon, what it does, and what it needs. */
+const LaunchCard = ({
+  title,
+  description,
+  icon,
+  tag,
+  onClick,
+  disabled,
+}: {
+  title: string
+  description: string
   icon: React.ReactNode
-  labelKey: string
-  label: string
-}[] = [
-  {
-    icon: <Boxes className="w-4 h-4" />,
-    label: 'Node + Mind',
-    labelKey: 'launcher.modes.both.title',
-    mode: 'both',
-  },
-  {
-    icon: <Server className="w-4 h-4" />,
-    label: 'Only Node',
-    labelKey: 'launcher.modes.node.title',
-    mode: 'node',
-  },
-  {
-    icon: <Brain className="w-4 h-4" />,
-    label: 'Only Mind',
-    labelKey: 'launcher.modes.mind.title',
-    mode: 'mind',
-  },
-]
+  tag?: string
+  onClick: () => void
+  disabled?: boolean
+}) => (
+  <button
+    className="group relative flex h-full w-full flex-col gap-3 rounded-2xl border-2 border-divider/20 bg-surface-elevated/40 p-6 text-left backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-surface-elevated/60 hover:shadow-lg hover:shadow-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-wait disabled:opacity-50 disabled:hover:translate-y-0"
+    disabled={disabled}
+    onClick={onClick}
+    type="button"
+  >
+    <div className="flex items-center gap-4">
+      <div className="flex items-center justify-center rounded-xl bg-primary/5 p-3 text-primary/80 transition-colors group-hover:bg-primary/15 group-hover:text-primary">
+        {icon}
+      </div>
+      <h3 className="text-xl font-bold text-white">{title}</h3>
+      {tag && (
+        <span className="ml-auto rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
+          {tag}
+        </span>
+      )}
+    </div>
+    <p className="text-sm leading-relaxed text-content-secondary">
+      {description}
+    </p>
+  </button>
+)
 
 export const Component = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const [nodeType, setNodeType] = useState<'local' | 'remote' | null>(null)
-  // Which capabilities the user wants. 'both' (Node + Mind) is the default;
-  // 'mind' skips node setup entirely and opens KaleidoMind.
-  const [selectedMode, setSelectedMode] = useState<AppMode>('both')
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
   const { toggleNotificationPanel, notifications } = useNotification()
@@ -129,6 +136,17 @@ export const Component = () => {
     }
 
     checkCapabilities()
+  }, [])
+
+  // the P2P market is not bundled on every system (not on Windows yet)
+  const [p2pWhere, setP2pWhere] = useState<{
+    backend: string | null
+    hint: string | null
+  } | null>(null)
+  useEffect(() => {
+    invoke<{ backend: string | null; hint: string | null }>('p2p_available')
+      .then(setP2pWhere)
+      .catch(() => setP2pWhere({ backend: null, hint: 'unknown' }))
   }, [])
 
   // Handle transitions
@@ -252,7 +270,7 @@ export const Component = () => {
               >
                 {!nodeType || nodeType === 'remote' ? (
                   <>
-                    <div className="text-center mb-12 slide-in">
+                    <div className="text-center mb-10 slide-in">
                       <div className="relative inline-flex mb-6">
                         {/* Purple ripple rings */}
                         <div className="absolute inset-0 rounded-2xl bg-purple/15 animate-ripple-1 pointer-events-none" />
@@ -278,99 +296,105 @@ export const Component = () => {
                           KaleidoSwap
                         </span>
                       </h1>
-                    </div>
-
-                    {/* Mode selector — Node + Mind (default) / Only Node / Only Mind */}
-                    <div className="flex justify-center mb-8 slide-in">
-                      <div className="flex gap-1 rounded-xl bg-surface-base/35 p-1">
-                        {MODE_OPTIONS.map((m) => {
-                          const active = selectedMode === m.mode
-                          return (
-                            <button
-                              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none ${
-                                active
-                                  ? 'bg-primary/15 text-primary border border-primary/30'
-                                  : 'text-content-secondary hover:text-white border border-transparent'
-                              }`}
-                              key={m.mode}
-                              onClick={() => setSelectedMode(m.mode)}
-                              type="button"
-                            >
-                              {m.icon}
-                              <span>
-                                {t(m.labelKey, { defaultValue: m.label })}
-                              </span>
-                            </button>
-                          )
+                      <p className="mx-auto max-w-xl text-base text-content-secondary">
+                        {t('launcher.subtitle', {
+                          defaultValue:
+                            'Choose how you want to use it. You can change later.',
                         })}
-                      </div>
+                      </p>
                     </div>
 
                     {mindLaunchError && (
-                      <p className="text-sm text-red-400" role="alert">
+                      <p className="mb-4 text-sm text-red-400" role="alert">
                         {mindLaunchError}
                       </p>
                     )}
-                    {selectedMode === 'mind' ? (
-                      <div className="flex justify-center slide-in">
-                        <div
-                          className="relative overflow-hidden transition-all duration-300 border-2 rounded-2xl backdrop-blur-sm
-                            hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 cursor-pointer fade-in
-                            bg-surface-elevated/40 hover:bg-surface-elevated/60 border-divider/20 w-full max-w-sm"
-                          onClick={() => void openMindOnly()}
-                        >
-                          <div className="p-6">
-                            <div className="flex items-center gap-4 mb-4">
-                              <div className="p-4 rounded-xl backdrop-blur-sm bg-primary/5 text-primary/80 flex items-center justify-center">
-                                <Brain className="w-6 h-6" strokeWidth={2} />
-                              </div>
-                              <h2 className="text-2xl font-bold text-white">
-                                KaleidoMind
-                              </h2>
-                            </div>
-                            <p className="text-content-secondary text-sm leading-relaxed">
-                              Run local AI models on this desktop. You can
-                              connect the app to a RGB Lightning node any time
-                              later.
-                            </p>
-                          </div>
+
+                    {/* Four ways in, each doing one thing. The node entries start Node + Mind,
+                        the default; "only node" is a setting. */}
+                    <div className="flex flex-col gap-8 slide-in">
+                      <section className="flex flex-col gap-3">
+                        <h2 className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">
+                          {t('launcher.groups.noNode', {
+                            defaultValue: 'Start without a node',
+                          })}
+                        </h2>
+                        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                          <LaunchCard
+                            description={t('launcher.cards.p2p.body', {
+                              defaultValue:
+                                'Trade RGB assets directly with other people, from a wallet of its own kept with a recovery phrase.',
+                            })}
+                            disabled={p2pWhere?.hint === 'image_unpublished'}
+                            icon={<Coins className="w-6 h-6" />}
+                            onClick={() => navigate(P2P_WALLET_PATH)}
+                            tag={
+                              p2pWhere?.hint === 'docker_missing'
+                                ? t('launcher.cards.p2p.needsDocker', {
+                                    defaultValue: 'Needs Docker',
+                                  })
+                                : p2pWhere?.hint === 'docker_stopped'
+                                  ? t('launcher.cards.p2p.startDocker', {
+                                      defaultValue: 'Start Docker first',
+                                    })
+                                  : p2pWhere?.hint === 'image_unpublished'
+                                    ? t('launcher.cards.p2p.unavailable', {
+                                        defaultValue: 'Not available yet',
+                                      })
+                                    : undefined
+                            }
+                            title={t('launcher.cards.p2p.title', {
+                              defaultValue: 'P2P Wallet',
+                            })}
+                          />
+                          <LaunchCard
+                            description={t('launcher.cards.mind.body', {
+                              defaultValue:
+                                'Run local AI models on this desktop. You can connect a node any time later.',
+                            })}
+                            icon={<Brain className="w-6 h-6" />}
+                            onClick={() => void openMindOnly()}
+                            title="KaleidoMind"
+                          />
                         </div>
-                      </div>
-                    ) : !capabilitiesLoaded ? (
-                      <div className="flex justify-center py-12">
-                        <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                      </div>
-                    ) : (
-                      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                        <NodeOption
-                          description={t('walletSetup.remoteNodeDescription')}
-                          icon={<Cloud className="w-6 h-6" />}
-                          onClick={() => {
-                            dispatch(setAppMode(selectedMode))
-                            navigate(WALLET_REMOTE_PATH)
-                          }}
-                          recommended={true}
-                          title={
-                            selectedMode === 'both'
-                              ? 'Remote Node + Mind'
-                              : t('walletSetup.remoteNodeTitle')
-                          }
-                        />
-                        <NodeOption
-                          description={t('walletSetup.localNodeDescription')}
-                          icon={<Server className="w-6 h-6" />}
-                          onClick={() => {
-                            dispatch(setAppMode(selectedMode))
-                            handleNodeTypeChange('local')
-                          }}
-                          title={
-                            selectedMode === 'both'
-                              ? 'Local Node + Mind'
-                              : t('walletSetup.localNodeTitle')
-                          }
-                        />
-                      </div>
-                    )}
+                      </section>
+
+                      <section className="flex flex-col gap-3">
+                        <h2 className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">
+                          {t('launcher.groups.node', {
+                            defaultValue: 'Use an RGB Lightning node',
+                          })}
+                        </h2>
+                        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                          <LaunchCard
+                            description={t('walletSetup.remoteNodeDescription')}
+                            icon={<Cloud className="w-6 h-6" />}
+                            onClick={() => {
+                              dispatch(setAppMode('both'))
+                              navigate(WALLET_REMOTE_PATH)
+                            }}
+                            tag={t('launcher.recommended', {
+                              defaultValue: 'Recommended',
+                            })}
+                            title={t('launcher.cards.remote', {
+                              defaultValue: 'Connect a node',
+                            })}
+                          />
+                          <LaunchCard
+                            description={t('walletSetup.localNodeDescription')}
+                            disabled={!capabilitiesLoaded}
+                            icon={<Server className="w-6 h-6" />}
+                            onClick={() => {
+                              dispatch(setAppMode('both'))
+                              handleNodeTypeChange('local')
+                            }}
+                            title={t('launcher.cards.local', {
+                              defaultValue: 'Run a node here',
+                            })}
+                          />
+                        </div>
+                      </section>
+                    </div>
                   </>
                 ) : nodeType === 'local' ? (
                   <>

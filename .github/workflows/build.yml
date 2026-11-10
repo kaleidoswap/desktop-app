@@ -149,6 +149,28 @@ jobs:
           echo "# Placeholder file for Windows - RGB Lightning Node not supported on Windows" > bin/rgb-lightning-node
         shell: bash
 
+      # The P2P market daemon is built from its own source. P2PD_REPO (a repository secret) says
+      # where, P2PD_REPO_TOKEN is a read-only token for it, and p2pd.ref pins the commit bundled.
+
+      # Not on Windows: the daemon uses Unix-only APIs for its key files and signals, so it does not
+      # build there. Windows runs the daemon's Docker image instead (pinned in p2pd.image).
+      - name: Build and sign the P2P market daemon
+        if: matrix.platform != 'windows-latest'
+        shell: bash
+        env:
+          P2PD_REPO_TOKEN: ${{ secrets.P2PD_REPO_TOKEN }}
+          P2PD_REPO: ${{ secrets.P2PD_REPO }}
+          APPLE_SIGNING_IDENTITY: ${{ startsWith(matrix.platform, 'macos-') && secrets.APPLE_SIGNING_IDENTITY || '' }}
+        run: |
+          : "${P2PD_REPO_TOKEN:?the P2PD_REPO_TOKEN secret is not set}"
+          : "${P2PD_REPO:?the P2PD_REPO secret is not set}"
+          echo "::add-mask::$P2PD_REPO_TOKEN"
+          export P2PD_REPO_URL="https://x-access-token:${P2PD_REPO_TOKEN}@${P2PD_REPO}"
+          export P2PD_REF="$(tr -d '[:space:]' < p2pd.ref)"
+          scripts/prepare-p2p-bundle.sh
+          ls -lh bin/p2pd*
+          rm -rf .p2pd-src
+
       - name: Extract changelog for release
         id: changelog
         if: startsWith(github.ref, 'refs/tags/v')
@@ -156,22 +178,22 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "Extracting changelog for version $VERSION"
-          
+
           # Extract the changelog section for this version
           CHANGELOG=$(awk -v heading="## [Version $VERSION]" '
             index($0, heading) == 1 { found = 1; next }
             found && /^## \[Version / { exit }
             found { print }
           ' CHANGELOG.md)
-          
+
           # If changelog is empty, provide a default message
           if [ -z "$CHANGELOG" ]; then
             CHANGELOG="See the CHANGELOG.md for details about this release."
           fi
-          
+
           # Save to file for multiline content
           echo "$CHANGELOG" > /tmp/changelog.txt
-          
+
           # Set output using the recommended method for multiline strings
           {
             echo 'CHANGELOG<<EOF'
@@ -201,7 +223,7 @@ jobs:
           releaseName: ${{ startsWith(github.ref, 'refs/tags/v') && format('KaleidoSwap {0}', github.ref_name) || (github.ref == 'refs/heads/test-build' && 'Test App v__VERSION__' || 'App v__VERSION__') }}
           releaseBody: |
             ${{ startsWith(github.ref, 'refs/tags/v') && format('Release {0}', github.ref_name) || format('Release v{0}', env.VERSION) }}
-            
+
             See the assets to download and install this version.
 
             ${{ startsWith(github.ref, 'refs/tags/v') && steps.changelog.outputs.CHANGELOG || 'Changes in this version:
@@ -218,16 +240,17 @@ jobs:
             - macOS Intel (x86_64): Download and extract the `.app.tar.gz` asset; native Intel build, code signed and notarized
             - Linux: Use .AppImage or .deb as preferred
             - Windows: Use the provided installer
-            
+
             All macOS builds install without security warnings!
-            
+
             **Verification:**
             - GPG signatures (`.asc` files) will be added shortly after release
           releaseDraft: ${{ !startsWith(github.ref, 'refs/tags/v') }}
           prerelease: ${{ startsWith(github.ref, 'refs/tags/test-v') }}
           includeUpdaterJson: true
           updaterJsonPreferNsis: false
-          args: ${{ matrix.args }}
+          # the overlay adds the daemon to the bundle, so it is passed only where the daemon was built
+          args: ${{ matrix.args }}${{ matrix.platform != 'windows-latest' && ' --config src-tauri/tauri.p2p.conf.json' || '' }}
 
       - name: Preserve installers if release upload fails
         if: failure()
@@ -256,8 +279,8 @@ jobs:
           git push origin latest
 
       - name: Create manifest file
-        if: matrix.platform != 'windows-latest'  # Skip on Windows
-        shell: bash  # Explicitly use bash for this step
+        if: matrix.platform != 'windows-latest' # Skip on Windows
+        shell: bash # Explicitly use bash for this step
         run: |
           echo "Creating manifest.txt for signing..."
           echo "App version: ${{ env.VERSION }}" > manifest.txt
@@ -292,7 +315,7 @@ jobs:
           cat manifest.txt
 
       - name: Upload manifest.txt
-        if: matrix.platform != 'windows-latest'  # Skip on Windows
+        if: matrix.platform != 'windows-latest' # Skip on Windows
         uses: actions/upload-artifact@v4
         with:
           name: manifest-${{ github.ref_name || 'build' }}-${{ matrix.platform }}-${{ matrix.args != '' && format('{0}', matrix.args) || 'default' }}

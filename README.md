@@ -172,6 +172,20 @@ gpg: Good signature from "Walter Maffione <your-email>"
    pnpm run tauri:dev
    ```
 
+#### Including the P2P market daemon (optional)
+
+The P2P market runs `p2pd`, which lives in its own repository. A normal build does not need it:
+in development the app finds it through `KALEIDO_P2PD_BIN` (or the `PATH`). To ship it inside the
+app:
+
+```sh
+P2PD_SRC=/path/to/the/daemon/p2p make p2p-bundle     # or P2PD_REPO_URL + P2PD_REF
+pnpm tauri build --config src-tauri/tauri.p2p.conf.json
+```
+
+`make p2p-bundle` builds the daemon and stages it as `bin/p2pd`; the extra config adds it to the
+bundle (on macOS the binary is signed when `APPLE_SIGNING_IDENTITY` is set).
+
 ## Usage 💡
 
 ### Connecting to an RGB Lightning Node
