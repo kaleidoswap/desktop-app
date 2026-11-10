@@ -35,6 +35,10 @@ type Step = 'choose' | 'show' | 'confirm' | 'restore'
 
 interface Props {
   networkLabel: string
+  /** Shown when this setup is for a wallet after the first. */
+  walletLabel?: string
+  /** Leave this setup and go back to a wallet that already exists. */
+  onCancel?: () => void
   /** A new recovery phrase. Nothing exists until `onComplete` runs. */
   generate: () => Promise<string>
   /** Create the wallet from `phrase` (a new one, or one the user brought). */
@@ -42,7 +46,13 @@ interface Props {
 }
 
 /** Creating a trading wallet: see the recovery phrase, prove it was written down, or restore one. */
-export function WalletSetup({ networkLabel, generate, onComplete }: Props) {
+export function WalletSetup({
+  networkLabel,
+  walletLabel,
+  onCancel,
+  generate,
+  onComplete,
+}: Props) {
   const tr = useTr()
   const [step, setStep] = useState<Step>('choose')
   const [phrase, setPhrase] = useState('')
@@ -89,7 +99,11 @@ export function WalletSetup({ networkLabel, generate, onComplete }: Props) {
         <Panel className="flex flex-col gap-5">
           <header className="flex flex-col gap-1">
             <h2 className="text-xl font-bold text-content-primary">
-              {tr('setup.title', 'Set up your trading wallet')}
+              {walletLabel
+                ? tr('setup.titleNamed', 'Set up {{name}}', {
+                    name: walletLabel,
+                  })
+                : tr('setup.title', 'Set up your trading wallet')}
             </h2>
             <p className="text-body text-content-secondary">
               {tr(
@@ -142,6 +156,15 @@ export function WalletSetup({ networkLabel, generate, onComplete }: Props) {
               </span>
             </button>
           </div>
+          {onCancel && (
+            <button
+              className="self-start text-caption text-content-tertiary transition-colors hover:text-content-secondary"
+              onClick={onCancel}
+              type="button"
+            >
+              {tr('setup.useOther', 'Use another wallet')}
+            </button>
+          )}
         </Panel>
       )}
 

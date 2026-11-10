@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 
 import { availableSats, marketApi, type Order } from '../api'
-import { splitBook } from '../book'
-import { tickerOf } from '../format'
+import { ordersAwaitingRelay, ordersOnScreen, splitBook } from '../book'
+import { tickerOf, tradeUnitPrice, type PrecisionSource } from '../format'
 
 import { Activity } from './Activity'
 import { DepthChart } from './DepthChart'
@@ -26,6 +26,8 @@ interface Props {
   onIssueAsset?: () => void
   /** Restart the wallet with a full scan of its addresses. */
   onRescan?: () => Promise<void>
+  /** The name of the trading wallet that is open, when the app has more than the original. */
+  walletLabel?: string
 }
 
 /** The market: order book, depth, a ticket for market and limit orders, and the user's activity. */
@@ -35,6 +37,7 @@ export function Market({
   onOpenFunds,
   node,
   onRescan,
+  walletLabel,
 }: Props) {
   const tr = useTr()
   const info = usePoll(marketApi.info, 30_000)
@@ -59,11 +62,29 @@ export function Market({
     trades.refresh()
   }
 
-  const orders = useMemo(() => {
-    const byId = new Map<string, Order>()
-    for (const o of book.data ?? []) byId.set(o.order_id, o)
-    return [...byId.values()]
-  }, [book.data])
+  const orders = useMemo(
+    () => ordersOnScreen(book.data ?? [], mine.data ?? []),
+    [book.data, mine.data]
+  )
+  const awaitingRelay = useMemo(
+    () => new Set(ordersAwaitingRelay(book.data ?? [], mine.data ?? [])),
+    [book.data, mine.data]
+  )
+  const knownPrecision = useMemo(() => {
+    const byAsset = new Map<string, PrecisionSource>()
+    for (const a of balance.data?.assets ?? []) {
+      byAsset.set(a.asset_id, { asset_id: a.asset_id, precision: a.precision })
+    }
+    for (const o of orders) {
+      if (!byAsset.has(o.asset_id)) {
+        byAsset.set(o.asset_id, {
+          asset_id: o.asset_id,
+          precision: o.precision,
+        })
+      }
+    }
+    return [...byAsset.values()]
+  }, [balance.data, orders])
 
   const markets: MarketInfo[] = useMemo(() => {
     const m = new Map<string, MarketInfo>()
@@ -111,7 +132,19 @@ export function Market({
       </Panel>
     )
   }
-  if (!info.data) return null
+  if (!info.data) {
+    return (
+      <Panel>
+        <EmptyState
+          description={tr(
+            'market.loadingBody',
+            'Connecting to your trading wallet.'
+          )}
+          title={tr('market.loading', 'Loading the market…')}
+        />
+      </Panel>
+    )
+  }
   const inf = info.data
 
   const market = markets.find((m) => m.asset_id === current)
@@ -133,9 +166,7 @@ export function Market({
         bestAsk={asks[0]?.unit_price}
         bestBid={bids[0]?.unit_price}
         info={inf}
-        last={
-          lastTrade ? lastTrade.price_sat / (lastTrade.amount || 1) : undefined
-        }
+        last={lastTrade ? tradeUnitPrice(lastTrade, knownPrecision) : undefined}
         markets={markets}
         onSelect={setSelected}
         open={marketOrders.length}
@@ -145,6 +176,7 @@ export function Market({
           null
         }
         selected={current}
+        walletLabel={walletLabel}
       />
 
       <HowItWorks
@@ -168,8 +200,10 @@ export function Market({
           <div className="grid items-stretch gap-3 md:grid-cols-[18rem_minmax(0,1fr)]">
             {market ? (
               <OrderBook
+                loading={book.data === undefined && !book.error}
                 onPick={(o) => !o.mine && setTaking([o])}
                 orders={marketOrders}
+                pendingRelay={awaitingRelay}
                 ticker={market.ticker}
               />
             ) : (
@@ -201,6 +235,7 @@ export function Market({
               </header>
               <div className="min-h-40 flex-1">
                 <DepthChart
+                  loading={book.data === undefined && !book.error}
                   orders={marketOrders}
                   ticker={market?.ticker ?? ''}
                 />
@@ -209,10 +244,13 @@ export function Market({
           </div>
           <Activity
             balance={balance.data}
+            knownPrecision={knownPrecision}
             onChanged={refreshAll}
             onOpenFunds={deposit}
             orders={mine.data ?? []}
+            ordersLoading={mine.data === undefined && !mine.error}
             trades={trades.data ?? []}
+            tradesLoading={trades.data === undefined && !trades.error}
           />
         </div>
 

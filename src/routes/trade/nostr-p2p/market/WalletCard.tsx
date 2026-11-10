@@ -162,26 +162,52 @@ export function WalletCard({
       )}
 
       {empty ? (
-        <p className="text-caption text-content-secondary">
-          {tr(
-            'wallet.empty',
-            'Empty. Deposit bitcoin to start trading, and any RGB asset you want to sell.'
-          )}
-        </p>
+        <div className="flex flex-col gap-1">
+          <p className="text-subhead font-medium tabular-nums text-content-primary">
+            0{' '}
+            <span className="text-caption font-normal text-content-tertiary">
+              sats
+            </span>
+          </p>
+          <p className="text-caption text-content-secondary">
+            {tr(
+              'wallet.empty',
+              'Empty. Deposit bitcoin to start trading, and any RGB asset you want to sell.'
+            )}
+          </p>
+        </div>
       ) : (
-        <dl className="flex flex-col gap-1.5">
-          <div className="flex items-baseline justify-between">
-            <dt className="text-caption text-content-secondary">Bitcoin</dt>
-            <dd className="text-subhead font-medium tabular-nums text-content-primary">
-              {fmtSats(btc)}{' '}
-              <span className="text-caption font-normal text-content-tertiary">
-                sats
+        <dl className="flex flex-col gap-2">
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-tiny text-content-tertiary">
+              {tr('wallet.bitcoin', 'Bitcoin')}
+            </dt>
+            <dd className="flex flex-col gap-0.5">
+              <span className="text-xl font-semibold tabular-nums text-content-primary">
+                {fmtSats(btc)}{' '}
+                <span className="text-caption font-normal text-content-tertiary">
+                  sats
+                </span>
               </span>
+              {pending > 0 && (
+                <span className="text-caption text-content-secondary">
+                  {tr('wallet.pending', '{{n}} sats confirming', {
+                    n: fmtSats(pending),
+                  })}
+                </span>
+              )}
+              {balance?.btc_coins && (
+                <span className="text-caption text-content-tertiary">
+                  {tr('wallet.coinsFree', '{{n}} coins free for swaps', {
+                    n: balance.btc_coins.length,
+                  })}
+                </span>
+              )}
             </dd>
           </div>
           {assets.map((a) => (
             <div
-              className="flex items-baseline justify-between"
+              className="flex items-baseline justify-between gap-3"
               key={a.asset_id}
             >
               <dt className="text-caption text-content-secondary">
@@ -189,6 +215,13 @@ export function WalletCard({
               </dt>
               <dd className="text-subhead font-medium tabular-nums text-content-primary">
                 {fmtUnits(a.spendable, a.precision)}
+                {a.total !== a.spendable && (
+                  <span className="ml-2 text-caption font-normal text-content-tertiary">
+                    {tr('wallet.inFlight', '{{n}} in flight', {
+                      n: fmtUnits(a.total - a.spendable, a.precision),
+                    })}
+                  </span>
+                )}
               </dd>
             </div>
           ))}

@@ -10,6 +10,59 @@ export function fmtUnits(amount: number, precision: number): string {
   })
 }
 
+/** A precision the daemon or an on-screen asset can actually mean. */
+export const isPrecision = (n: unknown): n is number =>
+  typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= 18
+
+export interface PrecisionSource {
+  asset_id: string
+  precision: number
+}
+
+/**
+ * How many decimals to apply to a trade amount (base units).
+ * The trade's own `precision` wins. Otherwise an asset already on screen
+ * (the book, or the wallet) with the same id. Unknown stays unknown: callers
+ * must not invent a scale.
+ */
+export function tradePrecision(
+  trade: { asset_id: string; precision?: number | null },
+  known: readonly PrecisionSource[] = []
+): number | null {
+  if (isPrecision(trade.precision)) return trade.precision
+  const hit = known.find((k) => k.asset_id === trade.asset_id)
+  return hit && isPrecision(hit.precision) ? hit.precision : null
+}
+
+/**
+ * A trade amount for display. When the scale is unknown the raw base units are
+ * shown, not a balance guessed by assuming a precision.
+ */
+export function fmtTradeAmount(
+  amount: number,
+  precision: number | null
+): string {
+  if (precision === null) return Math.trunc(amount).toLocaleString('en-US')
+  return fmtUnits(amount, precision)
+}
+
+/** Sats per display unit. Undefined when the amount's scale is not known. */
+export function tradeUnitPrice(
+  trade: {
+    amount: number
+    asset_id: string
+    precision?: number | null
+    price_sat: number
+  },
+  known: readonly PrecisionSource[] = []
+): number | undefined {
+  const precision = tradePrecision(trade, known)
+  if (precision === null || !(trade.amount > 0)) return undefined
+  const display = trade.amount / 10 ** precision
+  if (!(display > 0)) return undefined
+  return trade.price_sat / display
+}
+
 export const fmtSats = (n: number): string =>
   Math.round(n).toLocaleString('en-US')
 

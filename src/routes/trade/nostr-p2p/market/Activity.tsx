@@ -7,10 +7,13 @@ import {
   ago,
   fmtPrice,
   fmtSats,
+  fmtTradeAmount,
   fmtUnits,
   short,
   tickerOf,
   timeLeft,
+  tradePrecision,
+  type PrecisionSource,
 } from '../format'
 
 import { useTr } from './hooks'
@@ -23,6 +26,11 @@ interface Props {
   orders: Order[]
   trades: Trade[]
   balance: Balance | undefined
+  /** Assets already on screen, for trades whose daemon did not send `precision`. */
+  knownPrecision?: readonly PrecisionSource[]
+  /** True until that list has been read once, so an empty state is not shown early. */
+  ordersLoading?: boolean
+  tradesLoading?: boolean
   onChanged: () => void
   onOpenFunds?: () => void
 }
@@ -31,6 +39,9 @@ export function Activity({
   orders,
   trades,
   balance,
+  knownPrecision = [],
+  ordersLoading = false,
+  tradesLoading = false,
   onChanged,
   onOpenFunds,
 }: Props) {
@@ -80,13 +91,29 @@ export function Activity({
           ? ['danger', tr('activity.failed', 'Failed')]
           : ['info', tr('activity.inProgress', 'In progress')]
 
+  const tradeAmount = (t: Trade) => {
+    const precision = tradePrecision(t, knownPrecision)
+    return {
+      precision,
+      text: `${fmtTradeAmount(t.amount, precision)} ${tickerOf(t)}`,
+    }
+  }
+
   return (
     <Panel
       className="flex flex-col gap-3"
       label={tr('activity.title', 'Your activity')}
     >
+      <header className="flex items-baseline justify-between gap-3">
+        <h2 className="text-subhead font-medium text-content-primary">
+          {tr('activity.title', 'Your activity')}
+        </h2>
+        <span className="text-tiny text-content-tertiary">
+          {tr('activity.local', 'On this wallet')}
+        </span>
+      </header>
       <div
-        className="flex gap-1 rounded-xl bg-surface-inset p-1 self-start"
+        className="flex gap-1 self-start rounded-xl bg-surface-inset p-1"
         role="tablist"
       >
         {tabs.map(([id, label, n]) => (
@@ -113,7 +140,15 @@ export function Activity({
         ))}
       </div>
 
-      {tab === 'orders' &&
+      {((tab === 'orders' && ordersLoading) ||
+        (tab === 'trades' && tradesLoading)) && (
+        <p className="px-2 py-6 text-center text-caption text-content-tertiary">
+          {tr('activity.loading', 'Loading your activity…')}
+        </p>
+      )}
+
+      {!ordersLoading &&
+        tab === 'orders' &&
         (live.length === 0 ? (
           <EmptyState
             description={tr(
@@ -128,7 +163,7 @@ export function Activity({
               const [tone, label] = orderTone(o.state)
               return (
                 <li
-                  className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-xl bg-surface-inset px-3 py-2 text-caption"
+                  className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-xl bg-surface-inset px-3 py-2.5 text-caption"
                   key={o.order_id}
                 >
                   <Pill tone={o.side === 'buy' ? 'success' : 'danger'}>
@@ -167,7 +202,8 @@ export function Activity({
           </ul>
         ))}
 
-      {tab === 'trades' &&
+      {!tradesLoading &&
+        tab === 'trades' &&
         (trades.length === 0 ? (
           <EmptyState
             description={tr(
@@ -180,31 +216,49 @@ export function Activity({
           <ul className="flex flex-col gap-1">
             {trades.map((t) => {
               const [tone, label] = tradeTone(t)
+              const amount = tradeAmount(t)
+              const inFlight =
+                t.status === 'negotiating' || t.status === 'broadcast'
               return (
                 <li
-                  className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl bg-surface-inset px-3 py-2 text-caption"
+                  className={cx(
+                    'flex flex-col gap-2 rounded-xl bg-surface-inset px-3 py-2.5 text-caption',
+                    inFlight && 'ring-1 ring-primary/30'
+                  )}
                   key={`${t.id}-${t.role}`}
                 >
-                  <Pill tone={t.side === 'buy' ? 'success' : 'danger'}>
-                    {t.side === 'buy'
-                      ? tr('activity.bought', 'Bought')
-                      : tr('activity.sold', 'Sold')}
-                  </Pill>
-                  <span className="truncate tabular-nums text-content-primary">
-                    {fmtUnits(t.amount, 0)} {tickerOf(t)}{' '}
-                    <span className="text-content-tertiary">
-                      · {fmtSats(t.price_sat)} sats
-                    </span>
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Pill tone={tone}>{label}</Pill>
+                  <div className="flex items-center gap-3">
+                    <Pill tone={t.side === 'buy' ? 'success' : 'danger'}>
+                      {t.side === 'buy'
+                        ? tr('activity.bought', 'Bought')
+                        : tr('activity.sold', 'Sold')}
+                    </Pill>
                     <span
-                      className="text-content-tertiary"
-                      title={t.txid ?? undefined}
+                      className="min-w-0 flex-1 truncate font-medium tabular-nums text-content-primary"
+                      title={
+                        amount.precision === null
+                          ? tr(
+                              'activity.baseUnits',
+                              'Amount in the asset’s smallest unit'
+                            )
+                          : undefined
+                      }
                     >
-                      {t.txid ? short(t.txid, 4) : ago(t.ts)}
+                      {amount.text}{' '}
+                      <span className="font-normal text-content-tertiary">
+                        · {fmtSats(t.price_sat)} sats
+                      </span>
                     </span>
-                  </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <Pill tone={tone}>{label}</Pill>
+                      <span
+                        className="text-content-tertiary"
+                        title={t.txid ?? undefined}
+                      >
+                        {t.txid ? short(t.txid, 4) : ago(t.ts)}
+                      </span>
+                    </span>
+                  </div>
                   <SwapSteps trade={t} />
                 </li>
               )

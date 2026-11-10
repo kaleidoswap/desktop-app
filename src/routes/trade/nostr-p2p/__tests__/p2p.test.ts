@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import { walletAccountFor } from '../../../../constants/p2p'
 import {
   assetToNode,
   assetToTrading,
@@ -246,6 +247,18 @@ describe('amounts and config', () => {
       account: 'alice',
       network_key: 'SignetCustom',
     })
+  })
+
+  it('passes a second wallet through as its own daemon account', () => {
+    const second = walletAccountFor({ network: 'signetcustom' }, 'bob')
+    expect(daemonAccountName(second)).toBe('wallet-signetcustom-bob')
+    expect(startConfigFor(second, { key: 'SignetCustom' })).toEqual({
+      account: 'wallet-signetcustom-bob',
+      network_key: 'SignetCustom',
+    })
+    expect(startConfigFor(second, { key: 'SignetCustom' }).account).not.toBe(
+      walletAccountFor({ network: 'signetcustom' })
+    )
   })
 
   it('turns an account name the daemon would refuse into one it takes', () => {

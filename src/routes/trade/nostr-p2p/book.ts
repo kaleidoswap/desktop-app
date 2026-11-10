@@ -1,6 +1,38 @@
 import type { Order, Side } from './api'
 import { takerCost, units } from './format'
 
+const LIVE_ORDER = new Set(['open', 'matching'])
+
+/**
+ * The book to draw. `/api/book` is what the relays have echoed and can omit a
+ * limit for about 10–15s after it is published. This wallet's own open orders
+ * are local, so they are shown at once. An order that is in neither list is
+ * not invented.
+ */
+export function ordersOnScreen(
+  book: readonly Order[],
+  own: readonly Order[]
+): Order[] {
+  const byId = new Map<string, Order>()
+  for (const o of book) byId.set(o.order_id, o)
+  for (const o of own) {
+    if (!LIVE_ORDER.has(o.state ?? '')) continue
+    if (!byId.has(o.order_id)) byId.set(o.order_id, { ...o, mine: true })
+  }
+  return [...byId.values()]
+}
+
+/** Own open orders the relay book has not echoed yet. */
+export function ordersAwaitingRelay(
+  book: readonly Order[],
+  own: readonly Order[]
+): string[] {
+  const ids = new Set(book.map((o) => o.order_id))
+  return own
+    .filter((o) => LIVE_ORDER.has(o.state ?? '') && !ids.has(o.order_id))
+    .map((o) => o.order_id)
+}
+
 export function splitBook(orders: Order[]) {
   const asks = orders
     .filter((o) => o.side === 'sell')
