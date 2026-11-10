@@ -13,19 +13,13 @@ import {
   type Trade,
 } from '../api'
 import { nextMakers } from '../book'
-import {
-  ago,
-  fmtPrice,
-  fmtSats,
-  fmtUnits,
-  short,
-  takerCost,
-  tickerOf,
-} from '../format'
+import { combineSettlements, takerSettlement } from '../costs'
+import { ago, fmtPrice, fmtSats, fmtUnits, short, tickerOf } from '../format'
 
 import { useTr } from './hooks'
 import { RegistryPanel } from './RegistryPanel'
 import { failureKind, noAnswer, swapProgress, type Stage } from './progress'
+import { CostBreakdown } from './CostBreakdown'
 import { SwapGlyph } from './SwapGlyph'
 import { SummaryRows, Steps, cx, type Step } from './ui'
 
@@ -80,15 +74,16 @@ export function TakeSheet({
   const silentOrder = orders.find((o) => o.order_id === silent[0]?.id)
   const next = silentOrder ? nextMakers(book, silentOrder, tried) : []
 
-  const costs = orders.map(takerCost)
+  const settlement = combineSettlements(orders.map(takerSettlement))
   const assetBase = orders.reduce((s, o) => s + o.amount, 0)
   const priceSats = orders.reduce((s, o) => s + o.price_sat, 0)
-  const platform = orders.reduce((s, o) => s + o.platform_fee_sat, 0)
-  const network = orders.reduce((s, o) => s + o.network_fee_sat, 0)
-  const pay = costs.reduce((s, c) => s + c.pay, 0)
-  const receiveSats = costs.reduce((s, c) => s + c.receive, 0)
   const asset = `${fmtUnits(assetBase, first.precision)} ${ticker}`
-  const sats = buying ? `${fmtSats(pay)} sats` : `${fmtSats(receiveSats)} sats`
+  const gross =
+    settlement?.receiveSat == null
+      ? null
+      : `${fmtSats(settlement.receiveSat)} sats`
+  const priceText =
+    settlement?.priceSat == null ? '–' : `${fmtSats(settlement.priceSat)} sats`
 
   const unverified = orders.some((o) => !o.verified)
   const imitation = orders.find((o) => o.impersonates)?.impersonates ?? null
@@ -223,28 +218,6 @@ export function TakeSheet({
 
   const rows = [
     {
-      label: buying ? tr('take.send', 'You send') : tr('take.give', 'You give'),
-      value: buying ? `${fmtSats(pay)} sats` : asset,
-    },
-    {
-      emphasis: true,
-      label: tr('take.receive', 'You receive'),
-      tone: 'success' as const,
-      value: buying ? asset : `${fmtSats(receiveSats)} sats`,
-    },
-    {
-      label: tr('take.price', 'Price'),
-      value: `${fmtPrice(priceSats / (assetBase / 10 ** first.precision))} sats / ${ticker}`,
-    },
-    {
-      label: tr('take.platformFee', 'Platform fee'),
-      value: `${fmtSats(platform)} sats`,
-    },
-    {
-      label: tr('take.networkFee', 'Network fee'),
-      value: `${fmtSats(network)} sats`,
-    },
-    {
       label:
         orders.length > 1
           ? tr('take.orders', 'Orders')
@@ -287,15 +260,27 @@ export function TakeSheet({
             reached(p.stage, 'confirming') ? p.confirmations : null
           }
           counterparty={orders.length > 1 ? `${orders.length}×` : first.maker}
-          fee={`${fmtSats(platform)} sats`}
+          fee={
+            settlement?.platformFeeSat != null &&
+            settlement.networkFeeSat != null
+              ? `${fmtSats(settlement.platformFeeSat + settlement.networkFeeSat)} sats`
+              : tr('cost.unavailable', 'Unavailable')
+          }
           phase={started ? p.stage : 'idle'}
-          receive={buying ? asset : sats}
+          receive={buying ? asset : (gross ?? '–')}
           required={p.required || info.min_confirmations}
-          send={buying ? sats : asset}
+          send={buying ? priceText : asset}
         />
 
         {!started && (
           <>
+            {settlement && (
+              <CostBreakdown
+                asset={asset}
+                priceHint={`${fmtPrice(priceSats / (assetBase / 10 ** first.precision))} sats / ${ticker}`}
+                settlement={settlement}
+              />
+            )}
             <SummaryRows rows={rows} />
             <RegistryPanel facts={facts} note={first.registry} />
             {imitation && (

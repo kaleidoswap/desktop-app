@@ -10,8 +10,10 @@ import {
   type Side,
 } from '../api'
 import { planMarket, splitBook } from '../book'
+import { combineSettlements, makerEstimate, takerSettlement } from '../costs'
 import { fmtBtc, fmtPrice, fmtSats, fmtUnits, toBase } from '../format'
 
+import { CostBreakdown } from './CostBreakdown'
 import { Field } from './Field'
 import { useTr } from './hooks'
 import { Pill, Slider, cx } from './ui'
@@ -32,6 +34,9 @@ interface Props {
   onPlaced: () => void
   /** Opens the dialog that moves funds between the node and the trading wallet. */
   onOpenFunds?: () => void
+  initialAmount?: string
+  initialSide?: Side
+  initialMode?: Mode
 }
 
 const TTLS = [
@@ -51,11 +56,14 @@ export function TradeTicket({
   onReview,
   onPlaced,
   onOpenFunds,
+  initialAmount = '',
+  initialSide = 'buy',
+  initialMode = 'market',
 }: Props) {
   const tr = useTr()
-  const [side, setSide] = useState<Side>('buy')
-  const [mode, setMode] = useState<Mode>('market')
-  const [amount, setAmount] = useState('')
+  const [side, setSide] = useState<Side>(initialSide)
+  const [mode, setMode] = useState<Mode>(initialMode)
+  const [amount, setAmount] = useState(initialAmount)
   const [price, setPrice] = useState('')
   const [slippage, setSlippage] = useState(0.01)
   const [ttl, setTtl] = useState(TTLS[0]!.secs)
@@ -79,10 +87,17 @@ export function TradeTicket({
   const wider = SLIPPAGE.find((x) => x > slippage)
   const unitPrice = Number(price) || 0
   const total = Math.round(unitPrice * (amountBase / 10 ** asset.precision))
-  const platformFee = Math.max(
-    Math.floor((total * info.fee_bps) / 10_000),
-    info.min_fee_sat
-  )
+  const taken = combineSettlements(plan.picks.map(takerSettlement))
+  const limitQuote =
+    mode === 'limit' && total > 0
+      ? makerEstimate({
+          feeBps: info.fee_bps,
+          minFeeSat: info.min_fee_sat,
+          networkFeeSat: info.network_fee_sat,
+          priceSat: total,
+          side,
+        })
+      : null
   const crossing =
     mode === 'limit' && unitPrice > 0
       ? side === 'buy'
@@ -131,7 +146,17 @@ export function TradeTicket({
       n: fmtUnits(spendable, asset.precision),
       ticker: asset.ticker,
     })
-  } else if (side === 'buy' && (mode === 'market' ? plan.sats : total) > btc) {
+  } else if (
+    mode === 'market' &&
+    plan.picks.length > 0 &&
+    plan.reserveSat > btc
+  ) {
+    problem = tr(
+      'ticket.haveReserve',
+      'This reserves {{need}} sats. You have {{n}} sats available.',
+      { n: fmtSats(btc), need: fmtSats(plan.reserveSat) }
+    )
+  } else if (side === 'buy' && mode === 'limit' && total > btc) {
     problem = tr('ticket.haveSats', 'You have {{n}} sats available.', {
       n: fmtSats(btc),
     })
@@ -348,16 +373,6 @@ export function TradeTicket({
             </div>
             <div className="flex justify-between">
               <span className="text-content-secondary">
-                {side === 'buy'
-                  ? tr('ticket.youPay', 'You pay')
-                  : tr('ticket.youReceive', 'You receive')}
-              </span>
-              <span className="tabular-nums text-content-primary">
-                {plan.picks.length ? `${fmtSats(plan.sats)} sats` : '–'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-content-secondary">
                 {tr('ticket.avgPrice', 'Average price')}
               </span>
               <span className="tabular-nums text-content-primary">
@@ -424,6 +439,17 @@ export function TradeTicket({
                   { n: plan.tooManyFromMaker }
                 )}
               </p>
+            )}
+            {taken && (
+              <CostBreakdown
+                asset={`${fmtUnits(plan.baseAmount, asset.precision)} ${asset.ticker}`}
+                priceHint={
+                  plan.picks.length
+                    ? `${fmtPrice(plan.avgPrice)} sats`
+                    : undefined
+                }
+                settlement={taken}
+              />
             )}
             {plan.picks.length > 1 && (
               <p className="text-content-tertiary">
@@ -504,27 +530,19 @@ export function TradeTicket({
             </span>
           </span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-content-secondary">
-            {tr('ticket.fees', 'Fees')}
-          </span>
-          <span className="tabular-nums text-content-primary">
-            {mode === 'limit'
-              ? tr('ticket.makerFree', 'None for you as the maker')
-              : plan.picks.length
-                ? `${fmtSats(plan.fees)} sats`
-                : '–'}
-          </span>
-        </div>
-        {mode === 'limit' && total > 0 && (
-          <p className="text-content-tertiary tabular-nums">
+        {limitQuote && (
+          <CostBreakdown
+            asset={`${amount || '0'} ${asset.ticker}`}
+            estimates={limitQuote.estimates}
+            priceHint={`${fmtPrice(unitPrice)} sats / ${asset.ticker}`}
+            settlement={limitQuote.settlement}
+          />
+        )}
+        {limitQuote && limitQuote.settlement.reserveSat === null && (
+          <p className="text-caption text-content-secondary">
             {tr(
-              'ticket.takerPays',
-              'Whoever takes it pays {{platform}} sats to the platform and {{network}} sats to the network.',
-              {
-                network: fmtSats(info.network_fee_sat),
-                platform: fmtSats(platformFee),
-              }
+              'ticket.reserveUnknown',
+              'The reserved bitcoin is unavailable until the RGB output is known. It is not zero, and it is not the taker’s fees.'
             )}
           </p>
         )}
