@@ -37,6 +37,35 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
+      - name: Import Developer ID certificate into an ephemeral keychain
+        if: runner.os == 'macOS'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          umask 077
+          : "${APPLE_CERTIFICATE:?missing Apple certificate}"
+          : "${APPLE_SIGNING_IDENTITY:?missing signing identity}"
+          : "${KEYCHAIN_PASSWORD:?missing keychain password}"
+          : "${APPLE_ID:?missing notarization Apple ID}"
+          : "${APPLE_PASSWORD:?missing notarization credential}"
+          : "${APPLE_TEAM_ID:?missing Apple team}"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/beta-certificate.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/beta-signing.keychain-db"
+          security set-keychain-settings -lut 21600 "$RUNNER_TEMP/beta-signing.keychain-db"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/beta-signing.keychain-db"
+          security import "$RUNNER_TEMP/beta-certificate.p12" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -k "$RUNNER_TEMP/beta-signing.keychain-db"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/beta-signing.keychain-db"
+          security list-keychains -d user -s "$RUNNER_TEMP/beta-signing.keychain-db" "$HOME/Library/Keychains/login.keychain-db"
+          python3 scripts/check-beta-signing.py
+          xcrun notarytool history --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --output-format json > "$RUNNER_TEMP/beta-notary-auth.json"
+          echo 'Notarization credentials accepted.'
       - name: Verify private daemon access configuration
         if: runner.os != 'Windows'
         env:
@@ -67,37 +96,18 @@ jobs:
         if: runner.os == 'Windows'
         with:
           arch: x64
+      - name: Pin the MSVC linker instead of Git Bash link.exe
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $linker = Join-Path $env:VCToolsInstallDir 'bin\Hostx64\x64\link.exe'
+          if (!(Test-Path $linker)) { throw 'MSVC linker was not installed' }
+          "CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER=$linker" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Install frontend and check P2P backend
         run: |
           pnpm install --frozen-lockfile
           cargo test --locked --manifest-path src-tauri/Cargo.toml p2p
           cargo test --locked --manifest-path src-tauri/Cargo.toml --test build_config
-      - name: Import Developer ID certificate into an ephemeral keychain
-        if: runner.os == 'macOS'
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          set -euo pipefail
-          : "${APPLE_CERTIFICATE:?missing Apple certificate}"
-          : "${APPLE_SIGNING_IDENTITY:?missing signing identity}"
-          : "${KEYCHAIN_PASSWORD:?missing keychain password}"
-          : "${APPLE_ID:?missing notarization Apple ID}"
-          : "${APPLE_PASSWORD:?missing notarization credential}"
-          : "${APPLE_TEAM_ID:?missing Apple team}"
-          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/beta-certificate.p12"
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/beta-signing.keychain-db"
-          security set-keychain-settings -lut 21600 "$RUNNER_TEMP/beta-signing.keychain-db"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/beta-signing.keychain-db"
-          security import "$RUNNER_TEMP/beta-certificate.p12" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -k "$RUNNER_TEMP/beta-signing.keychain-db"
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/beta-signing.keychain-db"
-          security list-keychains -d user -s "$RUNNER_TEMP/beta-signing.keychain-db" "$HOME/Library/Keychains/login.keychain-db"
-          python3 scripts/check-beta-signing.py
       - name: Build bundled Lightning node
         if: runner.os != 'Windows'
         env:
@@ -141,7 +151,7 @@ jobs:
           rm -rf .p2pd-src
           if [[ "$RUNNER_OS" == macOS ]]; then
             security delete-keychain "$RUNNER_TEMP/beta-signing.keychain-db" || true
-            rm -f "$RUNNER_TEMP/beta-certificate.p12"
+            rm -f "$RUNNER_TEMP/beta-certificate.p12" "$RUNNER_TEMP/beta-notary-auth.json"
           fi
 
   docker-linux-amd64:
