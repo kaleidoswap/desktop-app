@@ -104,6 +104,8 @@ jobs:
           if (!(Test-Path $linker)) { throw 'MSVC linker was not installed' }
           "CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER=$linker" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Install frontend and check P2P backend
+        env:
+          BUILD_AND_RUN_RGB_LIGHTNING_NODE: "false"
         run: |
           pnpm install --frozen-lockfile
           cargo test --locked --manifest-path src-tauri/Cargo.toml p2p

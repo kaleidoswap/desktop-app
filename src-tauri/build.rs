@@ -235,33 +235,20 @@ impl DependencyChecker {
     }
 
     fn check_openssl(&self) {
-        let (openssl_include_dir, openssl_lib_dir) = if cfg!(target_os = "macos") {
-            (
-                "/opt/homebrew/opt/openssl@3/include".to_string(),
-                "/opt/homebrew/opt/openssl@3/lib".to_string(),
-            )
-        } else if cfg!(target_os = "linux") {
-            ("/usr/include/openssl".to_string(), "/usr/lib".to_string())
-        } else if cfg!(target_os = "windows") {
-            let include_dir = env::var("OPENSSL_INCLUDE_DIR")
-                .unwrap_or_else(|_| "C:\\Program Files\\OpenSSL\\include".to_string());
-            let lib_dir = env::var("OPENSSL_LIB_DIR")
-                .unwrap_or_else(|_| "C:\\Program Files\\OpenSSL\\lib".to_string());
-            (include_dir, lib_dir)
-        } else {
-            panic!("Unsupported operating system for OpenSSL checks");
-        };
-
-        let include_path = PathBuf::from(&openssl_include_dir);
-        if !include_path.exists() {
-            panic!(
-                "OpenSSL include directory does not exist: {:?}",
-                include_path
-            );
-        }
-        let lib_path = PathBuf::from(&openssl_lib_dir);
-        if !lib_path.exists() {
-            panic!("OpenSSL lib directory does not exist: {:?}", lib_path);
+        // Unix installations differ between Intel/Apple Silicon and Linux distros.
+        // pkg-config below validates the actual development package without hard-coded paths.
+        if cfg!(target_os = "windows") {
+            for (variable, fallback) in [
+                ("OPENSSL_INCLUDE_DIR", r"C:\Program Files\OpenSSL\include"),
+                ("OPENSSL_LIB_DIR", r"C:\Program Files\OpenSSL\lib"),
+            ] {
+                let path = PathBuf::from(env::var(variable).unwrap_or_else(|_| fallback.into()));
+                assert!(
+                    path.exists(),
+                    "OpenSSL directory does not exist: {:?}",
+                    path
+                );
+            }
         }
 
         // On Windows check vcpkg, elsewhere pkg-config
