@@ -88,8 +88,14 @@ export interface MarketPlan {
   picks: Order[]
   /** Asset units the picks add up to. */
   baseAmount: number
-  /** Sats the taker pays (buying) or receives (selling) for the picks, fees included in pay. */
+  /**
+   * Gross sats a selling taker is paid, or the buying taker's reservation
+   * (the same number as `reserveSat` when buying).
+   */
   sats: number
+  /** Sats the taker must set aside. Not the seller's proceeds. */
+  reserveSat: number
+  /** Platform fee plus network fee. Does not include the RGB output. */
   fees: number
   /** Volume-weighted price in sats per unit. */
   avgPrice: number
@@ -197,6 +203,7 @@ export function planMarket(
     nextFit,
     noCoinFor,
     picks,
+    reserveSat: costs.reduce((s, c) => s + c.pay, 0),
     sats,
     shortBy: Math.max(0, wantBase - base),
     tooManyFromMaker,
