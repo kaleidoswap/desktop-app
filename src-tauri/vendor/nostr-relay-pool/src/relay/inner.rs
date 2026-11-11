@@ -1,0 +1,2379 @@
+// Copyright (c) 2022-2023 Yuki Kishimoto
+// Copyright (c) 2023-2025 Rust Nostr Developers
+// Distributed under the MIT software license
+
+use std::borrow::Cow;
+use std::cmp;
+use std::collections::{HashMap, HashSet};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::Arc;
+use std::time::Duration;
+
+use async_utility::{task, time};
+use async_wsocket::futures_util::{self, SinkExt, StreamExt};
+use async_wsocket::{ConnectionMode, Message};
+use atomic_destructor::AtomicDestroyer;
+use negentropy::{Id, Negentropy, NegentropyStorageVector};
+use nostr::secp256k1::rand::{self, Rng};
+use nostr_database::prelude::*;
+use tokio::sync::mpsc::{self, Receiver, Sender};
+use tokio::sync::{broadcast, watch, Mutex, MutexGuard, Notify, RwLock, RwLockWriteGuard};
+
+use super::constants::{
+    DEFAULT_CONNECTION_TIMEOUT, JITTER_RANGE, MAX_RETRY_INTERVAL, MIN_ATTEMPTS, MIN_SUCCESS_RATE,
+    NEGENTROPY_BATCH_SIZE_DOWN, NEGENTROPY_FRAME_SIZE_LIMIT, NEGENTROPY_HIGH_WATER_UP,
+    NEGENTROPY_LOW_WATER_UP, PING_INTERVAL, SLEEP_INTERVAL, WAIT_FOR_OK_TIMEOUT,
+    WEBSOCKET_TX_TIMEOUT,
+};
+use super::flags::AtomicRelayServiceFlags;
+use super::options::{RelayOptions, ReqExitPolicy, SubscribeAutoCloseOptions, SyncOptions};
+use super::ping::PingTracker;
+use super::stats::RelayConnectionStats;
+use super::{
+    Error, Reconciliation, RelayNotification, RelayStatus, SubscriptionActivity,
+    SubscriptionAutoClosedReason,
+};
+use crate::policy::AdmitStatus;
+use crate::pool::RelayPoolNotification;
+use crate::relay::status::AtomicRelayStatus;
+use crate::shared::SharedState;
+use crate::transport::websocket::{WebSocketSink, WebSocketStream};
+
+type ClientMessageJson = String;
+
+// Skip NIP-50 matches since they may create issues and ban non-malicious relays.
+const MATCH_EVENT_OPTS: MatchEventOptions = MatchEventOptions::new().nip50(false);
+
+fn queue_auth_challenge(tx: &watch::Sender<Option<String>>, challenge: &str) {
+    // NIP-42 invalidates the previous challenge when a relay sends a new one.
+    tx.send_replace(Some(challenge.to_owned()));
+}
+
+enum HandleClosedMsg {
+    MarkAsClosed,
+    Remove,
+}
+
+struct HandleAutoClosing {
+    to_close: bool,
+    reason: Option<SubscriptionAutoClosedReason>,
+}
+
+#[derive(Debug)]
+struct RelayChannels {
+    nostr: (
+        Sender<Vec<ClientMessageJson>>,
+        Mutex<Receiver<Vec<ClientMessageJson>>>,
+    ),
+    ping: Notify,
+    terminate: Notify,
+}
+
+impl RelayChannels {
+    pub fn new() -> Self {
+        let (tx_nostr, rx_nostr) = mpsc::channel(1024);
+
+        Self {
+            nostr: (tx_nostr, Mutex::new(rx_nostr)),
+            ping: Notify::new(),
+            terminate: Notify::new(),
+        }
+    }
+
+    pub fn send_client_msgs(&self, msgs: Vec<ClientMessage>) -> Result<(), Error> {
+        // Serialize messages to JSON
+        let msgs: Vec<ClientMessageJson> = msgs.into_iter().map(|msg| msg.as_json()).collect();
+
+        // Send
+        self.nostr
+            .0
+            .try_send(msgs)
+            .map_err(|_| Error::CantSendChannelMessage {
+                channel: String::from("nostr"),
+            })
+    }
+
+    #[inline]
+    pub async fn rx_nostr(&self) -> MutexGuard<'_, Receiver<Vec<ClientMessageJson>>> {
+        self.nostr.1.lock().await
+    }
+
+    #[inline]
+    pub fn nostr_queue(&self) -> usize {
+        self.nostr.0.max_capacity() - self.nostr.0.capacity()
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn ping(&self) {
+        self.ping.notify_one()
+    }
+
+    pub fn terminate(&self) {
+        self.terminate.notify_one()
+    }
+}
+
+#[derive(Debug)]
+struct SubscriptionData {
+    pub filters: Vec<Filter>,
+    pub subscribed_at: Timestamp,
+    pub is_auto_closing: bool,
+    /// Received EOSE msg
+    pub received_eose: bool,
+    /// Number of received events
+    pub received_events: AtomicUsize,
+    /// Subscription closed by relay
+    pub closed: bool,
+}
+
+impl Default for SubscriptionData {
+    fn default() -> Self {
+        Self {
+            filters: Vec::new(),
+            subscribed_at: Timestamp::zero(),
+            is_auto_closing: false,
+            received_eose: false,
+            received_events: AtomicUsize::new(0),
+            closed: false,
+        }
+    }
+}
+
+// Instead of wrap every field in an `Arc<T>`, which increases the number of atomic operations,
+// put all fields that require an `Arc` here.
+#[derive(Debug)]
+pub(super) struct AtomicPrivateData {
+    status: AtomicRelayStatus,
+    channels: RelayChannels,
+    subscriptions: RwLock<HashMap<SubscriptionId, SubscriptionData>>,
+    running: AtomicBool,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct InnerRelay {
+    pub(super) url: RelayUrl,
+    pub(super) atomic: Arc<AtomicPrivateData>,
+    pub(super) opts: RelayOptions,
+    pub(super) flags: AtomicRelayServiceFlags,
+    pub(super) stats: RelayConnectionStats,
+    pub(super) state: SharedState,
+    pub(super) internal_notification_sender: broadcast::Sender<RelayNotification>,
+    external_notification_sender: Option<broadcast::Sender<RelayPoolNotification>>,
+}
+
+impl AtomicDestroyer for InnerRelay {
+    fn on_destroy(&self) {
+        self.disconnect();
+    }
+}
+
+impl InnerRelay {
+    pub(super) fn new(url: RelayUrl, state: SharedState, opts: RelayOptions) -> Self {
+        let (relay_notification_sender, ..) =
+            broadcast::channel::<RelayNotification>(opts.notification_channel_size);
+
+        Self {
+            url,
+            atomic: Arc::new(AtomicPrivateData {
+                status: AtomicRelayStatus::default(),
+                channels: RelayChannels::new(),
+                subscriptions: RwLock::new(HashMap::new()),
+                running: AtomicBool::new(false),
+            }),
+            flags: AtomicRelayServiceFlags::new(opts.flags),
+            opts,
+            stats: RelayConnectionStats::default(),
+            state,
+            internal_notification_sender: relay_notification_sender,
+            external_notification_sender: None,
+        }
+    }
+
+    #[inline]
+    pub fn connection_mode(&self) -> &ConnectionMode {
+        &self.opts.connection_mode
+    }
+
+    /// Check if the connection task is running
+    #[inline]
+    pub(super) fn is_running(&self) -> bool {
+        self.atomic.running.load(Ordering::SeqCst)
+    }
+
+    #[inline]
+    pub fn status(&self) -> RelayStatus {
+        self.atomic.status.load()
+    }
+
+    pub(super) fn set_status(&self, status: RelayStatus, log: bool) {
+        // Change status
+        self.atomic.status.set(status);
+
+        // Log
+        if log {
+            match status {
+                RelayStatus::Initialized => tracing::trace!(url = %self.url, "Relay initialized."),
+                RelayStatus::Pending => tracing::trace!(url = %self.url, "Relay is pending."),
+                RelayStatus::Connecting => tracing::debug!("Connecting to '{}'", self.url),
+                RelayStatus::Connected => tracing::info!("Connected to '{}'", self.url),
+                RelayStatus::Disconnected => tracing::info!("Disconnected from '{}'", self.url),
+                RelayStatus::Terminated => {
+                    tracing::info!("Completely disconnected from '{}'", self.url)
+                }
+                RelayStatus::Banned => tracing::info!(url = %self.url, "Relay banned."),
+                RelayStatus::Sleeping => tracing::info!("Relay '{}' went to sleep.", self.url),
+            }
+        }
+
+        // Send notification
+        self.send_notification(RelayNotification::RelayStatus { status }, false);
+
+        // If monitor is enabled, notify status change.
+        if let Some(monitor) = &self.state.monitor {
+            monitor.notify_status_change(self.url.clone(), status);
+        }
+    }
+
+    /// Perform checks to ensure that the relay is ready for use.
+    pub(super) fn ensure_operational(&self) -> Result<(), Error> {
+        // Ensures that the relay is awake.
+        self.ensure_awake_for_activity();
+
+        // Get current status
+        let status: RelayStatus = self.status();
+
+        // Relay is not ready (never called connect method)
+        if status.is_initialized() {
+            return Err(Error::NotReady);
+        }
+
+        // The relay has been banned
+        if status.is_banned() {
+            return Err(Error::Banned);
+        }
+
+        // Sanity-check, to ensure that the relay is not sleeping.
+        if status.is_sleeping() {
+            return Err(Error::Sleeping);
+        }
+
+        // This is needed to allow giving the time to the relay to connect,
+        // instead of just checking the status.
+        //
+        // A relay is considered not connected if all the following conditions are met:
+        // - the status is different from `RelayStatus::Connected`
+        // - the relay has already exceeded the minimum number of attempts
+        // - the connection success rate is lower than the minimum success rate
+        // - the relay woke up from sleep from more than `DEFAULT_CONNECTION_TIMEOUT` (needed if the relay has just waked up!)
+        if !status.is_connected()
+            && self.stats.attempts() > MIN_ATTEMPTS
+            && self.stats.success_rate() < MIN_SUCCESS_RATE
+            && self.stats.woke_up_at() + DEFAULT_CONNECTION_TIMEOUT < Timestamp::now()
+        {
+            return Err(Error::NotConnected);
+        }
+
+        // Check avg. latency
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            // Check if max avg latency is set
+            if let Some(max) = self.opts.max_avg_latency {
+                // ONLY LATER get the latency, to avoid unnecessary calculation
+                if let Some(current) = self.stats.latency() {
+                    if current > max {
+                        return Err(Error::MaximumLatencyExceeded { max, current });
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Returns all long-lived (non-auto-closing) subscriptions
+    pub async fn subscriptions(&self) -> HashMap<SubscriptionId, Vec<Filter>> {
+        let subscription = self.atomic.subscriptions.read().await;
+        subscription
+            .iter()
+            .filter_map(|(k, v)| (!v.is_auto_closing).then_some((k.clone(), v.filters.clone())))
+            .collect()
+    }
+
+    pub async fn subscription(&self, id: &SubscriptionId) -> Option<Vec<Filter>> {
+        let subscription = self.atomic.subscriptions.read().await;
+        subscription.get(id).map(|d| d.filters.clone())
+    }
+
+    pub(super) async fn remove_subscription(&self, id: &SubscriptionId) {
+        let mut subscriptions = self.atomic.subscriptions.write().await;
+        subscriptions.remove(id);
+    }
+
+    /// Register an auto-closing subscription
+    pub(crate) async fn add_auto_closing_subscription(
+        &self,
+        id: SubscriptionId,
+        filters: Vec<Filter>,
+    ) {
+        let mut subscriptions = self.atomic.subscriptions.write().await;
+        let data: &mut SubscriptionData = subscriptions.entry(id).or_default();
+        data.filters = filters;
+        data.is_auto_closing = true;
+    }
+
+    pub(crate) async fn update_subscription(
+        &self,
+        id: SubscriptionId,
+        filters: Vec<Filter>,
+        update_subscribed_at: bool,
+    ) {
+        let mut subscriptions = self.atomic.subscriptions.write().await;
+        let data: &mut SubscriptionData = subscriptions.entry(id).or_default();
+        data.filters = filters;
+
+        if update_subscribed_at {
+            data.subscribed_at = Timestamp::now();
+        }
+    }
+
+    /// Mark subscription as closed
+    async fn subscription_closed(&self, id: &SubscriptionId) {
+        let mut subscriptions = self.atomic.subscriptions.write().await;
+        if let Some(data) = subscriptions.get_mut(id) {
+            data.closed = true;
+        }
+    }
+
+    /// Received eose for subscription
+    async fn received_eose(&self, id: &SubscriptionId) {
+        let mut subscriptions = self.atomic.subscriptions.write().await;
+        if let Some(data) = subscriptions.get_mut(id) {
+            data.received_eose = true;
+        }
+    }
+
+    /// Check if it should subscribe for current websocket session
+    pub(crate) async fn should_resubscribe(&self, id: &SubscriptionId) -> bool {
+        let subscriptions = self.atomic.subscriptions.read().await;
+        match subscriptions.get(id) {
+            Some(SubscriptionData {
+                subscribed_at,
+                closed,
+                is_auto_closing: false,
+                ..
+            }) => {
+                // Never subscribed -> SHOULD subscribe
+                // Subscription closed by relay -> SHOULD subscribe
+                if subscribed_at.is_zero() || *closed {
+                    return true;
+                }
+
+                // First connection and subscribed_at != 0 -> SHOULD NOT re-subscribe
+                // Many connections and subscription NOT done in current websocket session -> SHOULD re-subscribe
+                self.stats.connected_at() > *subscribed_at && self.stats.success() > 1
+            }
+            // NOT subscribe if auto-closing subscription or subscription not found
+            Some(SubscriptionData {
+                is_auto_closing: true,
+                ..
+            })
+            | None => false,
+        }
+    }
+
+    #[inline]
+    pub fn queue(&self) -> usize {
+        self.atomic.channels.nostr_queue()
+    }
+
+    pub(crate) fn set_notification_sender(
+        &mut self,
+        notification_sender: broadcast::Sender<RelayPoolNotification>,
+    ) {
+        self.external_notification_sender = Some(notification_sender);
+    }
+
+    fn send_notification(&self, notification: RelayNotification, external: bool) {
+        match (external, &self.external_notification_sender) {
+            (true, Some(external_notification_sender)) => {
+                // Clone and send internal notification
+                let _ = self.internal_notification_sender.send(notification.clone());
+
+                // Convert relay to notification to pool notification
+                let notification: Option<RelayPoolNotification> = match notification {
+                    RelayNotification::Event {
+                        subscription_id,
+                        event,
+                    } => Some(RelayPoolNotification::Event {
+                        relay_url: self.url.clone(),
+                        subscription_id,
+                        event,
+                    }),
+                    RelayNotification::Message { message } => {
+                        Some(RelayPoolNotification::Message {
+                            relay_url: self.url.clone(),
+                            message,
+                        })
+                    }
+                    RelayNotification::RelayStatus { .. } => None,
+                    RelayNotification::Authenticated => None,
+                    RelayNotification::AuthenticationFailed => None,
+                    RelayNotification::Shutdown => Some(RelayPoolNotification::Shutdown),
+                };
+
+                // Send external notification
+                if let Some(notification) = notification {
+                    let _ = external_notification_sender.send(notification);
+                }
+            }
+            _ => {
+                // Send internal notification
+                let _ = self.internal_notification_sender.send(notification);
+            }
+        }
+    }
+
+    pub(super) async fn check_connection_policy(&self) -> Result<AdmitStatus, Error> {
+        match &self.state.admit_policy {
+            Some(policy) => Ok(policy.admit_connection(&self.url).await?),
+            None => Ok(AdmitStatus::Success),
+        }
+    }
+
+    /// Check if relay should sleep
+    async fn should_sleep(&self) -> bool {
+        // Check if sleeping is disabled
+        if !self.opts.sleep_when_idle {
+            return false;
+        }
+
+        // Get current subscriptions
+        let subscriptions = self.atomic.subscriptions.read().await;
+
+        // No sleep if there are active subscriptions
+        if !subscriptions.is_empty() {
+            return false;
+        }
+
+        // See if enough time elapsed since the last activity
+        let last_activity: Timestamp = self.stats.last_activity_at();
+
+        // If no activity has been recorded yet, use connection time
+        let reference_time: Timestamp = if last_activity == Timestamp::zero() {
+            self.stats.connected_at()
+        } else {
+            last_activity
+        };
+
+        // If reference time is still 0, do not sleep; relay has just started.
+        if reference_time == Timestamp::zero() {
+            return false;
+        }
+
+        let idle_duration_secs: u64 = Timestamp::now().as_secs() - reference_time.as_secs();
+        let idle_duration: Duration = Duration::from_secs(idle_duration_secs);
+        idle_duration >= self.opts.idle_timeout
+    }
+
+    /// Wake up the relay if it's sleeping and update the last activity timestamp.
+    #[inline]
+    fn ensure_awake_for_activity(&self) {
+        // If the sleeping is disabled, immediately return.
+        if !self.opts.sleep_when_idle {
+            return;
+        }
+
+        // Update last activity timestamp
+        self.stats.update_activity();
+
+        // If it isn't sleeping, immediately return.
+        if !self.status().is_sleeping() {
+            return;
+        }
+
+        tracing::debug!(url = %self.url, "Waking up sleeping relay.");
+
+        // Update status to pending
+        // TODO: is this needed here?
+        self.set_status(RelayStatus::Pending, false);
+
+        // Spawn a new connection task
+        self.spawn_connection_task(None);
+
+        // Update the wake-up timestamp
+        self.stats.just_woke_up();
+    }
+
+    pub(super) fn spawn_connection_task(&self, stream: Option<(WebSocketSink, WebSocketStream)>) {
+        // Check if the connection task is already running
+        // This is checked also later, but it's checked also here to avoid a full-clone if we know that is already running.
+        if self.is_running() {
+            tracing::warn!(url = %self.url, "Connection task is already running.");
+            return;
+        }
+
+        // Full-clone
+        let relay: InnerRelay = self.clone();
+
+        // Spawn task
+        task::spawn(relay.connection_task(stream));
+    }
+
+    /// This **MUST** be called only by the [`InnerRelay::spawn_connection_task`] method!
+    async fn connection_task(self, mut stream: Option<(WebSocketSink, WebSocketStream)>) {
+        // Set the connection task as running and get the previous value.
+        let is_running: bool = self.atomic.running.swap(true, Ordering::SeqCst);
+
+        // Re-check if the connection task is already running.
+        // This is required because may happen that two tasks are spawned at the exact same moment.
+        // Not use the "assert" macro since will cause the task to panic.
+        if is_running {
+            tracing::warn!(url = %self.url, "Connection task is already running.");
+            return;
+        }
+
+        // Lock receiver
+        let mut rx_nostr = self.atomic.channels.rx_nostr().await;
+
+        // Last websocket error
+        // Store it to avoid printing every time the same connection error
+        let mut last_ws_error = None;
+
+        // Auto-connect loop
+        loop {
+            // Check if the connection is allowed
+            match self.check_connection_policy().await {
+                Ok(status) => {
+                    // Connection rejected, update status and break the loop.
+                    if let AdmitStatus::Rejected { reason } = status {
+                        if let Some(reason) = reason {
+                            tracing::warn!(reason = %reason, "Connection rejected by admission policy.");
+                        }
+
+                        // Set the status to "terminated" and break loop.
+                        self.set_status(RelayStatus::Terminated, false);
+                        break;
+                    }
+                }
+                Err(e) => tracing::error!(error = %e, "Impossible to check connection policy."),
+            }
+
+            // Connect and run message handler
+            // The termination requests are handled inside this method!
+            self.connect_and_run(stream.take(), &mut rx_nostr, &mut last_ws_error)
+                .await;
+
+            // Get status
+            let status: RelayStatus = self.status();
+
+            // If the relay is terminated, banned or sleeping, break the loop.
+            if status.is_terminated() || status.is_banned() || status.is_sleeping() {
+                break;
+            }
+
+            // Check if reconnection is enabled
+            if self.opts.reconnect {
+                // Check if the relay is marked as disconnected. If not, update status.
+                // Check if disconnected to avoid a possible double log
+                if !status.is_disconnected() {
+                    self.set_status(RelayStatus::Disconnected, true);
+                }
+
+                // Sleep before retry to connect
+                let interval: Duration = self.calculate_retry_interval();
+                tracing::debug!(
+                    "Reconnecting to '{}' relay in {} secs",
+                    self.url,
+                    interval.as_secs()
+                );
+
+                // Sleep before retry to connect
+                // Handle termination to allow exiting immediately if request is received during the sleep.
+                tokio::select! {
+                    // Sleep
+                    _ = time::sleep(interval) => {},
+                    // Handle termination notification
+                    _ = self.handle_terminate() => break,
+                }
+            } else {
+                // Reconnection disabled, set status to "terminated"
+                self.set_status(RelayStatus::Terminated, true);
+
+                // Break loop and exit
+                tracing::debug!(url = %self.url, "Reconnection disabled, breaking loop.");
+                break;
+            }
+        }
+
+        // Mark the connection task as stopped.
+        self.atomic.running.store(false, Ordering::SeqCst);
+
+        tracing::debug!(url = %self.url, "Auto connect loop terminated.");
+    }
+
+    /// Depending on attempts and success, use default or incremental retry interval
+    fn calculate_retry_interval(&self) -> Duration {
+        // Check if the incremental interval is enabled
+        if self.opts.adjust_retry_interval {
+            // Calculate the difference between attempts and success
+            let diff: u32 = self.stats.attempts().saturating_sub(self.stats.success()) as u32;
+
+            // Calculate multiplier
+            let multiplier: u32 = 1 + (diff / 2);
+
+            // Compute the adaptive retry interval
+            let adaptive_interval: Duration = self.opts.retry_interval * multiplier;
+
+            // If the interval is too big, use the min one.
+            // If the interval is checked after the jitter, the interval may be the same for all relays!
+            let mut interval: Duration = cmp::min(adaptive_interval, MAX_RETRY_INTERVAL);
+
+            // The jitter is added to avoid situations where multiple relays reconnect simultaneously after a failure.
+            // This helps prevent synchronized retry storms.
+            let jitter: i8 = rand::thread_rng().gen_range(JITTER_RANGE);
+
+            // Apply jitter
+            if jitter >= 0 {
+                // Positive jitter, add it to the interval.
+                interval = interval.saturating_add(Duration::from_secs(jitter as u64));
+            } else {
+                // Negative jitter, compute `|jitter|` and saturating subtract it from the interval.
+                let jitter: u64 = jitter.unsigned_abs() as u64;
+                interval = interval.saturating_sub(Duration::from_secs(jitter));
+            }
+
+            // Return interval
+            return interval;
+        }
+
+        // Use default internal
+        self.opts.retry_interval
+    }
+
+    #[inline]
+    async fn handle_terminate(&self) {
+        // Wait to be notified
+        self.atomic.channels.terminate.notified().await;
+    }
+
+    pub(super) async fn _try_connect(
+        &self,
+        timeout: Duration,
+        status_on_failure: RelayStatus,
+    ) -> Result<(WebSocketSink, WebSocketStream), Error> {
+        // Update status
+        self.set_status(RelayStatus::Connecting, true);
+
+        // Increase the attempts
+        self.stats.new_attempt();
+
+        // Try to connect
+        // If during connection the termination request is received, abort the connection and return error.
+        // At this stem is NOT required to close the WebSocket connection.
+        tokio::select! {
+            // Connect
+            res = self.state.transport.connect((&self.url).into(), &self.opts.connection_mode, timeout) => match res {
+                Ok((ws_tx, ws_rx)) => {
+                    // Update status
+                    self.set_status(RelayStatus::Connected, true);
+
+                    // Increment success stats
+                    self.stats.new_success();
+
+                    Ok((ws_tx, ws_rx))
+                }
+                Err(e) => {
+                    // Update status
+                    self.set_status(status_on_failure, false);
+
+                    // Return error
+                    Err(Error::Transport(e))
+                }
+            },
+            // Handle termination notification
+            _ = self.handle_terminate() => Err(Error::TerminationRequest),
+        }
+    }
+
+    /// Connect and run message handler
+    ///
+    /// If `stream` arg is passed, no connection attempt will be done.
+    async fn connect_and_run(
+        &self,
+        stream: Option<(WebSocketSink, WebSocketStream)>,
+        rx_nostr: &mut MutexGuard<'_, Receiver<Vec<ClientMessageJson>>>,
+        last_ws_error: &mut Option<String>,
+    ) {
+        match stream {
+            // Already have a stream, go to post-connection stage
+            Some((ws_tx, ws_rx)) => self.post_connection(ws_tx, ws_rx, rx_nostr).await,
+            // No stream is passed, try to connect
+            // Set the status to "disconnected" to allow to automatic retries
+            None => match self
+                ._try_connect(DEFAULT_CONNECTION_TIMEOUT, RelayStatus::Disconnected)
+                .await
+            {
+                // Connection success, go to post-connection stage
+                Ok((ws_tx, ws_rx)) => self.post_connection(ws_tx, ws_rx, rx_nostr).await,
+                // Error during connection
+                Err(e) => {
+                    // TODO: avoid string allocation. The error is converted to string only to perform the `!=` binary operation.
+                    // Check if error should be logged
+                    let e: String = e.to_string();
+                    let to_log: bool = match &last_ws_error {
+                        Some(prev_err) => {
+                            // Log only if different from the last one
+                            prev_err != &e
+                        }
+                        None => true,
+                    };
+
+                    // Log error and update the last error
+                    if to_log {
+                        tracing::error!(url = %self.url, error= %e, "Connection failed.");
+                        *last_ws_error = Some(e);
+                    }
+                }
+            },
+        }
+    }
+
+    /// To run after websocket connection.
+    /// Run message handlers, pinger and other services
+    async fn post_connection(
+        &self,
+        mut ws_tx: WebSocketSink,
+        ws_rx: WebSocketStream,
+        rx_nostr: &mut MutexGuard<'_, Receiver<Vec<ClientMessageJson>>>,
+    ) {
+        // (Re)subscribe to relay
+        if self.flags.can_read() {
+            if let Err(e) = self.resubscribe().await {
+                tracing::error!(url = %self.url, error = %e, "Impossible to subscribe.")
+            }
+        }
+
+        let ping: PingTracker = PingTracker::default();
+
+        // Retain only the latest valid challenge while asynchronous signing is in progress.
+        let (ingester_tx, ingester_rx) = watch::channel(None);
+
+        // Wait that one of the futures terminates/completes
+        // Add also termination here, to allow closing the connection in case of termination request.
+        tokio::select! {
+            // Message sender handler
+            res = self.sender_message_handler(&mut ws_tx, rx_nostr, &ping) => match res {
+                Ok(()) => tracing::trace!(url = %self.url, "Relay sender exited."),
+                Err(e) => tracing::error!(url = %self.url, error = %e, "Relay sender exited with error.")
+            },
+            // Message receiver handler
+            res = self.receiver_message_handler(ws_rx, &ping, ingester_tx) => match res {
+                Ok(()) => tracing::trace!(url = %self.url, "Relay receiver exited."),
+                Err(e) => tracing::error!(url = %self.url, error = %e, "Relay receiver exited with error.")
+            },
+            // Ingester: perform actions
+            res = self.ingester(ingester_rx) => match res {
+                Ok(()) => tracing::trace!(url = %self.url, "Relay ingester exited."),
+                Err(e) => tracing::error!(url = %self.url, error = %e, "Relay ingester exited with error.")
+            },
+            // Monitor when the relay can go to sleep
+            _ = self.sleep_when_idle_monitor() => {},
+            // Termination handler
+            _ = self.handle_terminate() => {},
+            // Pinger
+            _ = self.pinger() => {}
+        }
+
+        // Always try to close the WebSocket connection
+        match close_ws(&mut ws_tx).await {
+            Ok(..) => tracing::debug!("WebSocket connection closed."),
+            Err(e) => tracing::error!(error = %e, "Can't close WebSocket connection."),
+        }
+    }
+
+    async fn sender_message_handler(
+        &self,
+        ws_tx: &mut WebSocketSink,
+        rx_nostr: &mut MutexGuard<'_, Receiver<Vec<ClientMessageJson>>>,
+        ping: &PingTracker,
+    ) -> Result<(), Error> {
+        #[cfg(target_arch = "wasm32")]
+        let _ping = ping;
+
+        loop {
+            tokio::select! {
+                // Nostr channel receiver
+                Some(msgs) = rx_nostr.recv() => {
+                    // Compose WebSocket text messages
+                    let msgs: Vec<Message> = msgs
+                        .into_iter()
+                        .map(Message::Text)
+                        .collect();
+
+                    // Calculate messages size
+                    let size: usize = msgs.iter().map(|msg| msg.len()).sum();
+                    let len: usize = msgs.len();
+
+                    // Log
+                    if len == 1 {
+                        let json = &msgs[0]; // SAFETY: len checked above (len == 1)
+                        tracing::debug!("Sending '{json}' to '{}' (size: {size} bytes)", self.url);
+                    } else {
+                        tracing::debug!("Sending {len} messages to '{}' (size: {size} bytes)", self.url);
+                    };
+
+                    // Send WebSocket messages
+                    send_ws_msgs(ws_tx, msgs).await?;
+
+                    // Increase sent bytes
+                    self.stats.add_bytes_sent(size);
+                }
+                // Ping channel receiver
+                _ = self.atomic.channels.ping.notified() => {
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        // If the last nonce is NOT 0, check if relay replied.
+                        // Return error if relay not replied
+                        if ping.last_nonce() != 0 && !ping.replied() {
+                            return Err(Error::NotRepliedToPing);
+                        }
+
+                        // Generate and save nonce
+                        let nonce: u64 = rand::random();
+                        ping.set_last_nonce(nonce);
+                        ping.set_replied(false);
+
+                        // Compose ping message
+                        let msg = Message::Ping(nonce.to_be_bytes().to_vec());
+
+                        // Send WebSocket message
+                        send_ws_msgs(ws_tx, vec![msg]).await?;
+
+                        // Set ping as just sent
+                        ping.just_sent().await;
+
+                        #[cfg(debug_assertions)]
+                        tracing::debug!(url = %self.url, nonce = %nonce, "Ping sent.");
+                    }
+                }
+                else => break
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn receiver_message_handler(
+        &self,
+        mut ws_rx: WebSocketStream,
+        ping: &PingTracker,
+        ingester_tx: watch::Sender<Option<String>>,
+    ) -> Result<(), Error> {
+        #[cfg(target_arch = "wasm32")]
+        let _ping = ping;
+
+        while let Some(msg) = ws_rx.next().await {
+            match msg? {
+                Message::Text(json) => self.handle_relay_message(&json, &ingester_tx).await,
+                Message::Binary(_) => {
+                    tracing::warn!(url = %self.url, "Binary messages aren't supported.");
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                Message::Pong(bytes) => {
+                    if self.flags.has_ping() && self.state.transport.support_ping() {
+                        match bytes.try_into() {
+                            Ok(nonce) => {
+                                // Nonce from big-endian bytes
+                                let nonce: u64 = u64::from_be_bytes(nonce);
+
+                                // Get last nonce
+                                let last_nonce: u64 = ping.last_nonce();
+
+                                // Check if last nonce not matches the received one
+                                if last_nonce != nonce {
+                                    return Err(Error::PongNotMatch {
+                                        expected: last_nonce,
+                                        received: nonce,
+                                    });
+                                }
+
+                                // Set ping as replied
+                                ping.set_replied(true);
+
+                                // Save latency
+                                let sent_at = ping.sent_at().await;
+                                self.stats.save_latency(sent_at.elapsed());
+                            }
+                            Err(..) => {
+                                return Err(Error::CantParsePong);
+                            }
+                        }
+                    }
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                Message::Close(None) => break,
+                #[cfg(not(target_arch = "wasm32"))]
+                Message::Close(Some(frame)) => {
+                    tracing::info!(code = %frame.code, reason = %frame.reason, "Connection closed by peer.");
+                    break;
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn ingester(&self, mut rx: watch::Receiver<Option<String>>) -> Result<(), Error> {
+        while rx.changed().await.is_ok() {
+            let Some(challenge) = rx.borrow_and_update().clone() else {
+                continue;
+            };
+
+            match self.auth(challenge).await {
+                Ok(..) => {
+                    self.send_notification(RelayNotification::Authenticated, false);
+
+                    tracing::info!(url = %self.url, "Authenticated to relay.");
+
+                    // TODO: ?
+                    if let Err(e) = self.resubscribe().await {
+                        tracing::error!(
+                            url = %self.url,
+                            error = %e,
+                            "Impossible to resubscribe."
+                        );
+                    }
+                }
+                Err(e) => {
+                    self.send_notification(RelayNotification::AuthenticationFailed, false);
+
+                    tracing::error!(
+                        url = %self.url,
+                        error = %e,
+                        "Can't authenticate to relay."
+                    );
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Monitor if it's time to put the relay in sleep mode.
+    async fn sleep_when_idle_monitor(&self) {
+        loop {
+            // Sleep
+            time::sleep(SLEEP_INTERVAL).await;
+
+            // Check if should go to sleep
+            if self.should_sleep().await {
+                // Update status
+                self.set_status(RelayStatus::Sleeping, true);
+
+                // Break the loop
+                break;
+            }
+        }
+    }
+
+    /// Send a signal every [`PING_INTERVAL`] to the other tasks, asking to ping the relay.
+    async fn pinger(&self) {
+        loop {
+            // Check if support ping
+            #[cfg(not(target_arch = "wasm32"))]
+            if self.flags.has_ping() && self.state.transport.support_ping() {
+                // Ping supported, ping!
+                self.atomic.channels.ping();
+            }
+
+            // Sleep
+            time::sleep(PING_INTERVAL).await;
+        }
+    }
+
+    async fn handle_relay_message(&self, msg: &str, ingester_tx: &watch::Sender<Option<String>>) {
+        match self.handle_raw_relay_message(msg).await {
+            Ok(Some(message)) => {
+                match &message {
+                    RelayMessage::Closed {
+                        subscription_id,
+                        message,
+                    } => {
+                        // Check machine-readable prefix
+                        let res: HandleClosedMsg = match MachineReadablePrefix::parse(message) {
+                            Some(MachineReadablePrefix::Duplicate) => HandleClosedMsg::Remove,
+                            Some(MachineReadablePrefix::Pow) => HandleClosedMsg::Remove,
+                            Some(MachineReadablePrefix::Blocked) => HandleClosedMsg::Remove,
+                            Some(MachineReadablePrefix::RateLimited) => {
+                                // TODO: add something like MarkAsRateLimited?
+                                // TODO: And retry after some time to re-subscribe
+                                HandleClosedMsg::MarkAsClosed
+                            }
+                            Some(MachineReadablePrefix::Invalid) => HandleClosedMsg::Remove,
+                            Some(MachineReadablePrefix::Error) => HandleClosedMsg::Remove,
+                            Some(MachineReadablePrefix::Unsupported) => HandleClosedMsg::Remove,
+                            Some(MachineReadablePrefix::AuthRequired) => {
+                                // Authentication is handled in other parts of code,
+                                // so here just mark as closed.
+                                HandleClosedMsg::MarkAsClosed
+                            }
+                            Some(MachineReadablePrefix::Restricted) => HandleClosedMsg::Remove,
+                            None => {
+                                // Doesn't mach any prefix,
+                                // meaning that it probably closed without errors,
+                                // so remove it.
+                                HandleClosedMsg::Remove
+                            }
+                        };
+
+                        // TODO: if auto-closing subscription, just remove it.
+
+                        match res {
+                            HandleClosedMsg::MarkAsClosed => {
+                                self.subscription_closed(subscription_id).await;
+                            }
+                            HandleClosedMsg::Remove => {
+                                tracing::debug!(
+                                    url = %self.url,
+                                    id = %subscription_id,
+                                    "Removing subscription."
+                                );
+
+                                self.remove_subscription(subscription_id).await;
+                            }
+                        }
+                    }
+                    RelayMessage::EndOfStoredEvents(id) => {
+                        self.received_eose(id).await;
+                    }
+                    RelayMessage::Auth { challenge } => {
+                        // Check if NIP42 auto authentication is enabled
+                        if self.state.is_auto_authentication_enabled() {
+                            queue_auth_challenge(ingester_tx, challenge);
+                        }
+                    }
+                    _ => (),
+                }
+
+                // Send notification
+                self.send_notification(RelayNotification::Message { message }, true);
+            }
+            Ok(None) => (),
+            Err(e) => tracing::error!(
+                url = %self.url,
+                msg = %msg,
+                error = %e,
+                "Impossible to handle relay message."
+            ),
+        }
+    }
+
+    async fn handle_raw_relay_message(
+        &self,
+        msg: &str,
+    ) -> Result<Option<RelayMessage<'static>>, Error> {
+        // Trim the message (removes leading and trailing whitespaces and line breaks).
+        let msg: &str = msg.trim();
+
+        // Get message size
+        let size: usize = msg.len();
+
+        tracing::debug!("Received '{msg}' from '{}' (size: {size} bytes)", self.url);
+
+        // Update bytes received
+        self.stats.add_bytes_received(size);
+
+        // Check message size
+        if let Some(max_size) = self.opts.limits.messages.max_size {
+            let max_size: usize = max_size as usize;
+            if size > max_size {
+                return Err(Error::RelayMessageTooLarge { size, max_size });
+            }
+        }
+
+        // Handle msg
+        match RelayMessage::from_json(msg)? {
+            RelayMessage::Event {
+                subscription_id,
+                event,
+            } => {
+                self.handle_event_msg(subscription_id.into_owned(), event.into_owned())
+                    .await
+            }
+            m => Ok(Some(m)),
+        }
+    }
+
+    async fn handle_event_msg(
+        &self,
+        subscription_id: SubscriptionId,
+        event: Event,
+    ) -> Result<Option<RelayMessage<'static>>, Error> {
+        // Check event size
+        if let Some(max_size) = self.opts.limits.events.get_max_size(&event.kind) {
+            let size: usize = event.as_json().len();
+            let max_size: usize = max_size as usize;
+            if size > max_size {
+                return Err(Error::EventTooLarge { size, max_size });
+            }
+        }
+
+        // Check tags limit
+        if let Some(max_num_tags) = self.opts.limits.events.get_max_num_tags(&event.kind) {
+            let size: usize = event.tags.len();
+            let max_num_tags: usize = max_num_tags as usize;
+            if size > max_num_tags {
+                return Err(Error::TooManyTags {
+                    size,
+                    max_size: max_num_tags,
+                });
+            }
+        }
+
+        // Check if subscription must be verified
+        if self.opts.verify_subscriptions || self.opts.ban_relay_on_mismatch {
+            // NOTE: here we don't use the `self.subscription(id)` to avoid an unnecessary clone of the filter!
+
+            // Acquire read lock
+            let subscriptions = self.atomic.subscriptions.read().await;
+
+            // Check if the subscription id exist and verify if the event matches the subscription filter.
+            let SubscriptionData {
+                filters,
+                received_eose,
+                received_events,
+                ..
+            } = subscriptions
+                .get(&subscription_id)
+                .ok_or(Error::SubscriptionNotFound)?;
+
+            // Check filter limit ONLY if EOSE is not received yet and if there is only ONE filter.
+            // We can't ensure that limit is respected if there is more than one filter.
+            if !received_eose && filters.len() == 1 {
+                // SAFETY: we've checked above that exists one filter.
+                let filter: &Filter = &filters[0];
+
+                // Check if the filter has a limit
+                if let Some(limit) = filter.limit {
+                    // Update number of received events
+                    let prev: usize = received_events.fetch_add(1, Ordering::SeqCst);
+                    let received_events: usize = prev.saturating_add(1);
+
+                    // Check if received more that requested
+                    if received_events > limit {
+                        // Ban the relay
+                        if self.opts.ban_relay_on_mismatch {
+                            self.ban();
+                        }
+
+                        return Err(Error::TooManyEvents);
+                    }
+                }
+            }
+
+            // NIP-01 treats multiple filters in the same REQ as OR: an event is
+            // valid for the subscription if it matches at least one filter. Requiring every
+            // filter to match would reject valid events and may incorrectly ban the relay.
+            if !filters
+                .iter()
+                .any(|f| f.match_event(&event, MATCH_EVENT_OPTS))
+            {
+                // Ban the relay
+                if self.opts.ban_relay_on_mismatch {
+                    self.ban();
+                }
+
+                return Err(Error::EventNotMatchFilter);
+            }
+        }
+
+        // Check if the event is expired
+        if event.is_expired() {
+            return Err(Error::EventExpired);
+        }
+
+        // Policies may make security-sensitive decisions from event identity and content.
+        self.state.verify_and_cache(&event).await?;
+
+        // Check event admission policy
+        if let Some(policy) = &self.state.admit_policy {
+            if let AdmitStatus::Rejected { .. } = policy
+                .admit_event(&self.url, &subscription_id, &event)
+                .await?
+            {
+                return Ok(None);
+            }
+        }
+
+        // Check the event status
+        match self.state.database().check_id(&event.id).await? {
+            // Already saved, continue with code execution
+            DatabaseEventStatus::Saved => {}
+            // Deleted, immediately return
+            DatabaseEventStatus::Deleted => return Ok(None),
+            // Not existent, try to save it to the database
+            DatabaseEventStatus::NotExistent => {
+                // Save into the database
+                let send_notification: bool = match self.state.database().save_event(&event).await?
+                {
+                    SaveEventStatus::Success => true,
+                    SaveEventStatus::Rejected(reason) => match reason {
+                        RejectedReason::Ephemeral => true,
+                        RejectedReason::Duplicate => true,
+                        RejectedReason::Deleted => false,
+                        RejectedReason::Expired => false,
+                        RejectedReason::Replaced => false,
+                        RejectedReason::InvalidDelete => false,
+                        RejectedReason::Other => true,
+                    },
+                };
+
+                // If the notification should NOT be sent, immediately return.
+                if !send_notification {
+                    return Ok(None);
+                }
+
+                // Send notification
+                self.send_notification(
+                    RelayNotification::Event {
+                        subscription_id: subscription_id.clone(),
+                        event: Box::new(event.clone()),
+                    },
+                    true,
+                );
+            }
+        }
+
+        Ok(Some(RelayMessage::Event {
+            subscription_id: Cow::Owned(subscription_id),
+            event: Cow::Owned(event),
+        }))
+    }
+
+    pub fn disconnect(&self) {
+        let status = self.status();
+
+        // Check if it's already terminated or banned
+        if status.is_terminated() || status.is_banned() {
+            return;
+        }
+
+        // Notify termination
+        self.atomic.channels.terminate();
+
+        // Update status
+        self.set_status(RelayStatus::Terminated, true);
+
+        // Shutdown all notification loops
+        self.send_notification(RelayNotification::Shutdown, false);
+    }
+
+    pub fn ban(&self) {
+        let status = self.status();
+
+        // Check if it's already terminated or banned
+        if status.is_terminated() || status.is_banned() {
+            return;
+        }
+
+        // Notify termination
+        self.atomic.channels.terminate();
+
+        // Update status
+        self.set_status(RelayStatus::Banned, true);
+
+        // Shutdown all notification loops
+        self.send_notification(RelayNotification::Shutdown, false);
+    }
+
+    #[inline]
+    pub fn send_msg(&self, msg: ClientMessage<'_>) -> Result<(), Error> {
+        self.batch_msg(vec![msg])
+    }
+
+    pub fn batch_msg(&self, msgs: Vec<ClientMessage<'_>>) -> Result<(), Error> {
+        // Check if relay is operational
+        self.ensure_operational()?;
+
+        // Check if the list is empty
+        if msgs.is_empty() {
+            return Err(Error::BatchMessagesEmpty);
+        }
+
+        // If it can't write, check if there are "write" messages
+        if !self.flags.can_write() && msgs.iter().any(|msg| msg.is_event()) {
+            return Err(Error::WriteDisabled);
+        }
+
+        // If it can't read, check if there are "read" messages
+        if !self.flags.can_read() && msgs.iter().any(|msg| msg.is_req() || msg.is_close()) {
+            return Err(Error::ReadDisabled);
+        }
+
+        // Send messages
+        self.atomic.channels.send_client_msgs(msgs)
+    }
+
+    fn send_neg_msg(&self, id: &SubscriptionId, message: &str) -> Result<(), Error> {
+        self.send_msg(ClientMessage::NegMsg {
+            subscription_id: Cow::Borrowed(id),
+            message: Cow::Borrowed(message),
+        })
+    }
+
+    fn send_neg_close(&self, id: &SubscriptionId) -> Result<(), Error> {
+        self.send_msg(ClientMessage::NegClose {
+            subscription_id: Cow::Borrowed(id),
+        })
+    }
+
+    async fn auth(&self, challenge: String) -> Result<(), Error> {
+        // Get signer
+        let signer = self.state.signer().await?;
+
+        // Construct event
+        let event: Event = EventBuilder::auth(challenge, self.url.clone())
+            .sign(&signer)
+            .await?;
+
+        // Subscribe to notifications
+        let mut notifications = self.internal_notification_sender.subscribe();
+
+        // Send the AUTH message
+        self.send_msg(ClientMessage::Auth(Cow::Borrowed(&event)))?;
+
+        // Wait for OK
+        // The event ID is already checked in `wait_for_ok` method
+        let (status, message) = self
+            .wait_for_ok(&mut notifications, &event.id, WAIT_FOR_OK_TIMEOUT)
+            .await?;
+
+        // Check status
+        if status {
+            Ok(())
+        } else {
+            Err(Error::RelayMessage(message))
+        }
+    }
+
+    pub(super) async fn wait_for_ok(
+        &self,
+        notifications: &mut broadcast::Receiver<RelayNotification>,
+        id: &EventId,
+        timeout: Duration,
+    ) -> Result<(bool, String), Error> {
+        time::timeout(Some(timeout), async {
+            while let Ok(notification) = notifications.recv().await {
+                match notification {
+                    RelayNotification::Message {
+                        message:
+                            RelayMessage::Ok {
+                                event_id,
+                                status,
+                                message,
+                            },
+                    } => {
+                        // Check if it can return
+                        if id == &event_id {
+                            return Ok((status, message.into_owned()));
+                        }
+                    }
+                    RelayNotification::RelayStatus { status } => {
+                        if status.is_disconnected() {
+                            return Err(Error::NotConnected);
+                        }
+                    }
+                    RelayNotification::Shutdown => break,
+                    _ => (),
+                }
+            }
+
+            Err(Error::PrematureExit)
+        })
+        .await
+        .ok_or(Error::Timeout)?
+    }
+
+    pub async fn resubscribe(&self) -> Result<(), Error> {
+        // TODO: avoid subscriptions clone
+        let subscriptions = self.subscriptions().await;
+        for (id, filters) in subscriptions.into_iter() {
+            if !filters.is_empty() && self.should_resubscribe(&id).await {
+                self.send_msg(ClientMessage::req(id, filters))?;
+            } else {
+                tracing::debug!("Skip re-subscription of '{id}'");
+            }
+        }
+
+        Ok(())
+    }
+
+    pub(super) fn spawn_auto_closing_handler(
+        &self,
+        id: SubscriptionId,
+        filters: Vec<Filter>,
+        opts: SubscribeAutoCloseOptions,
+        notifications: broadcast::Receiver<RelayNotification>,
+        activity: Option<Sender<SubscriptionActivity>>,
+    ) {
+        let relay = self.clone(); // <-- FULL RELAY CLONE HERE
+        task::spawn(async move {
+            // Check if CLOSE needed
+            let to_close: bool = match relay
+                .handle_auto_closing(&id, &filters, opts, notifications, &activity)
+                .await
+            {
+                Some(HandleAutoClosing { to_close, reason }) => {
+                    // Send activity
+                    if let Some(reason) = reason {
+                        if let Some(activity) = &activity {
+                            // TODO: handle error?
+                            let _ = activity.send(SubscriptionActivity::Closed(reason)).await;
+                        }
+                    }
+
+                    to_close
+                }
+                // Timeout
+                None => {
+                    tracing::warn!(id = %id, "Timeout reached for subscription, auto-closing.");
+                    true
+                }
+            };
+
+            // Drop activity sender to terminate the receiver activity loop
+            drop(activity);
+
+            // Close subscription
+            let send_result = if to_close {
+                tracing::debug!(id = %id, "Auto-closing subscription.");
+                relay.send_msg(ClientMessage::Close(Cow::Borrowed(&id)))
+            } else {
+                Ok(())
+            };
+
+            // Remove subscription
+            relay.remove_subscription(&id).await;
+
+            send_result
+        });
+    }
+
+    async fn handle_auto_closing(
+        &self,
+        id: &SubscriptionId,
+        filters: &[Filter],
+        opts: SubscribeAutoCloseOptions,
+        mut notifications: broadcast::Receiver<RelayNotification>,
+        activity: &Option<Sender<SubscriptionActivity>>,
+    ) -> Option<HandleAutoClosing> {
+        time::timeout(opts.timeout, async move {
+            let mut wait_for_events_counter: u16 = 0;
+            let mut wait_for_events_after_eose_counter: u16 = 0;
+            let mut received_eose: bool = false;
+            let mut require_resubscription: bool = false;
+            let mut last_event: Option<Instant> = None;
+
+            // Listen to notifications with timeout
+            // If no notification is received within no-events timeout, `None` is returned.
+            while let Ok(notification) =
+                time::timeout(opts.idle_timeout, notifications.recv()).await?
+            {
+                // Check if no-events timeout is reached
+                if let (Some(idle_timeout), Some(last_event)) = (opts.idle_timeout, last_event) {
+                    if last_event.elapsed() > idle_timeout {
+                        // Close the subscription
+                        return Some(HandleAutoClosing {
+                            to_close: true,
+                            reason: None,
+                        });
+                    }
+                }
+
+                match notification {
+                    RelayNotification::Message { message, .. } => match message {
+                        RelayMessage::Event {
+                            subscription_id,
+                            event,
+                        } => {
+                            if subscription_id.as_ref() == id {
+                                // Send activity
+                                if let Some(activity) = activity {
+                                    // TODO: handle error?
+                                    let _ = activity
+                                        .send(SubscriptionActivity::ReceivedEvent(
+                                            event.into_owned(),
+                                        ))
+                                        .await;
+                                }
+
+                                // If no-events timeout is enabled, update instant of last event received
+                                if opts.idle_timeout.is_some() {
+                                    last_event = Some(Instant::now());
+                                }
+
+                                // Check exit policy
+                                match opts.exit_policy {
+                                    ReqExitPolicy::WaitForEvents(num) => {
+                                        wait_for_events_counter += 1;
+                                        if wait_for_events_counter >= num {
+                                            break;
+                                        }
+                                    }
+                                    ReqExitPolicy::WaitForEventsAfterEOSE(num) => {
+                                        if received_eose {
+                                            wait_for_events_after_eose_counter += 1;
+                                            if wait_for_events_after_eose_counter >= num {
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
+                        RelayMessage::EndOfStoredEvents(subscription_id) => {
+                            if subscription_id.as_ref() == id {
+                                received_eose = true;
+                                if let ReqExitPolicy::ExitOnEOSE
+                                | ReqExitPolicy::WaitDurationAfterEOSE(_) = opts.exit_policy
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        RelayMessage::Closed {
+                            subscription_id,
+                            message,
+                        } => {
+                            if subscription_id.as_ref() == id {
+                                // Check machine-readable prefix
+                                match MachineReadablePrefix::parse(&message) {
+                                    Some(MachineReadablePrefix::AuthRequired) => {
+                                        // Authentication is not enabled, return.
+                                        if !self.state.is_auto_authentication_enabled() {
+                                            return Some(HandleAutoClosing {
+                                                to_close: false, // No need to send CLOSE msg
+                                                reason: Some(SubscriptionAutoClosedReason::Closed(
+                                                    message.into_owned(),
+                                                )),
+                                            });
+                                        }
+
+                                        // Needs to re-subscribe
+                                        require_resubscription = true;
+                                    }
+                                    Some(_) => {
+                                        return Some(HandleAutoClosing {
+                                            to_close: false, // No need to send CLOSE msg
+                                            reason: Some(SubscriptionAutoClosedReason::Closed(
+                                                message.into_owned(),
+                                            )),
+                                        });
+                                    }
+                                    // Mark subscription as completed.
+                                    //
+                                    // If we are arrived at this point,
+                                    // means that no error should be occurred,
+                                    // so the subscription can be marked as completed.
+                                    //
+                                    // # Example
+                                    //
+                                    // Send a request with `{"ids":["<id>"]}` filter.
+                                    // In this case, when the relay sends the matching event,
+                                    // it no longer makes sense to keep the subscription open,
+                                    // as no more events will ever be served.
+                                    // Discussion: https://github.com/nostrability/nostrability/issues/167
+                                    None => {
+                                        return Some(HandleAutoClosing {
+                                            to_close: false,
+                                            reason: Some(SubscriptionAutoClosedReason::Completed),
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        _ => (),
+                    },
+                    RelayNotification::Authenticated => {
+                        // Resend REQ
+                        if require_resubscription {
+                            require_resubscription = false;
+                            let msg = ClientMessage::Req {
+                                subscription_id: Cow::Borrowed(id),
+                                filters: filters.iter().map(Cow::Borrowed).collect(),
+                            };
+                            let _ = self.send_msg(msg);
+                        }
+                    }
+                    RelayNotification::AuthenticationFailed => {
+                        return Some(HandleAutoClosing {
+                            to_close: false, // No need to send CLOSE msg
+                            reason: Some(SubscriptionAutoClosedReason::AuthenticationFailed),
+                        });
+                    }
+                    RelayNotification::RelayStatus { status } => {
+                        if status.is_disconnected() {
+                            return Some(HandleAutoClosing {
+                                to_close: false, // No need to send CLOSE msg
+                                reason: None,
+                            });
+                        }
+                    }
+                    RelayNotification::Shutdown => {
+                        return Some(HandleAutoClosing {
+                            to_close: false, // No need to send CLOSE msg
+                            reason: None,
+                        });
+                    }
+                    _ => (),
+                }
+            }
+
+            if let ReqExitPolicy::WaitDurationAfterEOSE(duration) = opts.exit_policy {
+                time::timeout(Some(duration), async {
+                    while let Ok(notification) = notifications.recv().await {
+                        match notification {
+                            RelayNotification::Message {
+                                message:
+                                    RelayMessage::Event {
+                                        subscription_id,
+                                        event,
+                                    },
+                            } => {
+                                if subscription_id.as_ref() == id {
+                                    // Send activity
+                                    if let Some(activity) = activity {
+                                        // TODO: handle error?
+                                        let _ = activity
+                                            .send(SubscriptionActivity::ReceivedEvent(
+                                                event.into_owned(),
+                                            ))
+                                            .await;
+                                    }
+                                }
+                            }
+                            RelayNotification::RelayStatus { status } => {
+                                if status.is_disconnected() {
+                                    return Ok(());
+                                }
+                            }
+                            RelayNotification::Shutdown => {
+                                return Ok(());
+                            }
+                            _ => (),
+                        }
+                    }
+
+                    Ok::<(), Error>(())
+                })
+                .await;
+            }
+
+            Some(HandleAutoClosing {
+                to_close: true, // Need to send CLOSE msg
+                reason: Some(SubscriptionAutoClosedReason::Completed),
+            })
+        })
+        .await?
+    }
+
+    fn _unsubscribe_long_lived_subscription(
+        &self,
+        subscriptions: &mut RwLockWriteGuard<HashMap<SubscriptionId, SubscriptionData>>,
+        id: Cow<SubscriptionId>,
+    ) -> Result<(), Error> {
+        // Remove the subscription from the map
+        if let Some(sub) = subscriptions.remove(&id) {
+            // Re-insert if auto-closing
+            if sub.is_auto_closing {
+                subscriptions.insert(id.into_owned(), sub);
+                return Ok(());
+            }
+        }
+
+        // Send CLOSE message
+        self.send_msg(ClientMessage::Close(id))
+    }
+
+    pub async fn unsubscribe(&self, id: &SubscriptionId) -> Result<(), Error> {
+        let mut subscriptions = self.atomic.subscriptions.write().await;
+        self._unsubscribe_long_lived_subscription(&mut subscriptions, Cow::Borrowed(id))
+    }
+
+    pub async fn unsubscribe_all(&self) -> Result<(), Error> {
+        let mut subscriptions = self.atomic.subscriptions.write().await;
+
+        // All IDs
+        let ids: Vec<SubscriptionId> = subscriptions.keys().cloned().collect();
+
+        // Unsubscribe
+        for id in ids.into_iter() {
+            self._unsubscribe_long_lived_subscription(&mut subscriptions, Cow::Owned(id))?;
+        }
+
+        Ok(())
+    }
+
+    #[inline(never)]
+    fn handle_neg_msg<I>(
+        &self,
+        subscription_id: &SubscriptionId,
+        msg: Option<Vec<u8>>,
+        curr_have_ids: I,
+        curr_need_ids: I,
+        opts: &SyncOptions,
+        output: &mut Reconciliation,
+        have_ids: &mut Vec<EventId>,
+        need_ids: &mut Vec<EventId>,
+        sync_done: &mut bool,
+    ) -> Result<(), Error>
+    where
+        I: Iterator<Item = EventId>,
+    {
+        let mut counter: u64 = 0;
+
+        // If event ID wasn't already seen, add to the HAVE IDs
+        // Add to HAVE IDs only if `do_up` is true
+        for id in curr_have_ids.into_iter() {
+            if output.local.insert(id) && opts.do_up() {
+                have_ids.push(id);
+                counter += 1;
+            }
+        }
+
+        // If event ID wasn't already seen, add to the NEED IDs
+        // Add to NEED IDs only if `do_down` is true
+        for id in curr_need_ids.into_iter() {
+            if output.remote.insert(id) && opts.do_down() {
+                need_ids.push(id);
+                counter += 1;
+            }
+        }
+
+        if let Some(progress) = &opts.progress {
+            progress.send_modify(|state| {
+                state.total += counter;
+            });
+        }
+
+        match msg {
+            Some(query) => self.send_neg_msg(subscription_id, &hex::encode(query)),
+            None => {
+                // Mark sync as done
+                *sync_done = true;
+
+                // Send NEG-CLOSE message
+                self.send_neg_close(subscription_id)
+            }
+        }
+    }
+
+    #[inline(never)]
+    async fn upload_neg_events(
+        &self,
+        have_ids: &mut Vec<EventId>,
+        in_flight_up: &mut HashSet<EventId>,
+        opts: &SyncOptions,
+    ) -> Result<(), Error> {
+        // Check if it should skip the upload
+        if !opts.do_up() || have_ids.is_empty() || in_flight_up.len() > NEGENTROPY_LOW_WATER_UP {
+            return Ok(());
+        }
+
+        let mut num_sent = 0;
+
+        while !have_ids.is_empty() && in_flight_up.len() < NEGENTROPY_HIGH_WATER_UP {
+            if let Some(id) = have_ids.pop() {
+                match self.state.database().event_by_id(&id).await {
+                    Ok(Some(event)) => {
+                        in_flight_up.insert(id);
+                        self.send_msg(ClientMessage::event(event))?;
+                        num_sent += 1;
+                    }
+                    Ok(None) => {
+                        // Event not found
+                    }
+                    Err(e) => tracing::error!(
+                        url = %self.url,
+                        error = %e,
+                        "Can't upload event."
+                    ),
+                }
+            }
+        }
+
+        // Update progress
+        if let Some(progress) = &opts.progress {
+            progress.send_modify(|state| {
+                state.current += num_sent;
+            });
+        }
+
+        if num_sent > 0 {
+            tracing::info!(
+                "Negentropy UP for '{}': {} events ({} remaining)",
+                self.url,
+                num_sent,
+                have_ids.len()
+            );
+        }
+
+        Ok(())
+    }
+
+    #[inline(never)]
+    async fn req_neg_events(
+        &self,
+        need_ids: &mut Vec<EventId>,
+        in_flight_down: &mut bool,
+        down_sub_id: &SubscriptionId,
+        opts: &SyncOptions,
+    ) -> Result<(), Error> {
+        // Check if it should skip the download
+        if !opts.do_down() || need_ids.is_empty() || *in_flight_down {
+            return Ok(());
+        }
+
+        let capacity: usize = cmp::min(need_ids.len(), NEGENTROPY_BATCH_SIZE_DOWN);
+        let mut ids: Vec<EventId> = Vec::with_capacity(capacity);
+
+        while !need_ids.is_empty() && ids.len() < NEGENTROPY_BATCH_SIZE_DOWN {
+            if let Some(id) = need_ids.pop() {
+                ids.push(id);
+            }
+        }
+
+        tracing::info!(
+            "Negentropy DOWN for '{}': {} events ({} remaining)",
+            self.url,
+            ids.len(),
+            need_ids.len()
+        );
+
+        // Update progress
+        if let Some(progress) = &opts.progress {
+            progress.send_modify(|state| {
+                state.current += ids.len() as u64;
+            });
+        }
+
+        let filter = Filter::new().ids(ids);
+        let msg: ClientMessage = ClientMessage::Req {
+            subscription_id: Cow::Borrowed(down_sub_id),
+            filters: vec![Cow::Borrowed(&filter)],
+        };
+
+        // Register an auto-closing subscription
+        self.add_auto_closing_subscription(down_sub_id.clone(), vec![filter.clone()])
+            .await;
+
+        // Send msg
+        if let Err(e) = self.send_msg(msg) {
+            // Remove previously added subscription
+            self.remove_subscription(down_sub_id).await;
+
+            // Propagate error
+            return Err(e);
+        }
+
+        *in_flight_down = true;
+
+        Ok(())
+    }
+
+    #[inline(never)]
+    fn handle_neg_ok(
+        &self,
+        in_flight_up: &mut HashSet<EventId>,
+        event_id: EventId,
+        status: bool,
+        message: Cow<'_, str>,
+        output: &mut Reconciliation,
+    ) {
+        if in_flight_up.remove(&event_id) {
+            if status {
+                output.sent.insert(event_id);
+            } else {
+                tracing::error!(
+                    url = %self.url,
+                    id = %event_id,
+                    msg = %message,
+                    "Can't upload event."
+                );
+
+                output
+                    .send_failures
+                    .entry(self.url.clone())
+                    .and_modify(|map| {
+                        map.insert(event_id, message.to_string());
+                    })
+                    .or_default()
+                    .insert(event_id, message.into_owned());
+            }
+        }
+    }
+
+    /// New negentropy protocol
+    #[inline(never)]
+    pub(super) async fn sync(
+        &self,
+        filter: &Filter,
+        items: Vec<(EventId, Timestamp)>,
+        opts: &SyncOptions,
+        output: &mut Reconciliation,
+    ) -> Result<(), Error> {
+        // Prepare the negentropy client
+        let storage: NegentropyStorageVector = prepare_negentropy_storage(items)?;
+        let mut negentropy: Negentropy<NegentropyStorageVector> =
+            Negentropy::borrowed(&storage, NEGENTROPY_FRAME_SIZE_LIMIT)?;
+
+        // Initiate reconciliation
+        let initial_message: Vec<u8> = negentropy.initiate()?;
+
+        // Subscribe
+        let mut notifications = self.internal_notification_sender.subscribe();
+        let mut temp_notifications = self.internal_notification_sender.subscribe();
+
+        // Send the initial negentropy message
+        let sub_id: SubscriptionId = SubscriptionId::generate();
+        let open_msg: ClientMessage = ClientMessage::NegOpen {
+            subscription_id: Cow::Borrowed(&sub_id),
+            filter: Cow::Borrowed(filter),
+            id_size: None,
+            initial_message: Cow::Owned(hex::encode(initial_message)),
+        };
+        self.send_msg(open_msg)?;
+
+        // Check if negentropy is supported
+        check_negentropy_support(&sub_id, opts, &mut temp_notifications).await?;
+
+        let mut in_flight_up: HashSet<EventId> = HashSet::new();
+        let mut in_flight_down: bool = false;
+        let mut sync_done: bool = false;
+        let mut have_ids: Vec<EventId> = Vec::new();
+        let mut need_ids: Vec<EventId> = Vec::new();
+        let down_sub_id: SubscriptionId = SubscriptionId::generate();
+
+        // Start reconciliation
+        while let Ok(notification) = notifications.recv().await {
+            match notification {
+                RelayNotification::Message { message } => {
+                    match message {
+                        RelayMessage::NegMsg {
+                            subscription_id,
+                            message,
+                        } => {
+                            if subscription_id.as_ref() == &sub_id {
+                                let mut curr_have_ids: Vec<Id> = Vec::new();
+                                let mut curr_need_ids: Vec<Id> = Vec::new();
+
+                                // Parse message
+                                let query: Vec<u8> = hex::decode(message.as_ref())?;
+
+                                // Reconcile
+                                let msg: Option<Vec<u8>> = negentropy.reconcile_with_ids(
+                                    &query,
+                                    &mut curr_have_ids,
+                                    &mut curr_need_ids,
+                                )?;
+
+                                // Handle the message
+                                self.handle_neg_msg(
+                                    &subscription_id,
+                                    msg,
+                                    curr_have_ids.into_iter().map(neg_id_to_event_id),
+                                    curr_need_ids.into_iter().map(neg_id_to_event_id),
+                                    opts,
+                                    output,
+                                    &mut have_ids,
+                                    &mut need_ids,
+                                    &mut sync_done,
+                                )?;
+                            }
+                        }
+                        RelayMessage::NegErr {
+                            subscription_id,
+                            message,
+                        } => {
+                            if subscription_id.as_ref() == &sub_id {
+                                return Err(Error::RelayMessage(message.into_owned()));
+                            }
+                        }
+                        RelayMessage::Ok {
+                            event_id,
+                            status,
+                            message,
+                        } => {
+                            self.handle_neg_ok(
+                                &mut in_flight_up,
+                                event_id,
+                                status,
+                                message,
+                                output,
+                            );
+                        }
+                        RelayMessage::Event {
+                            subscription_id,
+                            event,
+                        } => {
+                            if subscription_id.as_ref() == &down_sub_id {
+                                output.received.insert(event.id);
+                            }
+                        }
+                        RelayMessage::EndOfStoredEvents(id) => {
+                            if id.as_ref() == &down_sub_id {
+                                in_flight_down = false;
+
+                                // Remove subscription
+                                self.remove_subscription(&down_sub_id).await;
+
+                                // Close subscription
+                                self.send_msg(ClientMessage::Close(Cow::Borrowed(&down_sub_id)))?;
+                            }
+                        }
+                        RelayMessage::Closed {
+                            subscription_id, ..
+                        } => {
+                            if subscription_id.as_ref() == &down_sub_id {
+                                in_flight_down = false;
+
+                                // NOTE: the subscription is removed in the `InnerRelay::handle_relay_message` method,
+                                // so there is no need to try to remove it also here.
+                            }
+                        }
+                        _ => (),
+                    }
+
+                    // Send events
+                    self.upload_neg_events(&mut have_ids, &mut in_flight_up, opts)
+                        .await?;
+
+                    // Get events
+                    self.req_neg_events(&mut need_ids, &mut in_flight_down, &down_sub_id, opts)
+                        .await?;
+                }
+                RelayNotification::RelayStatus { status } => {
+                    if status.is_disconnected() {
+                        return Err(Error::NotConnected);
+                    }
+                }
+                RelayNotification::Shutdown => {
+                    return Err(Error::ReceivedShutdown);
+                }
+                _ => (),
+            };
+
+            if sync_done
+                && have_ids.is_empty()
+                && need_ids.is_empty()
+                && in_flight_up.is_empty()
+                && !in_flight_down
+            {
+                break;
+            }
+        }
+
+        tracing::info!(url = %self.url, "Negentropy reconciliation terminated.");
+
+        Ok(())
+    }
+}
+
+/// Send WebSocket messages with timeout set to [WEBSOCKET_TX_TIMEOUT].
+async fn send_ws_msgs(tx: &mut WebSocketSink, msgs: Vec<Message>) -> Result<(), Error> {
+    let mut stream = futures_util::stream::iter(msgs.into_iter().map(Ok));
+    match time::timeout(Some(WEBSOCKET_TX_TIMEOUT), tx.send_all(&mut stream)).await {
+        Some(res) => Ok(res?),
+        None => Err(Error::Timeout),
+    }
+}
+
+/// Send WebSocket messages with timeout set to [WEBSOCKET_TX_TIMEOUT].
+async fn close_ws(tx: &mut WebSocketSink) -> Result<(), Error> {
+    // TODO: remove timeout from here?
+    match time::timeout(Some(WEBSOCKET_TX_TIMEOUT), tx.close()).await {
+        Some(res) => Ok(res?),
+        None => Err(Error::Timeout),
+    }
+}
+
+#[inline]
+fn neg_id_to_event_id(id: Id) -> EventId {
+    EventId::from_byte_array(id.to_bytes())
+}
+
+fn prepare_negentropy_storage(
+    items: Vec<(EventId, Timestamp)>,
+) -> Result<NegentropyStorageVector, Error> {
+    // Compose negentropy storage
+    let mut storage = NegentropyStorageVector::with_capacity(items.len());
+
+    // Add items
+    for (id, timestamp) in items.into_iter() {
+        let id: Id = Id::from_byte_array(id.to_bytes());
+        storage.insert(timestamp.as_secs(), id)?;
+    }
+
+    // Seal
+    storage.seal()?;
+
+    // Build negentropy client
+    Ok(storage)
+}
+
+/// Check if negentropy is supported
+#[inline(never)]
+async fn check_negentropy_support(
+    sub_id: &SubscriptionId,
+    opts: &SyncOptions,
+    temp_notifications: &mut broadcast::Receiver<RelayNotification>,
+) -> Result<(), Error> {
+    time::timeout(Some(opts.initial_timeout), async {
+        while let Ok(notification) = temp_notifications.recv().await {
+            if let RelayNotification::Message { message } = notification {
+                match message {
+                    RelayMessage::NegMsg {
+                        subscription_id, ..
+                    } => {
+                        if subscription_id.as_ref() == sub_id {
+                            break;
+                        }
+                    }
+                    RelayMessage::NegErr {
+                        subscription_id,
+                        message,
+                    } => {
+                        if subscription_id.as_ref() == sub_id {
+                            return Err(Error::RelayMessage(message.into_owned()));
+                        }
+                    }
+                    RelayMessage::Notice(message) => {
+                        if message == "ERROR: negentropy error: negentropy query missing elements" {
+                            // The NEG-OPEN message is sent with 4 elements instead of 5
+                            // If the relay return this error means that is not support new
+                            // negentropy protocol
+                            return Err(Error::Negentropy(
+                                negentropy::Error::UnsupportedProtocolVersion,
+                            ));
+                        } else if message.contains("bad msg")
+                            && (message.contains("unknown cmd")
+                                || message.contains("negentropy")
+                                || message.contains("NEG-"))
+                        {
+                            return Err(Error::NegentropyNotSupported);
+                        } else if message.contains("bad msg: invalid message")
+                            && message.contains("NEG-OPEN")
+                        {
+                            return Err(Error::UnknownNegentropyError);
+                        }
+                    }
+                    _ => (),
+                }
+            }
+        }
+
+        Ok(())
+    })
+    .await
+    .ok_or(Error::Timeout)?
+}
+
+#[cfg(test)]
+mod tests {
+    use std::future::Future;
+    use std::pin::Pin;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+
+    use nostr::event::{Event, EventBuilder, Kind};
+    use nostr::key::Keys;
+    use nostr::message::SubscriptionId;
+    use nostr::types::RelayUrl;
+
+    use super::*;
+    use crate::policy::{AdmitPolicy, AdmitStatus, PolicyError};
+    use crate::relay::{Relay, RelayOptions};
+
+    #[derive(Debug)]
+    struct CountingAdmitPolicy(Arc<AtomicUsize>);
+
+    impl AdmitPolicy for CountingAdmitPolicy {
+        fn admit_event<'a>(
+            &'a self,
+            _relay_url: &'a RelayUrl,
+            _subscription_id: &'a SubscriptionId,
+            _event: &'a Event,
+        ) -> Pin<Box<dyn Future<Output = Result<AdmitStatus, PolicyError>> + Send + 'a>> {
+            self.0.fetch_add(1, Ordering::SeqCst);
+            Box::pin(async { Ok(AdmitStatus::Success) })
+        }
+    }
+
+    fn event_with_invalid_signature() -> Event {
+        let keys = Keys::generate();
+        let mut event = EventBuilder::new(Kind::TextNote, "test")
+            .sign_with_keys(&keys)
+            .unwrap();
+        let other_event = EventBuilder::new(Kind::TextNote, "other")
+            .sign_with_keys(&Keys::generate())
+            .unwrap();
+        event.sig = other_event.sig;
+        event
+    }
+
+    #[test]
+    fn test_new_auth_challenge_replaces_the_previous_one() {
+        let (tx, rx) = watch::channel(None);
+
+        for index in 0..100 {
+            queue_auth_challenge(&tx, &index.to_string());
+        }
+
+        assert_eq!(rx.borrow().as_deref(), Some("99"));
+    }
+
+    #[tokio::test]
+    async fn test_invalid_event_does_not_poison_verification_cache() {
+        let relay = Relay::new(
+            RelayUrl::parse("wss://relay.example.com").unwrap(),
+            SharedState::default(),
+            RelayOptions::new(),
+        );
+        let event = event_with_invalid_signature();
+
+        assert!(event.verify().is_err());
+        for _ in 0..2 {
+            assert!(relay.inner.state.verify_and_cache(&event).await.is_err());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_repeated_invalid_event_is_not_saved() {
+        let relay = Relay::new(
+            RelayUrl::parse("wss://relay.example.com").unwrap(),
+            SharedState::default(),
+            RelayOptions::new(),
+        );
+        let event = event_with_invalid_signature();
+        let subscription_id = SubscriptionId::new("test");
+
+        for _ in 0..2 {
+            assert!(relay
+                .inner
+                .handle_event_msg(subscription_id.clone(), event.clone())
+                .await
+                .is_err());
+        }
+
+        assert_eq!(
+            relay
+                .inner
+                .state
+                .database()
+                .check_id(&event.id)
+                .await
+                .unwrap(),
+            DatabaseEventStatus::NotExistent
+        );
+    }
+
+    #[tokio::test]
+    async fn test_invalid_event_is_rejected_before_admit_policy() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let shared = SharedState {
+            admit_policy: Some(Arc::new(CountingAdmitPolicy(calls.clone()))),
+            ..Default::default()
+        };
+        let relay = Relay::new(
+            RelayUrl::parse("wss://relay.example.com").unwrap(),
+            shared,
+            RelayOptions::new(),
+        );
+        let event = event_with_invalid_signature();
+
+        let result = relay
+            .inner
+            .handle_event_msg(SubscriptionId::new("test"), event)
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+    }
+
+    #[tokio::test]
+    async fn test_invalid_event_with_saved_id_is_rejected() {
+        let relay = Relay::new(
+            RelayUrl::parse("wss://relay.example.com").unwrap(),
+            SharedState::default(),
+            RelayOptions::new(),
+        );
+        let valid_event = EventBuilder::new(Kind::TextNote, "valid")
+            .sign_with_keys(&Keys::generate())
+            .unwrap();
+        relay
+            .inner
+            .state
+            .database()
+            .save_event(&valid_event)
+            .await
+            .unwrap();
+
+        let mut forged_event = valid_event;
+        forged_event.content = String::from("forged");
+        assert!(forged_event.verify().is_err());
+
+        let result = relay
+            .inner
+            .handle_event_msg(SubscriptionId::new("test"), forged_event)
+            .await;
+        assert!(result.is_err());
+    }
+}
+
+#[cfg(bench)]
+mod benches {
+    use std::sync::LazyLock;
+
+    use test::Bencher;
+    use tokio::runtime::Runtime;
+
+    use super::*;
+
+    static RUNTIME: LazyLock<Runtime> = LazyLock::new(|| Runtime::new().unwrap());
+
+    fn relay() -> InnerRelay {
+        let url = RelayUrl::parse("ws://localhost:8080").unwrap();
+        let state = SharedState::default();
+        let opts = RelayOptions::default();
+        InnerRelay::new(url, state, opts)
+    }
+
+    #[bench]
+    fn bench_handle_relay_msg_event(bh: &mut Bencher) {
+        let relay = relay();
+
+        let msg = r#"["EVENT", "random_string", {"id":"70b10f70c1318967eddf12527799411b1a9780ad9c43858f5e5fcd45486a13a5","pubkey":"379e863e8357163b5bce5d2688dc4f1dcc2d505222fb8d74db600f30535dfdfe","created_at":1612809991,"kind":1,"tags":[],"content":"test","sig":"273a9cd5d11455590f4359500bccb7a89428262b96b3ea87a756b770964472f8c3e87f5d5e64d8d2e859a71462a3f477b554565c4f2f326cb01dd7620db71502"}]"#;
+
+        bh.iter(|| {
+            RUNTIME.block_on(async {
+                relay.handle_raw_relay_message(msg).await.unwrap();
+            });
+        });
+    }
+
+    #[bench]
+    fn bench_handle_relay_msg_invalid_event(bh: &mut Bencher) {
+        let relay = relay();
+
+        let msg = r#"["EVENT", "random_string", {"id":"70b10f70c1318967eddf12527799411b1a9780ad9c43858f5e5fcd45486a13a5","pubkey":"379e863e8357163b5bce5d2688dc4f1dcc2d505222fb8d74db600f30535dfdfe","created_at":1612809991,"kind":1,"tags":[],"content":"test","sig":"fa163f5cfb75d77d9b6269011872ee22b34fb48d23251e9879bb1e4ccbdd8aaaf4b6dc5f5084a65ef42c52fbcde8f3178bac3ba207de827ec513a6aa39fa684c"}]"#;
+
+        bh.iter(|| {
+            RUNTIME.block_on(async {
+                let _ = relay.handle_raw_relay_message(msg).await;
+            });
+        });
+    }
+}

@@ -59,3 +59,8 @@ default = []
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2.14.1"
+
+# Same narrow LRU dependency backport as p2pd; see vendor/README.md.
+[patch.crates-io]
+nostr-database = { path = "vendor/nostr-database" }
+nostr-relay-pool = { path = "vendor/nostr-relay-pool" }

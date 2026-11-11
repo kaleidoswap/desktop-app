@@ -1,0 +1,249 @@
+// Copyright (c) 2022-2023 Yuki Kishimoto
+// Copyright (c) 2023-2025 Rust Nostr Developers
+// Distributed under the MIT software license
+
+use std::fmt;
+use std::time::Duration;
+
+use nostr::event::{self, builder};
+use nostr::message::MessageHandleError;
+use nostr_database::DatabaseError;
+
+use crate::policy::PolicyError;
+use crate::shared::SharedStateError;
+use crate::transport::error::TransportError;
+
+/// Relay error
+#[derive(Debug)]
+pub enum Error {
+    /// Transport error
+    Transport(TransportError),
+    /// Shared state error
+    SharedState(SharedStateError),
+    /// Policy error
+    Policy(PolicyError),
+    /// MessageHandle error
+    MessageHandle(MessageHandleError),
+    /// Event error
+    Event(event::Error),
+    /// Event Builder error
+    EventBuilder(builder::Error),
+    /// Hex error
+    Hex(hex::FromHexError),
+    /// Negentropy error
+    Negentropy(negentropy::Error),
+    /// Database error
+    Database(DatabaseError),
+    /// Generic timeout
+    Timeout,
+    /// Not replied to ping
+    NotRepliedToPing,
+    /// Can't parse pong
+    CantParsePong,
+    /// Pong not match
+    PongNotMatch {
+        /// Expected nonce
+        expected: u64,
+        /// Received nonce
+        received: u64,
+    },
+    /// Message response timeout
+    CantSendChannelMessage {
+        /// Name of channel
+        channel: String,
+    },
+    /// Relay not ready
+    NotReady,
+    /// Relay not connected
+    NotConnected,
+    /// Relay is sleeping
+    Sleeping,
+    /// Relay subscription id not exist
+    SubscriptionNotFound,
+    /// Event doesn't match the subscription filter
+    EventNotMatchFilter,
+    /// Received too many events for the subscription
+    TooManyEvents,
+    /// Relay banned
+    Banned,
+    /// Connection rejected
+    ConnectionRejected {
+        /// Reason
+        reason: Option<String>,
+    },
+    /// Received termination request
+    TerminationRequest,
+    /// Received shutdown
+    ReceivedShutdown,
+    /// Relay message
+    RelayMessage(String),
+    /// Batch messages empty
+    BatchMessagesEmpty,
+    /// Read actions disabled
+    ReadDisabled,
+    /// Write actions disabled
+    WriteDisabled,
+    /// Negentropy not supported
+    NegentropyNotSupported,
+    /// Unknown negentropy error
+    UnknownNegentropyError,
+    /// Relay message too large
+    RelayMessageTooLarge {
+        /// Message size
+        size: usize,
+        /// Max message size
+        max_size: usize,
+    },
+    /// Event too large
+    EventTooLarge {
+        /// Event size
+        size: usize,
+        /// Max event size
+        max_size: usize,
+    },
+    /// Too many tags
+    TooManyTags {
+        /// Tags num
+        size: usize,
+        /// Max tags num
+        max_size: usize,
+    },
+    /// Event expired
+    EventExpired,
+    /// Notification Handler error
+    Handler(String),
+    /// Max latency exceeded
+    MaximumLatencyExceeded {
+        /// Max
+        max: Duration,
+        /// Current
+        current: Duration,
+    },
+    /// Auth failed
+    AuthenticationFailed,
+    /// Premature exit
+    PrematureExit,
+}
+
+impl std::error::Error for Error {}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Transport(e) => e.fmt(f),
+            Self::SharedState(e) => e.fmt(f),
+            Self::Policy(e) => e.fmt(f),
+            Self::MessageHandle(e) => e.fmt(f),
+            Self::Event(e) => e.fmt(f),
+            Self::EventBuilder(e) => e.fmt(f),
+            Self::Hex(e) => e.fmt(f),
+            Self::Negentropy(e) => e.fmt(f),
+            Self::Database(e) => e.fmt(f),
+            Self::Timeout => f.write_str("timeout"),
+            Self::NotRepliedToPing => f.write_str("not replied to ping"),
+            Self::CantParsePong => f.write_str("can't parse pong"),
+            Self::PongNotMatch { expected, received } => write!(
+                f,
+                "pong not match: expected={expected}, received={received}"
+            ),
+            Self::CantSendChannelMessage { channel } => {
+                write!(f, "can't send message to the '{channel}' channel")
+            }
+            Self::NotReady => f.write_str("relay is initialized but not ready"),
+            Self::NotConnected => f.write_str("relay not connected"),
+            Self::SubscriptionNotFound => f.write_str("subscription not found"),
+            Self::EventNotMatchFilter => f.write_str("event doesn't match the subscription filter"),
+            Self::TooManyEvents => f.write_str("received too many events for the subscription"),
+            Self::Sleeping => f.write_str("relay is sleeping"),
+            Self::Banned => f.write_str("relay banned"),
+            Self::ConnectionRejected { reason } => {
+                let reason: &str = reason.as_deref().unwrap_or("unknown");
+                write!(f, "connection rejected: reason={reason}")
+            }
+            Self::TerminationRequest => f.write_str("received termination request"),
+            Self::ReceivedShutdown => f.write_str("received shutdown"),
+            Self::RelayMessage(message) => f.write_str(message),
+            Self::BatchMessagesEmpty => f.write_str("can't batch empty list of messages"),
+            Self::ReadDisabled => f.write_str("read actions are disabled"),
+            Self::WriteDisabled => f.write_str("write actions are disabled"),
+            Self::NegentropyNotSupported => f.write_str("negentropy not supported"),
+            Self::UnknownNegentropyError => f.write_str("unknown negentropy error"),
+            Self::RelayMessageTooLarge { size, max_size } => write!(
+                f,
+                "Received message too large: size={size}, max_size={max_size}"
+            ),
+            Self::EventTooLarge { size, max_size } => write!(
+                f,
+                "Received event too large: size={size}, max_size={max_size}"
+            ),
+            Self::TooManyTags { size, max_size } => write!(
+                f,
+                "Received event with too many tags: tags={size}, max_tags={max_size}"
+            ),
+            Self::EventExpired => f.write_str("event expired"),
+            Self::Handler(e) => f.write_str(e),
+            Self::MaximumLatencyExceeded { max, current } => write!(
+                f,
+                "Maximum latency exceeded: max={}ms, current={}ms",
+                max.as_millis(),
+                current.as_millis()
+            ),
+            Self::AuthenticationFailed => f.write_str("authentication failed"),
+            Self::PrematureExit => f.write_str("premature exit"),
+        }
+    }
+}
+
+impl From<TransportError> for Error {
+    fn from(e: TransportError) -> Self {
+        Self::Transport(e)
+    }
+}
+
+impl From<SharedStateError> for Error {
+    fn from(e: SharedStateError) -> Self {
+        Self::SharedState(e)
+    }
+}
+
+impl From<PolicyError> for Error {
+    fn from(e: PolicyError) -> Self {
+        Self::Policy(e)
+    }
+}
+
+impl From<MessageHandleError> for Error {
+    fn from(e: MessageHandleError) -> Self {
+        Self::MessageHandle(e)
+    }
+}
+
+impl From<event::Error> for Error {
+    fn from(e: event::Error) -> Self {
+        Self::Event(e)
+    }
+}
+
+impl From<builder::Error> for Error {
+    fn from(e: builder::Error) -> Self {
+        Self::EventBuilder(e)
+    }
+}
+
+impl From<hex::FromHexError> for Error {
+    fn from(e: hex::FromHexError) -> Self {
+        Self::Hex(e)
+    }
+}
+
+impl From<negentropy::Error> for Error {
+    fn from(e: negentropy::Error) -> Self {
+        Self::Negentropy(e)
+    }
+}
+
+impl From<DatabaseError> for Error {
+    fn from(e: DatabaseError) -> Self {
+        Self::Database(e)
+    }
+}
