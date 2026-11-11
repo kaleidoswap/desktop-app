@@ -1,0 +1,2 @@
+flatbuf:
+	flatc --rust -o ./src/flatbuffers ./fbs/event.fbs

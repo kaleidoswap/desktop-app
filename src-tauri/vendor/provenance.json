@@ -1,0 +1,18 @@
+{
+  "nostr-database-0.44.0": {
+    "registry_archive_sha256": "7462c9d8ae5ef6a28d66a192d399ad2530f1f2130b13186296dbb11bdef5b3d1",
+    "modified_files": [
+      "Cargo.toml"
+    ],
+    "added_license_source": "https://raw.githubusercontent.com/rust-nostr/nostr/c1a24383cd361a408fc53eeac7c1708a3b589194/LICENSE",
+    "license_sha256": "a333d394b9f31b6ca64d08f3048a8a38125c181d68d3d376c4ddf988cffd12d2"
+  },
+  "nostr-relay-pool-0.44.3": {
+    "registry_archive_sha256": "c85c54d6ca9aae4ae2bf19a7663ba9db5f45f783f1d24aff55f006386b8b99a1",
+    "modified_files": [
+      "Cargo.toml"
+    ],
+    "added_license_source": "https://raw.githubusercontent.com/rust-nostr/nostr/eac2a5af540374af2940ddb932c76d0e00b0bf99/LICENSE",
+    "license_sha256": "a333d394b9f31b6ca64d08f3048a8a38125c181d68d3d376c4ddf988cffd12d2"
+  }
+}

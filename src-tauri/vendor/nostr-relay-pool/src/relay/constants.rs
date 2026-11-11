@@ -1,0 +1,46 @@
+// Copyright (c) 2022-2023 Yuki Kishimoto
+// Copyright (c) 2023-2025 Rust Nostr Developers
+// Distributed under the MIT software license
+
+//! Relay constants
+
+use core::ops::RangeInclusive;
+use core::time::Duration;
+
+pub(super) const WAIT_FOR_OK_TIMEOUT: Duration = Duration::from_secs(10);
+pub(super) const WAIT_FOR_AUTHENTICATION_TIMEOUT: Duration = Duration::from_secs(7);
+pub(super) const DEFAULT_CONNECTION_TIMEOUT: Duration = Duration::from_secs(60);
+
+/// Relay default notification channel size
+pub const DEFAULT_NOTIFICATION_CHANNEL_SIZE: usize = 2048;
+
+/// Max relay size
+pub const MAX_MESSAGE_SIZE: u32 = 5 * 1024 * 1024; // 5 MB
+
+pub(super) const DEFAULT_RETRY_INTERVAL: Duration = Duration::from_secs(10);
+// Not increase the max retry interval too much.
+// Keep it small, avoid huge waits before reconnection if internet was gone for much time and then come back.
+pub(super) const MAX_RETRY_INTERVAL: Duration = Duration::from_secs(60);
+pub(super) const JITTER_RANGE: RangeInclusive<i8> = -3..=3;
+
+pub(super) const NEGENTROPY_FRAME_SIZE_LIMIT: u64 = 60_000; // Default frame limit is 128k. Halve that (hex encoding) and subtract a bit (JSON msg overhead)
+pub(super) const NEGENTROPY_HIGH_WATER_UP: usize = 100;
+pub(super) const NEGENTROPY_LOW_WATER_UP: usize = 50;
+pub(super) const NEGENTROPY_BATCH_SIZE_DOWN: usize = 100;
+
+pub(super) const MIN_ATTEMPTS: usize = 1;
+pub(super) const MIN_SUCCESS_RATE: f64 = 0.90;
+
+pub(super) const PING_INTERVAL: Duration = Duration::from_secs(55); // Used also for latency calculation
+
+/// Sleep interval
+#[cfg(not(test))]
+pub(super) const SLEEP_INTERVAL: Duration = Duration::from_secs(60);
+/// Sleep interval for tests
+#[cfg(test)]
+pub(super) const SLEEP_INTERVAL: Duration = Duration::from_secs(1);
+
+pub(super) const WEBSOCKET_TX_TIMEOUT: Duration = Duration::from_secs(10);
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) const LATENCY_MIN_READS: u64 = 3;
