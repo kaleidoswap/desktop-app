@@ -1,3 +1,4 @@
+import { CreateChannelStep2Schema } from '../../slices/channel/channelFormSchemas'
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,7 +13,6 @@ import { useEffect, useRef, useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
-import { z } from 'zod'
 
 import { useSettings } from '../../hooks/useSettings'
 import defaultIcon from '../../assets/rgb-logo.svg'
@@ -25,10 +25,7 @@ import {
 } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
 import { ChannelDurationSelector } from '../../components/ChannelConfiguration'
-import {
-  NewChannelFormSchema,
-  TNewChannelForm,
-} from '../../slices/channel/channel.slice'
+import { TNewChannelForm } from '../../slices/channel/channel.slice'
 import { nodeApi, NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 
 import 'react-toastify/dist/ReactToastify.css'
@@ -214,18 +211,6 @@ interface FormFields {
   public: boolean
 }
 
-const Step2Schema = NewChannelFormSchema.omit({
-  capacitySat: true,
-  pubKeyAndAddress: true,
-}).extend({
-  assetAmountDisplay: z.string().optional(),
-  assetId: z.string().optional(),
-  assetTicker: z.string().optional(), // Display amount with proper precision
-  capacitySat: z.string(),
-  pubKeyAndAddress: z.string(),
-  public: z.boolean(),
-})
-
 export const Step2 = ({
   onBack,
   onNext,
@@ -301,7 +286,7 @@ export const Step2 = ({
         public: formData.public !== undefined ? formData.public : true,
       },
       mode: 'onChange',
-      resolver: zodResolver(Step2Schema),
+      resolver: zodResolver(CreateChannelStep2Schema),
     })
 
   const capacitySat = watch('capacitySat')

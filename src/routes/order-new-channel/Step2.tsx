@@ -1,3 +1,4 @@
+import { OrderChannelStep2Schema } from '../../slices/channel/channelFormSchemas'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, ArrowRight, ChevronDown, Info } from 'lucide-react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
@@ -47,16 +48,7 @@ interface Props {
   preselectedAssetAmount?: number
 }
 
-const FormFieldsSchema = z.object({
-  assetId: z.string().optional().default(''),
-  capacitySat: z.string(),
-  channelExpireBlocks: z.number(),
-  clientAssetAmount: z.string().optional().default('0'),
-  clientBalanceSat: z.string(),
-  lspAssetAmount: z.string().optional().default(''),
-})
-
-type FormFields = z.infer<typeof FormFieldsSchema>
+type FormFields = z.infer<typeof OrderChannelStep2Schema>
 
 const BuyAssetDropdownItem = ({
   asset,
@@ -178,7 +170,7 @@ export const Step2: React.FC<Props> = ({
         clientBalanceSat: '20000',
         lspAssetAmount: '',
       },
-      resolver: zodResolver(FormFieldsSchema),
+      resolver: zodResolver(OrderChannelStep2Schema),
     })
 
   const [getInfoRequest] = makerApi.endpoints.get_info.useLazyQuery()
@@ -540,7 +532,7 @@ export const Step2: React.FC<Props> = ({
           const adjustedData = { ...submissionData }
           let madeAdjustments = false
 
-          error.errors.forEach((err) => {
+          error.issues.forEach((err) => {
             const path = err.path.join('.')
             if (path === 'capacitySat' && err.message.includes('minimum')) {
               adjustedData.capacitySat = effectiveMinCapacity
