@@ -110,6 +110,9 @@ jobs:
           pnpm install --frozen-lockfile
           cargo test --locked --manifest-path src-tauri/Cargo.toml p2p
           cargo test --locked --manifest-path src-tauri/Cargo.toml --test build_config
+      - name: Verify Windows Credential Manager
+        if: runner.os == 'Windows'
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --test windows_keyring
       - name: Build bundled Lightning node
         if: runner.os != 'Windows'
         env:
@@ -146,6 +149,13 @@ jobs:
           codesign --verify --deep --strict "$app"
           xcrun stapler validate "$app"
           spctl --assess --type execute --verbose "$app"
+      - name: Verify optimized glib iterator backport on Linux
+        if: runner.os == 'Linux'
+        run: cargo test --locked --release --manifest-path src-tauri/Cargo.toml --target '${{ matrix.target }}' --test glib_variant_iter
+      - name: Extract and launch the Windows package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/test-windows-package.ps1
       # No release, registry push, updater JSON, or artifact upload.
       - name: Clean ephemeral signing and private checkout files
         if: always()
