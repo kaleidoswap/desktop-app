@@ -8,6 +8,7 @@ import { Activity } from './Activity'
 import { DepthChart } from './DepthChart'
 import { useTr, usePoll } from './hooks'
 import { HowItWorks } from './HowItWorks'
+import { MosaikBridge } from './MosaikBridge'
 import { OrderBook } from './OrderBook'
 import { PairHeader, type MarketInfo } from './PairHeader'
 import { TakeSheet } from './TakeSheet'
@@ -129,6 +130,7 @@ export function Market({
 
   return (
     <div className="flex flex-col gap-3">
+      <MosaikBridge network={inf.network} />
       <PairHeader
         bestAsk={asks[0]?.unit_price}
         bestBid={bids[0]?.unit_price}

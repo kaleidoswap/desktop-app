@@ -94,11 +94,19 @@ export function WalletSetup({ networkLabel, generate, onComplete }: Props) {
             <p className="text-body text-content-secondary">
               {tr(
                 'setup.body',
-                'This wallet trades on {{network}} straight from your computer. It is yours alone and needs no node: you hold it with a recovery phrase.',
+                'Your own wallet for trading on {{network}}. No Lightning node needed.',
                 { network: networkLabel }
               )}
             </p>
           </header>
+          <ol
+            className="flex gap-4 text-caption text-content-secondary"
+            aria-label="Getting started"
+          >
+            <li className="font-semibold text-primary">1 · Create wallet</li>
+            <li>2 · Add funds</li>
+            <li>3 · Make an offer</li>
+          </ol>
           <div className="grid gap-3 sm:grid-cols-2">
             <button
               className="flex flex-col items-start gap-2 rounded-xl bg-primary/10 p-4 text-left ring-1 ring-primary/30 transition-colors hover:bg-primary/15"
