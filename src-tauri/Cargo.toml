@@ -64,3 +64,9 @@ tauri-plugin-updater = "2.14.1"
 [patch.crates-io]
 nostr-database = { path = "vendor/nostr-database" }
 nostr-relay-pool = { path = "vendor/nostr-relay-pool" }
+
+# RUSTSEC-2024-0429: upstream fix backported to GTK3-compatible glib.
+glib = { path = "vendor/glib" }
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+glib = "0.18.5"
