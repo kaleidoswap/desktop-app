@@ -71,7 +71,7 @@ export function HowItWorks({
     {
       body: tr(
         'guide.s1Body',
-        'Deposit bitcoin from any wallet or exchange, plus any RGB asset you want to sell. Only what is in this wallet can be traded.'
+        'Add BTC on the selected network to this trading wallet. To sell an asset, deposit it here too.'
       ),
       done: funded,
       title: tr('guide.s1', 'Deposit'),
@@ -79,7 +79,7 @@ export function HowItWorks({
     {
       body: tr(
         'guide.s2Body',
-        'Market buys or sells right now at the best open price. Limit posts your own price and waits for someone to take it.'
+        'Choose Market to accept an offer, or Limit to publish your price. Keep desktop online while your offer or swap is active.'
       ),
       done: active,
       title: tr('guide.s2', 'Buy or sell'),
@@ -89,12 +89,12 @@ export function HowItWorks({
         confirmations > 0
           ? tr(
               'guide.s3Body',
-              'Swaps are on-chain and settle after {{n}} confirmations. Withdraw to any address whenever you like.',
+              'Follow the swap in Activity. After {{n}} confirmations, settled funds become available to withdraw.',
               { n: confirmations }
             )
           : tr(
               'guide.s3BodyNow',
-              'Swaps are on-chain. Withdraw to any address whenever you like.'
+              'Follow the swap in Activity. Settled, unreserved funds can be withdrawn.'
             ),
       done: false,
       title: tr('guide.s3', 'Settle and withdraw'),
