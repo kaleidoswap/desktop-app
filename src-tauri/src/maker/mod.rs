@@ -392,11 +392,32 @@ async fn start(app: &AppHandle, signer: &MakerSigner, network_key: &str) -> Resu
     .map_err(|e| e.to_string())??;
 
     let journal = Journal::open(base.join("journal.json"));
-    let mut tasks = Vec::new();
     // USD pegs: signer-core reads a price file, which the app writes from its own BTC/USD reading;
-    // a file not rewritten for MAX_PRICE_AGE_SECS refuses those markets
+    // a file not rewritten for MAX_PRICE_AGE_SECS refuses those markets. A file left from an earlier
+    // policy (another peg) must never be read under this one, so it goes before the signer starts:
+    // until the first fresh reading is written, USD-pegged swaps are refused.
     let prices_path = base.join("reference-prices.json");
+    match std::fs::remove_file(&prices_path) {
+        Ok(()) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(format!("could not clear the old reference prices: {e}")),
+    }
     let pegs = signed.policy.usd_pegs();
+    let client_policy = Arc::new(signer_core::ClientPolicy::new(
+        signed.policy.to_config(&prices_path),
+        Some(base.join("daily.json")),
+    )?);
+    let handle = signer_core::service::start(
+        keys.clone(),
+        maker,
+        &n.relays,
+        client_policy,
+        wallet,
+        online,
+    )
+    .await?;
+    // the background tasks start only once the signer runs, so a failed start leaves none behind
+    let mut tasks = Vec::new();
     if !pegs.is_empty() {
         let path = prices_path.clone();
         tasks.push(tauri::async_runtime::spawn(async move {
@@ -413,19 +434,6 @@ async fn start(app: &AppHandle, signer: &MakerSigner, network_key: &str) -> Resu
             }
         }));
     }
-    let client_policy = Arc::new(signer_core::ClientPolicy::new(
-        signed.policy.to_config(&prices_path),
-        Some(base.join("daily.json")),
-    )?);
-    let handle = signer_core::service::start(
-        keys.clone(),
-        maker,
-        &n.relays,
-        client_policy,
-        wallet,
-        online,
-    )
-    .await?;
     let mut answers = handle.answers();
     tasks.push(tauri::async_runtime::spawn(async move {
         use tokio::sync::broadcast::error::RecvError;
