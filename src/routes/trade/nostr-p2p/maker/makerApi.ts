@@ -145,6 +145,49 @@ export interface UsageReport {
   total: Omit<UsageDay, 'date'>
 }
 
+// ─── the signer wallet (launch a token) ───────────────────────────────────────
+
+export interface Sats {
+  settled: number
+  spendable: number
+  future: number
+}
+
+export interface WalletAsset {
+  asset_id: string
+  ticker: string
+  name: string
+  precision: number
+  issued_supply: number
+  balance: Sats
+  /** Coins carrying some of it: how many sales can run at once. */
+  allocations: number
+}
+
+export interface SignerWallet {
+  btc: Sats
+  colored: Sats
+  coins: number
+  free_coins: number
+  assets: WalletAsset[]
+}
+
+export interface MintRequest {
+  ticker: string
+  name: string
+  precision: number
+  /** Base units. */
+  supply: number
+  parts: number
+}
+
+export interface StateHandoff {
+  uploaded: boolean
+  file: string | null
+  password: string | null
+  detail: string | null
+}
+
 export type PairInput =
   | { code: string }
   | { endpoint: Endpoint; token: string }
@@ -165,13 +208,21 @@ export interface MakerBackend {
   stopSigner(): Promise<MakerView>
   journal(): Promise<JournalData>
   btcUsd(): Promise<number>
+  wallet(): Promise<SignerWallet>
+  walletAddress(): Promise<string>
+  createCoins(num: number, size: number, feeRate: number): Promise<number>
+  mint(m: MintRequest): Promise<string>
+  sendState(): Promise<StateHandoff>
 }
 
 export const tauriMakerBackend = (networkKey: string): MakerBackend => ({
   api: (method, path, body) =>
     invoke('maker_api', { body: body ?? null, method, networkKey, path }),
   btcUsd: () => invoke('maker_btc_usd'),
+  createCoins: (num, size, feeRate) =>
+    invoke('maker_wallet_create_coins', { feeRate, networkKey, num, size }),
   journal: () => invoke('maker_journal', { networkKey }),
+  mint: (mint) => invoke('maker_wallet_mint', { mint, networkKey }),
   pair: (input) =>
     invoke('maker_pair', {
       code: 'code' in input ? input.code : null,
@@ -180,11 +231,14 @@ export const tauriMakerBackend = (networkKey: string): MakerBackend => ({
       token: 'token' in input ? input.token : null,
     }),
   pairingRequest: () => invoke('maker_pairing_request', { networkKey }),
+  sendState: () => invoke('maker_send_state', { networkKey }),
   setMode: (mode) => invoke('maker_set_mode', { mode, networkKey }),
   signPolicy: (policy) => invoke('maker_sign_policy', { networkKey, policy }),
   startSigner: () => invoke('maker_signer_start', { networkKey }),
   stopSigner: () => invoke('maker_signer_stop', { networkKey }),
   view: () => invoke('maker_view', { networkKey }),
+  wallet: () => invoke('maker_wallet', { networkKey }),
+  walletAddress: () => invoke('maker_wallet_address', { networkKey }),
 })
 
 let factory: (networkKey: string) => MakerBackend = tauriMakerBackend

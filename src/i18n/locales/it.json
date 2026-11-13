@@ -3609,7 +3609,8 @@
       "stepMode": "Become a maker",
       "stepStrategy": "Strategy",
       "stepPolicy": "Signing policy",
-      "stepLive": "Live"
+      "stepLive": "Live",
+      "stepLaunch": "Launch a token"
     },
     "mode": {
       "title": "How do you want to run your maker?",
@@ -3834,6 +3835,54 @@
       "swapsSettled": "Swaps settled",
       "volume": "Volume",
       "since": "Answering since {{when}}"
+    },
+    "launch": {
+      "title": "Launch a token",
+      "explain": "Mint your asset here, in this app's signer wallet, so the signer holds its RGB state from the start and can sign every sale. Then hand that state to your hosted maker and set what it quotes. Your keys never leave this computer.",
+      "refresh": "Refresh",
+      "signerRunning": "The signer is using the wallet",
+      "signerRunningHint": "Minting and making coins need the wallet to themselves. Stop the signer while you launch, and start it again from Live.",
+      "fund": "Fund the signer wallet",
+      "fundHint": "Send Mutinynet BTC here. It pays for the coins your asset sits on and the fees to make them.",
+      "btc": "Available:",
+      "incoming": "{{sat}} sat on the way",
+      "address": "Deposit address",
+      "showAddress": "Show a deposit address",
+      "coins": "Make coins for the asset",
+      "coinsHint": "An asset sits on small coins of its own. Each sale spends coins of its own, so more coins mean more sales at once.",
+      "coinsNow": "{{free}} free of {{total}} coins",
+      "coinsNum": "How many",
+      "coinsSize": "Each",
+      "feeRate": "Fee rate",
+      "makeCoins": "Make coins",
+      "mint": "Mint",
+      "mintHint": "A non-inflatable asset (NIA): the supply is fixed at mint.",
+      "ticker": "Ticker",
+      "name": "Name",
+      "supply": "Supply",
+      "precision": "Decimals",
+      "parts": "Spread over",
+      "partsHint": "coins ({{free}} free)",
+      "split": "Minted as {{each}}{{more}}",
+      "mintButton": "Mint",
+      "allocations": "on {{n}} coins",
+      "handoff": "Give the state to your hosted maker",
+      "handoffHint": "Your maker holds no keys, but it needs to know what the wallet holds to offer it. This sends an encrypted copy of the wallet's state (no key).",
+      "sendState": "Send the state",
+      "stateSent": "Your hosted maker has the state",
+      "stateManual": "Your maker cannot take the state yet. Hand KaleidoSwap this file and its password; they unlock the wallet's state only, not your keys.",
+      "stateFile": "State file",
+      "statePassword": "Password",
+      "next": "Set what it quotes",
+      "nextHint": "An issuer-set price and asks only; the signing policy then allows selling and nothing else.",
+      "nextLater": "Mint first.",
+      "setStrategy": "Strategy for {{ticker}}",
+      "errors": {
+        "ticker": "The ticker is 1 to 8 capital letters or digits, starting with a letter.",
+        "name": "Give the asset a name.",
+        "supply": "The supply is too small to spread over that many coins.",
+        "coins": "Make some coins first."
+      }
     }
   }
 }

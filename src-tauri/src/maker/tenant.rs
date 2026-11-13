@@ -133,7 +133,12 @@ const ROUTES: &[(&str, &str)] = &[
     ("POST", "/api/bot/pause"),
     ("POST", "/api/bot/resume"),
     ("GET", "/api/usage"),
+    // the signer wallet's RGB state, for a watch-only maker (encrypted rgb-lib backup, no key)
+    ("POST", STATE_ROUTE),
 ];
+
+/// Where the app hands the hosted maker its wallet's RGB state.
+pub const STATE_ROUTE: &str = "/api/wallet/state";
 
 /// Whether `method path` may be sent. `GET /api/usage` may carry `from` / `to` dates.
 pub fn route_allowed(method: &str, path: &str) -> bool {
@@ -186,6 +191,7 @@ pub async fn request(
     if !status.is_success() {
         return Err(match status.as_u16() {
             401 => "the maker refused the API token".into(),
+            404 => format!("the maker does not offer {path} yet"),
             _ if text.is_empty() => status.to_string(),
             _ => text,
         });
@@ -260,6 +266,8 @@ mod tests {
         assert!(route_allowed("GET", "/api/bot"));
         assert!(route_allowed("PUT", "/api/bot"));
         assert!(route_allowed("POST", "/api/bot/pause"));
+        assert!(route_allowed("POST", STATE_ROUTE));
+        assert!(!route_allowed("GET", STATE_ROUTE));
         assert!(route_allowed(
             "GET",
             "/api/usage?from=2026-11-13&to=2026-11-13"

@@ -355,6 +355,11 @@ fn main() {
             maker::maker_signer_stop,
             maker::maker_journal,
             maker::maker_btc_usd,
+            maker::maker_wallet,
+            maker::maker_wallet_address,
+            maker::maker_wallet_create_coins,
+            maker::maker_wallet_mint,
+            maker::maker_send_state,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

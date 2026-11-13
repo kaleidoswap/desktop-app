@@ -4,13 +4,14 @@ import { Alert } from '../../../../components/ui'
 import { cx, EmptyState, Panel, Pill } from '../market/ui'
 
 import { ChooseMode } from './ChooseMode'
+import { LaunchScreen } from './LaunchScreen'
 import { LiveScreen } from './LiveScreen'
 import { makerAvailableOn, makerBackend, type MakerView } from './makerApi'
 import { errorText, useMk } from './parts'
 import { PolicyScreen } from './PolicyScreen'
-import { StrategyScreen } from './StrategyScreen'
+import { StrategyScreen, type Asset } from './StrategyScreen'
 
-type Screen = 'mode' | 'strategy' | 'policy' | 'live'
+type Screen = 'mode' | 'launch' | 'strategy' | 'policy' | 'live'
 
 /** Whether the maker is set up far enough to configure: a mode, and for hosted its pairing. */
 export const isPaired = (v: MakerView | null): boolean =>
@@ -36,6 +37,7 @@ export function MakerSection({
   const [error, setError] = useState<string | null>(null)
   const [screen, setScreen] = useState<Screen | null>(null)
   const autoStarted = useRef(false)
+  const [seed, setSeed] = useState<Asset | null>(null)
 
   const reload = useCallback(async () => {
     try {
@@ -96,6 +98,15 @@ export function MakerSection({
   const hosted = view.mode === 'hosted'
   const steps: { id: Screen; label: string; enabled: boolean }[] = [
     { enabled: true, id: 'mode', label: tm('section.stepMode') },
+    ...(hosted
+      ? [
+          {
+            enabled: paired,
+            id: 'launch' as Screen,
+            label: tm('section.stepLaunch'),
+          },
+        ]
+      : []),
     { enabled: paired, id: 'strategy', label: tm('section.stepStrategy') },
     ...(hosted
       ? [
@@ -165,10 +176,26 @@ export function MakerSection({
           view={view}
         />
       )}
+      {current === 'launch' && paired && hosted && (
+        <LaunchScreen
+          backend={backend}
+          onStrategy={(a) => {
+            setSeed({
+              asset_id: a.asset_id,
+              precision: a.precision,
+              ticker: a.ticker,
+            })
+            setScreen('strategy')
+          }}
+          onView={setView}
+          view={view}
+        />
+      )}
       {current === 'strategy' && paired && (
         <StrategyScreen
           backend={backend}
           onNext={() => setScreen('policy')}
+          seed={seed}
           view={view}
         />
       )}

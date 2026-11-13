@@ -35,7 +35,7 @@ import {
   type StrategyForm,
 } from './strategy'
 
-interface Asset {
+export interface Asset {
   asset_id: string
   ticker: string
   precision: number
@@ -56,10 +56,13 @@ export function StrategyScreen({
   backend,
   view,
   onNext,
+  seed,
 }: {
   backend: MakerBackend
   view: MakerView
   onNext: () => void
+  /** An asset just minted for launch: open it with an issuer-set price and asks only. */
+  seed?: Asset | null
 }) {
   const tm = useMk()
   const api = useMemo(() => tenant(backend), [backend])
@@ -212,6 +215,24 @@ export function StrategyScreen({
       setBusy(false)
     }
   }
+
+  // a launched token: its own market if the maker has one, else a new issuer-set, sell-only one
+  const seedId = seed?.asset_id
+  const loaded = !!state
+  useEffect(() => {
+    if (!seed || !loaded) return
+    const known = state?.config.markets.some(
+      (m) => m.asset_id === seed.asset_id
+    )
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelected(seed.asset_id)
+    if (!known) {
+      setForm({ ...defaultForm(seed), bidSize: 0, priceKind: 'issuer' })
+      setSaved(false)
+    }
+    // run once per seed, when the maker's config is in
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seedId, loaded])
 
   const startNew = (a: Asset) => {
     if (!a.asset_id.startsWith('rgb:')) return

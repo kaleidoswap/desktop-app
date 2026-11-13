@@ -25,6 +25,7 @@ pub mod journal;
 pub mod policy;
 pub mod store;
 pub mod tenant;
+pub mod wallet;
 
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -184,6 +185,8 @@ pub struct MakerSigner {
     running: tokio::sync::Mutex<Option<Running>>,
     /// Why the last start failed, for the Live screen.
     last_error: Mutex<Option<String>>,
+    /// The signer wallet while the launch screens use it; the signer takes it when it starts.
+    wallet: tokio::sync::Mutex<Option<wallet::OpenWallet>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -353,43 +356,28 @@ async fn start(app: &AppHandle, signer: &MakerSigner, network_key: &str) -> Resu
         return Err("the signed policy is for another network".into());
     }
 
-    // rgb-lib's copy of the wallet, which signs: opened (and synced) off the async workers
+    // rgb-lib's wallet, which signs: the one the launch screens opened, or opened here off the
+    // async workers
     let base = dir(app, &n.network)?;
-    let (network, indexer) = (n.network.clone(), n.indexer_url.clone());
-    let wallet_dir = base.join("signer-wallet");
-    let (wallet, online) = tauri::async_runtime::spawn_blocking(move || {
-        use rgb_lib::wallet::{DatabaseType, OnlineOptions, SinglesigKeys, Wallet, WalletData};
-        std::fs::create_dir_all(&wallet_dir).map_err(|e| e.to_string())?;
-        let k = wallet_keys(&network, &s)?;
-        let data = WalletData {
-            data_dir: wallet_dir.to_string_lossy().into_owned(),
-            bitcoin_network: rgb_lib::BitcoinNetwork::from_str(&network)
-                .map_err(|e| e.to_string())?,
-            database_type: DatabaseType::Sqlite,
-            max_allocations_per_utxo: 5,
-            supported_schemas: vec![rgb_lib::AssetSchema::Nia],
-            reuse_addresses: false,
-        };
-        let sk = SinglesigKeys {
-            account_xpub_vanilla: k.account_xpub_vanilla,
-            account_xpub_colored: k.account_xpub_colored,
-            vanilla_keychain: None,
-            master_fingerprint: k.master_fingerprint,
-            mnemonic: Some(k.mnemonic),
-            witness_version: k.witness_version,
-        };
-        let mut w = Wallet::new(data, sk).map_err(|e| format!("signer wallet: {e}"))?;
-        let online = w
-            .go_online(OnlineOptions {
-                indexer_url: indexer,
-                skip_consistency_check: true,
-                vanilla_sync_lookback: 20,
+    let open = match signer
+        .wallet
+        .lock()
+        .await
+        .take()
+        .filter(|w| w.network == n.network)
+    {
+        Some(w) => w,
+        None => {
+            let (network, indexer) = (n.network.clone(), n.indexer_url.clone());
+            let wallet_dir = base.join("signer-wallet");
+            tauri::async_runtime::spawn_blocking(move || {
+                wallet::open(&network, &indexer, &wallet_dir, &s)
             })
-            .map_err(|e| format!("signer wallet: {e}"))?;
-        Ok::<_, String>((w, online))
-    })
-    .await
-    .map_err(|e| e.to_string())??;
+            .await
+            .map_err(|e| e.to_string())??
+        }
+    };
+    let (wallet, online) = (open.wallet, open.online);
 
     let journal = Journal::open(base.join("journal.json"));
     // USD pegs: signer-core reads a price file, which the app writes from its own BTC/USD reading;
@@ -667,6 +655,162 @@ pub async fn maker_signer_stop(
     c.signer_enabled = false;
     save_config(&app, &n.network, &c)?;
     view(&app, &signer, &network_key).await
+}
+
+// ─── the signer wallet: launch a token ──────────────────────────────────────
+
+/// Run `f` on the signer wallet, opened once and kept for the next call. Refused while the signer
+/// runs: it holds the same wallet, and rgb-lib wants one user per wallet directory.
+async fn with_wallet<T: Send + 'static>(
+    app: &AppHandle,
+    signer: &MakerSigner,
+    network_key: &str,
+    f: impl FnOnce(&mut wallet::OpenWallet) -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
+    let n = net(network_key)?;
+    if signer
+        .running
+        .lock()
+        .await
+        .as_ref()
+        .is_some_and(|r| r.network == n.network)
+    {
+        return Err("the signer is using the wallet: stop it on the Live screen first".into());
+    }
+    let mut slot = signer.wallet.lock().await;
+    let mut open = match slot.take().filter(|w| w.network == n.network) {
+        Some(w) => w,
+        None => {
+            let wallet_dir = dir(app, &n.network)?.join("signer-wallet");
+            let (network, indexer) = (n.network.clone(), n.indexer_url.clone());
+            tauri::async_runtime::spawn_blocking(move || {
+                let s = secrets(&network)?;
+                wallet::open(&network, &indexer, &wallet_dir, &s)
+            })
+            .await
+            .map_err(|e| e.to_string())??
+        }
+    };
+    let (res, open) = tauri::async_runtime::spawn_blocking(move || {
+        let r = f(&mut open);
+        (r, open)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    *slot = Some(open);
+    res
+}
+
+#[tauri::command]
+pub async fn maker_wallet(
+    app: AppHandle,
+    signer: Signer<'_>,
+    network_key: String,
+) -> Result<wallet::WalletView, String> {
+    with_wallet(&app, &signer, &network_key, wallet::view).await
+}
+
+/// A fresh address of the signer wallet, to fund it.
+#[tauri::command]
+pub async fn maker_wallet_address(
+    app: AppHandle,
+    signer: Signer<'_>,
+    network_key: String,
+) -> Result<String, String> {
+    with_wallet(&app, &signer, &network_key, |w| {
+        w.wallet.get_address().map_err(|e| e.to_string())
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn maker_wallet_create_coins(
+    app: AppHandle,
+    signer: Signer<'_>,
+    network_key: String,
+    num: u8,
+    size: u32,
+    fee_rate: u64,
+) -> Result<u8, String> {
+    with_wallet(&app, &signer, &network_key, move |w| {
+        wallet::create_coins(w, num, size, fee_rate)
+    })
+    .await
+}
+
+/// Mint an asset into the signer wallet. Returns its asset id.
+#[tauri::command]
+pub async fn maker_wallet_mint(
+    app: AppHandle,
+    signer: Signer<'_>,
+    network_key: String,
+    mint: wallet::Mint,
+) -> Result<String, String> {
+    mint.check()?;
+    with_wallet(&app, &signer, &network_key, move |w| wallet::mint(w, &mint)).await
+}
+
+/// How the wallet state reached the hosted maker.
+#[derive(Debug, Serialize)]
+pub struct StateHandoff {
+    pub uploaded: bool,
+    /// The encrypted backup, kept when it could not be uploaded.
+    pub file: Option<String>,
+    /// Its password, for handing it over by hand. Unlocks the state only, no key.
+    pub password: Option<String>,
+    pub detail: Option<String>,
+}
+
+/// Give the hosted maker this wallet's RGB state (an encrypted rgb-lib backup), so the watch-only
+/// maker knows what it holds and can sell it. When the maker has no import yet, the file and its
+/// password are kept for the user to hand over.
+#[tauri::command]
+pub async fn maker_send_state(
+    app: AppHandle,
+    signer: Signer<'_>,
+    network_key: String,
+) -> Result<StateHandoff, String> {
+    let n = net(&network_key)?;
+    let c = config(&app, &n.network)?;
+    let endpoint = c
+        .endpoint
+        .filter(|_| c.mode == Some(Mode::Hosted))
+        .ok_or("pair with your hosted maker first")?;
+    let token = secret_store::get(&token_name(&n.network))?
+        .ok_or("the maker's API token is missing: pair again")?;
+    let path = dir(&app, &n.network)?
+        .join("exports")
+        .join(format!("state-{}.rgb", Timestamp::now().as_secs()));
+    let password = crate::p2p::new_token();
+    {
+        let (path, password) = (path.clone(), password.clone());
+        with_wallet(&app, &signer, &network_key, move |w| {
+            wallet::backup(w, &path, &password)
+        })
+        .await?;
+    }
+    let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+    let body = serde_json::json!({
+        "backup_b64": base64::Engine::encode(&base64::engine::general_purpose::STANDARD, bytes),
+        "password": password,
+    });
+    match tenant::request(&endpoint, &token, "POST", tenant::STATE_ROUTE, Some(body)).await {
+        Ok(_) => {
+            let _ = std::fs::remove_file(&path);
+            Ok(StateHandoff {
+                uploaded: true,
+                file: None,
+                password: None,
+                detail: None,
+            })
+        }
+        Err(e) => Ok(StateHandoff {
+            uploaded: false,
+            file: Some(path.to_string_lossy().into_owned()),
+            password: Some(password),
+            detail: Some(e),
+        }),
+    }
 }
 
 #[tauri::command]

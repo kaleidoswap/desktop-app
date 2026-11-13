@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { splitSupply, tickerOk } from '../maker/LaunchScreen'
 import { fillsToday, openQuotes, utcDayStart } from '../maker/LiveScreen'
 import { isPaired } from '../maker/MakerSection'
 import { makerAvailableOn, type MakerView } from '../maker/makerApi'
@@ -270,5 +271,22 @@ describe('maker section', () => {
       now
     )
     expect(fills).toHaveLength(2)
+  })
+})
+
+describe('launch a token', () => {
+  it('spreads the whole supply over the coins, the remainder on the first', () => {
+    expect(splitSupply(1_000, 3)).toEqual([334, 333, 333])
+    expect(splitSupply(10, 1)).toEqual([10])
+    expect(splitSupply(1_000_000_007, 6).reduce((a, b) => a + b, 0)).toBe(
+      1_000_000_007
+    )
+  })
+
+  it('takes the tickers an NIA asset takes', () => {
+    expect(tickerOk('LAUNCH')).toBe(true)
+    expect(tickerOk('A1')).toBe(true)
+    for (const t of ['', 'lower', 'TOOLONGTKR', '1ABC', 'AB-C'])
+      expect(tickerOk(t)).toBe(false)
   })
 })
