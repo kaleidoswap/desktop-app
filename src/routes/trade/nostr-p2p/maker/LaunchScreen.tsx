@@ -28,6 +28,7 @@ import {
   useMk,
 } from './parts'
 import { toBase } from './strategy'
+import { tenant } from './makerApi'
 
 /** The supply spread over `parts` coins, as the signer wallet will mint it (base units). */
 export function splitSupply(supply: number, parts: number): number[] {
@@ -103,6 +104,26 @@ export function LaunchScreen({
     ticker: '',
   })
   const [handoff, setHandoff] = useState<StateHandoff | null>(null)
+  // after an import the host scans its chains; its balance says when each asset can be sold
+  const [hostSpendable, setHostSpendable] = useState<Record<string, number>>({})
+  const waiting =
+    !!handoff?.uploaded &&
+    handoff.assets.some((a) => (hostSpendable[a.asset_id] ?? a.spendable) === 0)
+  useEffect(() => {
+    if (!waiting) return
+    const api = tenant(backend)
+    const id = setInterval(() => {
+      api
+        .balance()
+        .then((b) =>
+          setHostSpendable(
+            Object.fromEntries(b.assets.map((a) => [a.asset_id, a.spendable]))
+          )
+        )
+        .catch(() => {})
+    }, 5_000)
+    return () => clearInterval(id)
+  }, [waiting, backend])
   const running = view.signer.running
 
   const run = useCallback(async (what: string, f: () => Promise<unknown>) => {
@@ -424,7 +445,35 @@ export function LaunchScreen({
           </Button>
         </div>
         {handoff?.uploaded && (
-          <Pill tone="success">{tm('launch.stateSent')}</Pill>
+          <div className="flex flex-col gap-2">
+            <Pill tone="success">{tm('launch.stateSent')}</Pill>
+            <ul className="flex flex-col gap-1 text-caption">
+              {handoff.assets.map((a) => {
+                const precision =
+                  wallet?.assets.find((w) => w.asset_id === a.asset_id)
+                    ?.precision ?? 0
+                const spendable = hostSpendable[a.asset_id] ?? a.spendable
+                return (
+                  <li
+                    className="flex flex-wrap items-center gap-2"
+                    key={a.asset_id}
+                  >
+                    <span className="font-medium text-content-primary">
+                      {a.ticker ?? short(a.asset_id, 10)}
+                    </span>
+                    <span className="text-content-secondary">
+                      {fmtUnits(a.total, precision)}
+                    </span>
+                    {spendable > 0 ? (
+                      <Pill tone="success">{tm('launch.readyToSell')}</Pill>
+                    ) : (
+                      <Pill tone="info">{tm('launch.hostScanning')}</Pill>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
         )}
         {handoff && !handoff.uploaded && (
           <div className="flex flex-col gap-2 rounded-xl bg-status-warning-subtle p-3 text-caption text-status-warning">

@@ -181,8 +181,19 @@ export interface MintRequest {
   parts: number
 }
 
+/** An asset as the hosted maker reports it after an import (base units). */
+export interface ImportedAsset {
+  asset_id: string
+  ticker: string | null
+  total: number
+  spendable: number
+}
+
 export interface StateHandoff {
   uploaded: boolean
+  /** The host is scanning its address chains: `spendable` is 0 until it is done. */
+  scanning: boolean
+  assets: ImportedAsset[]
   file: string | null
   password: string | null
   detail: string | null

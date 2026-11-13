@@ -137,6 +137,14 @@ const ROUTES: &[(&str, &str)] = &[
     ("POST", STATE_ROUTE),
 ];
 
+/// How a 404 reads: the maker's p2pd is too old to have the route.
+const NOT_OFFERED: &str = "the maker does not offer";
+
+/// The maker answered 404 to this call: its p2pd does not have the route yet.
+pub fn not_offered(error: &str) -> bool {
+    error.starts_with(NOT_OFFERED)
+}
+
 /// Where the app hands the hosted maker its wallet's RGB state.
 pub const STATE_ROUTE: &str = "/api/wallet/state";
 
@@ -167,7 +175,12 @@ pub async fn request(
         return Err(format!("{method} {path} is not available from the app"));
     }
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(30))
+        // an import uploads the whole backup and restores it on the host
+        .timeout(Duration::from_secs(if path == STATE_ROUTE {
+            300
+        } else {
+            30
+        }))
         .build()
         .map_err(|e| e.to_string())?;
     let url = format!("{}{path}", endpoint.url.trim_end_matches('/'));
@@ -191,7 +204,7 @@ pub async fn request(
     if !status.is_success() {
         return Err(match status.as_u16() {
             401 => "the maker refused the API token".into(),
-            404 => format!("the maker does not offer {path} yet"),
+            404 => format!("{NOT_OFFERED} {path} yet"),
             _ if text.is_empty() => status.to_string(),
             _ => text,
         });

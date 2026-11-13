@@ -754,6 +754,10 @@ pub async fn maker_wallet_mint(
 #[derive(Debug, Serialize)]
 pub struct StateHandoff {
     pub uploaded: bool,
+    /// The host now scans its address chains: `spendable` stays 0 until it is done.
+    pub scanning: bool,
+    /// What the host holds after the import.
+    pub assets: Vec<ImportedAsset>,
     /// The encrypted backup, kept when it could not be uploaded.
     pub file: Option<String>,
     /// Its password, for handing it over by hand. Unlocks the state only, no key.
@@ -761,9 +765,29 @@ pub struct StateHandoff {
     pub detail: Option<String>,
 }
 
+/// An asset as the host reports it after an import.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ImportedAsset {
+    pub asset_id: String,
+    #[serde(default)]
+    pub ticker: Option<String>,
+    pub total: u64,
+    pub spendable: u64,
+}
+
+/// What the host answered to an import (`POST /api/wallet/state` on p2pd).
+fn imported(answer: &serde_json::Value) -> Result<(bool, Vec<ImportedAsset>), String> {
+    if answer["imported"].as_bool() != Some(true) {
+        return Err(format!("the maker did not import the state: {answer}"));
+    }
+    let assets = serde_json::from_value(answer["assets"].clone()).unwrap_or_default();
+    Ok((answer["scanning"].as_bool().unwrap_or(false), assets))
+}
+
 /// Give the hosted maker this wallet's RGB state (an encrypted rgb-lib backup), so the watch-only
-/// maker knows what it holds and can sell it. When the maker has no import yet, the file and its
-/// password are kept for the user to hand over.
+/// maker knows what it holds and can sell it. Only a maker too old to offer the import (404) gets
+/// the manual way: the file and its password are kept for the user to hand over. Any other refusal
+/// (another wallet's backup, a swap in progress) is the error, and the file is not kept.
 #[tauri::command]
 pub async fn maker_send_state(
     app: AppHandle,
@@ -795,21 +819,26 @@ pub async fn maker_send_state(
         "password": password,
     });
     match tenant::request(&endpoint, &token, "POST", tenant::STATE_ROUTE, Some(body)).await {
-        Ok(_) => {
+        Err(e) if tenant::not_offered(&e) => Ok(StateHandoff {
+            uploaded: false,
+            scanning: false,
+            assets: Vec::new(),
+            file: Some(path.to_string_lossy().into_owned()),
+            password: Some(password),
+            detail: Some(e),
+        }),
+        answer => {
             let _ = std::fs::remove_file(&path);
+            let (scanning, assets) = imported(&answer?)?;
             Ok(StateHandoff {
                 uploaded: true,
+                scanning,
+                assets,
                 file: None,
                 password: None,
                 detail: None,
             })
         }
-        Err(e) => Ok(StateHandoff {
-            uploaded: false,
-            file: Some(path.to_string_lossy().into_owned()),
-            password: Some(password),
-            detail: Some(e),
-        }),
     }
 }
 
@@ -838,6 +867,25 @@ mod tests {
         }
         assert!(net("SignetCustom").is_ok());
         assert!(net("Mainnet").is_err());
+    }
+
+    #[test]
+    fn an_import_answer_is_read_and_anything_else_is_an_error() {
+        let ok = serde_json::json!({ "imported": true, "replaced": "ab.replaced-1", "scanning": true,
+            "assets": [{ "asset_id": "rgb:x", "ticker": "LAUNCH", "total": 100, "spendable": 0 }] });
+        let (scanning, assets) = imported(&ok).unwrap();
+        assert!(scanning);
+        assert_eq!(
+            assets,
+            vec![ImportedAsset {
+                asset_id: "rgb:x".into(),
+                ticker: Some("LAUNCH".into()),
+                total: 100,
+                spendable: 0
+            }]
+        );
+        assert!(imported(&serde_json::json!({ "imported": false })).is_err());
+        assert!(imported(&serde_json::Value::Null).is_err());
     }
 
     #[test]

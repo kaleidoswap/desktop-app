@@ -3867,7 +3867,7 @@
       "handoffHint": "Your maker holds no keys, but it needs to know what the wallet holds to offer it. This sends an encrypted copy of the wallet's state (no key).",
       "sendState": "Send the state",
       "stateSent": "Your hosted maker has the state",
-      "stateManual": "Your maker cannot take the state yet. Hand KaleidoSwap this file and its password; they unlock the wallet's state only, not your keys.",
+      "stateManual": "Your maker's p2pd is too old to take the state. Hand KaleidoSwap this file and its password; they unlock the wallet's state only, not your keys.",
       "stateFile": "State file",
       "statePassword": "Password",
       "next": "Set what it quotes",
@@ -3879,7 +3879,9 @@
         "name": "Give the asset a name.",
         "supply": "The supply is too small to spread over that many coins.",
         "coins": "Make some coins first."
-      }
+      },
+      "readyToSell": "Ready to sell",
+      "hostScanning": "Your maker is reading the chain…"
     }
   }
 }
