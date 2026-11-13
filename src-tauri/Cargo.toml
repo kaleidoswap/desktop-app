@@ -51,6 +51,22 @@ keyring = { version = "3.6", features = ["apple-native", "windows-native", "sync
 hex = "0.4"
 sysinfo = { version = "0.37", default-features = false, features = ["system"] }
 
+# Maker signer: the client side of a hosted p2pd maker (kaleidoswap/p2pd, branch feat/maker-engine).
+# Pinned to a commit; bump `rev` on both lines together (rgb-lib must match signer-core's).
+signer-core = { git = "https://github.com/kaleidoswap/p2pd", rev = "e970971aeaf8fd2d2bae57eb3be99dc586fd2572" }
+rgb-lib = { git = "https://github.com/kaleidoswap/rgb-lib", rev = "90668f51da32f72a302deba2c90bdf24ef678af2", features = ["esplora", "camel_case"] }
+base64 = "0.22"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# Touch ID (or the device-owner prompt) before the maker's signing policy is signed
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSString", "NSError"] }
+objc2-local-authentication = { version = "0.3", default-features = false, features = ["std", "LAContext", "LAError", "block2"] }
+block2 = "0.6"
+
+[dev-dependencies]
+tempfile = "3"
+
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!

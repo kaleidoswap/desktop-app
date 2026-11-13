@@ -126,6 +126,12 @@ const ALLOWED: &[(&str, &str)] = &[
     ("POST", "/api/rln/sendrgb"),
     ("POST", "/api/rln/createutxos"),
     ("POST", "/api/rln/issueassetnia"),
+    // the maker's strategy, when this wallet is the user's own maker (see maker.rs)
+    ("GET", "/api/bot"),
+    ("PUT", "/api/bot"),
+    ("POST", "/api/bot/pause"),
+    ("POST", "/api/bot/resume"),
+    ("GET", "/api/usage"),
 ];
 
 /// Whether the app may call `method path`: the market's own routes, nothing from the daemon's
@@ -236,7 +242,14 @@ impl P2pProcess {
                 .args(["--fee-address", &cfg.fee_address])
                 .args(["--fee-bps", &cfg.fee_bps.to_string()])
                 .args(["--min-fee-sat", &cfg.min_fee_sat.to_string()])
-                .args(["--keystore", if cfg!(target_os = "macos") { "keychain-biometric" } else { "keychain" }])
+                .args([
+                    "--keystore",
+                    if cfg!(target_os = "macos") {
+                        "keychain-biometric"
+                    } else {
+                        "keychain"
+                    },
+                ])
                 .arg("--data-dir")
                 .arg(&data_dir);
             for relay in &cfg.relays {
@@ -380,6 +393,9 @@ impl P2pProcess {
             "GET" => client.get(url),
             "POST" => client
                 .post(url)
+                .json(&body.unwrap_or(serde_json::Value::Null)),
+            "PUT" => client
+                .put(url)
                 .json(&body.unwrap_or(serde_json::Value::Null)),
             "DELETE" => client.delete(url),
             other => return Err(format!("unsupported method {other}")),
@@ -755,6 +771,10 @@ mod tests {
             ("POST", "/api/btc/send"),
             ("POST", "/api/rln/createutxos"),
             ("POST", "/api/rln/issueassetnia"),
+            ("GET", "/api/bot"),
+            ("PUT", "/api/bot"),
+            ("POST", "/api/bot/pause"),
+            ("GET", "/api/usage"),
             ("DELETE", "/api/orders/aB3-_9"),
             (
                 "GET",
@@ -777,6 +797,8 @@ mod tests {
             ("GET", "/api/asset/../info"),
             ("POST", "/api/asset/rgb:abc"),
             ("PUT", "/api/orders"),
+            ("PUT", "/api/bot/pause"),
+            ("GET", "/api/usage?from=x"),
             ("GET", "/api/../etc"),
             ("GET", "/"),
             ("GET", "/api/info/"),

@@ -8,6 +8,7 @@ mod crypto;
 mod db;
 mod dca;
 mod docker_node;
+mod maker;
 mod mind;
 mod mind_hardware;
 mod mind_runtime;
@@ -195,6 +196,7 @@ fn main() {
         .manage(Arc::clone(&nwc_manager))
         .manage(Arc::clone(&mind_process))
         .manage(Arc::clone(&p2p_process))
+        .manage(Arc::new(maker::MakerSigner::default()))
         .manage(CurrentAccount::default())
         .on_window_event(|window, event| {
             if window.label() == "main" {
@@ -343,6 +345,16 @@ fn main() {
             p2p_profile_set,
             p2p_available,
             p2p_networks,
+            maker::maker_view,
+            maker::maker_set_mode,
+            maker::maker_pair,
+            maker::maker_pairing_request,
+            maker::maker_api,
+            maker::maker_sign_policy,
+            maker::maker_signer_start,
+            maker::maker_signer_stop,
+            maker::maker_journal,
+            maker::maker_btc_usd,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

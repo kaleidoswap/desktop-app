@@ -1,0 +1,3 @@
+[net]
+# signer-core comes from a private repository: let git use its own credentials
+git-fetch-with-cli = true

@@ -24,6 +24,8 @@ import { Component as WithdrawalsHistory } from '../../wallet-history/withdrawal
 
 import { DepositModal } from './DepositModal'
 import { FundsModal, type Direction } from './FundsModal'
+import { MakerSection } from './maker/MakerSection'
+import { makerAvailableOn } from './maker/makerApi'
 import { Market } from './market/Market'
 import { RecoveryPhraseModal } from './RecoveryPhraseModal'
 import {
@@ -76,7 +78,7 @@ const saveNetwork = (key: string) => {
 /** Which wallet the running daemon belongs to, so coming back to the page does not restart it. */
 let runningAccount: string | null = null
 
-type Tab = 'market' | 'assets' | 'deposits' | 'withdrawals'
+type Tab = 'market' | 'maker' | 'assets' | 'deposits' | 'withdrawals'
 
 type Phase =
   'loading' | 'unavailable' | 'setup' | 'starting' | 'running' | 'error'
@@ -144,6 +146,9 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
   const standalone = !showNav
   const dispatch = useAppDispatch()
   const [tab, setTab] = useState<Tab>('market')
+  // maker mode is a Mutinynet pilot: no tab for it anywhere else
+  const makerOn = !!config && makerAvailableOn(config.network)
+  const shownTab: Tab = tab === 'maker' && !makerOn ? 'market' : tab
   useEffect(() => {
     if (!standalone || phase !== 'running') return
     setWalletOverride(createP2pWalletWrapper())
@@ -357,7 +362,7 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
     body = (
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {standalone && (
+          {(standalone || makerOn) && (
             <div
               className="mr-auto flex gap-1 rounded-xl bg-surface-inset p-1"
               role="tablist"
@@ -368,26 +373,35 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
                     'market',
                     t('p2pMarket.tabMarket', { defaultValue: 'Market' }),
                   ],
-                  [
-                    'assets',
-                    t('p2pMarket.tabAssets', { defaultValue: 'Assets' }),
-                  ],
-                  [
-                    'deposits',
-                    t('p2pMarket.tabDeposits', { defaultValue: 'Deposits' }),
-                  ],
-                  [
-                    'withdrawals',
-                    t('p2pMarket.tabWithdrawals', {
-                      defaultValue: 'Withdrawals',
-                    }),
-                  ],
+                  ...(makerOn
+                    ? [['maker', t('p2pMaker.section.tab')] as [Tab, string]]
+                    : []),
+                  ...(standalone
+                    ? ([
+                        [
+                          'assets',
+                          t('p2pMarket.tabAssets', { defaultValue: 'Assets' }),
+                        ],
+                        [
+                          'deposits',
+                          t('p2pMarket.tabDeposits', {
+                            defaultValue: 'Deposits',
+                          }),
+                        ],
+                        [
+                          'withdrawals',
+                          t('p2pMarket.tabWithdrawals', {
+                            defaultValue: 'Withdrawals',
+                          }),
+                        ],
+                      ] as [Tab, string][])
+                    : []),
                 ] as [Tab, string][]
               ).map(([id, label]) => (
                 <button
-                  aria-selected={tab === id}
+                  aria-selected={shownTab === id}
                   className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                    tab === id
+                    shownTab === id
                       ? 'bg-surface-raised text-content-primary'
                       : 'text-content-tertiary hover:text-content-secondary'
                   }`}
@@ -445,10 +459,13 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
             {t('p2pMarket.restart', { defaultValue: 'Restart' })}
           </Button>
         </div>
-        {standalone && tab === 'assets' && <AssetsHistory />}
-        {standalone && tab === 'deposits' && <DepositsHistory />}
-        {standalone && tab === 'withdrawals' && <WithdrawalsHistory />}
-        {(!standalone || tab === 'market') && (
+        {standalone && shownTab === 'assets' && <AssetsHistory />}
+        {standalone && shownTab === 'deposits' && <DepositsHistory />}
+        {standalone && shownTab === 'withdrawals' && <WithdrawalsHistory />}
+        {shownTab === 'maker' && config && (
+          <MakerSection network={config.network} networkKey={config.key} />
+        )}
+        {shownTab === 'market' && (
           <Market
             node={
               nodeConnected

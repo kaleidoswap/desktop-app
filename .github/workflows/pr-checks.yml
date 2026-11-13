@@ -52,6 +52,17 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
+      # The maker signer embeds `signer-core` from the private p2pd repository (a git dependency in
+      # src-tauri/Cargo.toml, fetched with the git CLI per src-tauri/.cargo/config.toml).
+      - name: Let cargo fetch the private p2pd repository
+        shell: bash
+        env:
+          P2PD_REPO_TOKEN: ${{ secrets.P2PD_REPO_TOKEN }}
+        run: |
+          : "${P2PD_REPO_TOKEN:?the P2PD_REPO_TOKEN secret is not set}"
+          echo "::add-mask::$P2PD_REPO_TOKEN"
+          git config --global url."https://x-access-token:${P2PD_REPO_TOKEN}@github.com/kaleidoswap/p2pd".insteadOf "https://github.com/kaleidoswap/p2pd"
+
       - name: Check Formatting
         run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
       - name: Clippy
