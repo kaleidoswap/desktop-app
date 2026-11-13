@@ -112,15 +112,15 @@ jobs:
           cache-on-failure: true
 
       # The maker signer embeds `signer-core` from the private p2pd repository (a git dependency in
-      # src-tauri/Cargo.toml, fetched with the git CLI per src-tauri/.cargo/config.toml).
-      - name: Let cargo fetch the private p2pd repository
+      # src-tauri/Cargo.toml, fetched with the git CLI per src-tauri/.cargo/config.toml). Only this
+      # step sees the token, through git's env config; later cargo steps build from what it fetched.
+      - name: Fetch Rust dependencies (private p2pd repository)
         shell: bash
         env:
-          P2PD_REPO_TOKEN: ${{ secrets.P2PD_REPO_TOKEN }}
-        run: |
-          : "${P2PD_REPO_TOKEN:?the P2PD_REPO_TOKEN secret is not set}"
-          echo "::add-mask::$P2PD_REPO_TOKEN"
-          git config --global url."https://x-access-token:${P2PD_REPO_TOKEN}@github.com/kaleidoswap/p2pd".insteadOf "https://github.com/kaleidoswap/p2pd"
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: url.https://x-access-token:${{ secrets.P2PD_REPO_TOKEN }}@github.com/kaleidoswap/p2pd.insteadOf
+          GIT_CONFIG_VALUE_0: https://github.com/kaleidoswap/p2pd
+        run: cargo fetch --locked --manifest-path src-tauri/Cargo.toml
 
       - name: Install frontend dependencies
         run: pnpm install

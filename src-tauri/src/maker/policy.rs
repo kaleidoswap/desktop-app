@@ -180,6 +180,12 @@ pub enum Side {
 }
 
 /// The swap reduced to what the policy decides on.
+///
+/// Fees are left out on purpose: in an rgb-lib on-chain swap the taker funds both the network fee
+/// and the platform fee, so the client's price is the two legs alone. A transaction that made the
+/// client pay anything more (a fee taken from its change, an extra output) differs from the offer;
+/// catching that needs the terms derived from the PSBT, the fee and output checks of work package
+/// 2 in `signer-core`, which run before this policy once they land. Until then: Mutinynet only.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Swap {
     pub side: Side,
