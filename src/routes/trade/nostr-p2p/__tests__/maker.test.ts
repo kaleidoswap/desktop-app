@@ -170,6 +170,19 @@ describe('maker signing policy', () => {
     })
   })
 
+  it('leaves buying off even when the strategy quotes bids: a purchase trusts the host', () => {
+    const both = toBotMarket({
+      ...defaultForm(ASSET),
+      askSize: 10,
+      bidSize: 10,
+    })
+    expect(ruleFor(both)).toMatchObject({
+      buy: false,
+      maxSwapSat: 0,
+      sell: true,
+    })
+  })
+
   it('turns into the rule the signer checks, in base units and bps', () => {
     const r = ruleFor(market, {
       bandPct: 2.5,
@@ -180,6 +193,7 @@ describe('maker signing policy', () => {
     expect(rule).toMatchObject({
       band_bps: 250,
       max_daily_net_units: 40_000,
+      max_swap_sat: null,
       max_swap_units: 4_000,
       reference: { kind: 'fixed', sat_per_unit: 1_000 },
       ticker: 'TUSD',

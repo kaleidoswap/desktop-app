@@ -143,6 +143,9 @@ export function PolicyScreen({
             <p className="text-caption text-content-tertiary">
               {tm('policy.explainKeys')}
             </p>
+            <p className="text-caption text-content-tertiary">
+              {tm('policy.salesState')}
+            </p>
             <p className="text-caption text-status-warning">
               {tm('policy.beta')}
             </p>
@@ -206,6 +209,11 @@ export function PolicyScreen({
                     onChange={(buy) => update(i, { buy })}
                   />
                 </div>
+                {r.buy && (
+                  <p className="rounded-xl bg-status-warning-subtle p-3 text-caption text-status-warning">
+                    {tm('policy.buyTrust')}
+                  </p>
+                )}
                 <div className="grid gap-3 md:grid-cols-3">
                   <div className="flex flex-col gap-1.5">
                     <label
@@ -268,6 +276,14 @@ export function PolicyScreen({
                     onChange={(maxSwap) => update(i, { maxSwap })}
                     suffix={name}
                     value={r.maxSwap}
+                  />
+                  <NumField
+                    hint={tm('policy.maxSwapSatHint')}
+                    id={`policy-max-swap-sat-${i}`}
+                    label={tm('policy.maxSwapSat')}
+                    onChange={(maxSwapSat) => update(i, { maxSwapSat })}
+                    suffix="sat"
+                    value={r.maxSwapSat}
                   />
                   <NumField
                     hint={tm('policy.maxDailyNetHint')}

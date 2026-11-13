@@ -3,8 +3,8 @@
 //! **Hosted** (the recommended model): KaleidoSwap runs p2pd with the client's strategy on its
 //! own machine, around the clock, with a watch-only wallet. This app keeps the keys and runs the
 //! policy signer (`signer-core`, from the p2pd repository): the maker sends each swap it
-//! negotiated over Nostr (kind 24253, NIP-44, paired by key), and the signer signs it only if the
-//! client's signed policy allows it. The strategy is set through the maker's tenant API.
+//! negotiated over Nostr (kind 24253, NIP-44, paired by key); the signer works out the swap's terms
+//! from the PSBT and its own wallet, and signs only if the client's signed policy allows them. The strategy is set through the maker's tenant API.
 //!
 //! **Self-hosted**: the user's own p2pd (this app's trading wallet, or one they run) quotes and
 //! signs by itself; the app only sets its strategy through the same API.
@@ -16,8 +16,9 @@
 //! * OS keychain: the signer's wallet mnemonic and Nostr key (`maker-signer-<network>`), and the
 //!   hosted maker's API token (`maker-token-<network>`)
 //! * `<app data>/maker/<network>/`: `config.json` (mode, endpoint), `policy.json` (the signed
-//!   policy), `exposure.json` (the day's net per asset), `journal.json` (requests and answers),
-//!   `signer-wallet/` (rgb-lib's copy of the wallet, used to sign)
+//!   policy), `daily.json` (signer-core's net per UTC day), `reference-prices.json` (USD pegs in
+//!   sats, rewritten every minute), `journal.json` (what the signer answered), `signer-wallet/`
+//!   (rgb-lib's wallet that signs; it needs the RGB state of what it sells, see the policy screen)
 
 pub mod biometric;
 pub mod journal;
@@ -38,7 +39,7 @@ use crate::p2p::{P2pProcess, P2pStartRequest};
 use crate::{p2p_networks, secret_store};
 
 use journal::{Journal, JournalData};
-use policy::{ClientPolicy, PriceCache, Reference, SignedPolicy, SigningPolicy};
+use policy::{SignedPolicy, SigningPolicy};
 use tenant::Endpoint;
 
 /// Where the maker signer may run: Mutinynet, and regtest for development.
@@ -163,10 +164,8 @@ fn load_policy(app: &AppHandle, network: &str) -> Result<Option<SignedPolicy>, S
 
 struct Running {
     network: String,
-    handle: signer_core::service::SignerHandle,
-    /// Reads the signer's conversation with the maker for the journal; also tells whether the
-    /// relays are reachable.
-    watcher: Client,
+    handle: signer_core::SignerHandle,
+    /// The journal writer (reads `handle.answers()`) and, for USD pegs, the reference price writer.
     tasks: Vec<tauri::async_runtime::JoinHandle<()>>,
     started_at: u64,
 }
@@ -176,7 +175,6 @@ impl Running {
         for t in self.tasks {
             t.abort();
         }
-        self.watcher.shutdown().await;
         self.handle.shutdown().await;
     }
 }
@@ -186,19 +184,15 @@ pub struct MakerSigner {
     running: tokio::sync::Mutex<Option<Running>>,
     /// Why the last start failed, for the Live screen.
     last_error: Mutex<Option<String>>,
-    prices: PriceCache,
 }
 
 #[derive(Debug, Serialize)]
 pub struct SignerView {
     running: bool,
     started_at: Option<u64>,
-    relays_connected: usize,
-    relays_total: usize,
+    relays: usize,
     signed: u64,
     refused: u64,
-    /// When the hosted maker last pinged this signer.
-    last_ping: Option<u64>,
     error: Option<String>,
 }
 
@@ -240,16 +234,13 @@ async fn view(
         Ok(None) => (None, None),
         Err(e) => (None, Some(e)),
     };
-    let journal = Journal::open(dir(app, &n.network)?.join("journal.json")).snapshot();
     let running = signer.running.lock().await;
     let mut sv = SignerView {
         running: false,
         started_at: None,
-        relays_connected: 0,
-        relays_total: n.relays.len(),
+        relays: n.relays.len(),
         signed: 0,
         refused: 0,
-        last_ping: journal.last_ping,
         error: signer
             .last_error
             .lock()
@@ -258,11 +249,8 @@ async fn view(
     };
     if let Some(r) = running.as_ref().filter(|r| r.network == n.network) {
         use std::sync::atomic::Ordering::Relaxed;
-        let relays = r.watcher.relays().await;
         sv.running = true;
         sv.started_at = Some(r.started_at);
-        sv.relays_total = relays.len();
-        sv.relays_connected = relays.values().filter(|r| r.is_connected()).count();
         sv.signed = r.handle.stats.signed.load(Relaxed);
         sv.refused = r.handle.stats.refused.load(Relaxed);
     }
@@ -404,17 +392,31 @@ async fn start(app: &AppHandle, signer: &MakerSigner, network_key: &str) -> Resu
     .map_err(|e| e.to_string())??;
 
     let journal = Journal::open(base.join("journal.json"));
-    let needs_usd = signed
-        .policy
-        .markets
-        .iter()
-        .any(|m| matches!(m.reference, Reference::UsdPeg { .. }));
-    let client_policy = Arc::new(ClientPolicy::new(
-        signed,
-        base.join("exposure.json"),
-        signer.prices.clone(),
-        journal.clone(),
-    ));
+    let mut tasks = Vec::new();
+    // USD pegs: signer-core reads a price file, which the app writes from its own BTC/USD reading;
+    // a file not rewritten for MAX_PRICE_AGE_SECS refuses those markets
+    let prices_path = base.join("reference-prices.json");
+    let pegs = signed.policy.usd_pegs();
+    if !pegs.is_empty() {
+        let path = prices_path.clone();
+        tasks.push(tauri::async_runtime::spawn(async move {
+            loop {
+                match fetch_btc_usd().await {
+                    Ok(usd) => {
+                        if let Err(e) = store::write(&path, &policy::reference_prices(&pegs, usd)) {
+                            log::warn!("[maker] reference prices: {e}");
+                        }
+                    }
+                    Err(e) => log::warn!("[maker] reference price: {e}"),
+                }
+                tokio::time::sleep(Duration::from_secs(60)).await;
+            }
+        }));
+    }
+    let client_policy = Arc::new(signer_core::ClientPolicy::new(
+        signed.policy.to_config(&prices_path),
+        Some(base.join("daily.json")),
+    )?);
     let handle = signer_core::service::start(
         keys.clone(),
         maker,
@@ -424,55 +426,17 @@ async fn start(app: &AppHandle, signer: &MakerSigner, network_key: &str) -> Resu
         online,
     )
     .await?;
-
-    let watcher = Client::builder().signer(keys.clone()).build();
-    for r in &n.relays {
-        watcher.add_relay(r).await.map_err(|e| e.to_string())?;
-    }
-    watcher.connect().await;
-    let now = Timestamp::now().as_secs();
-    for f in journal::filter(keys.public_key(), maker, now) {
-        watcher
-            .subscribe(f, None)
-            .await
-            .map_err(|e| e.to_string())?;
-    }
-    let mut tasks = Vec::new();
-    {
-        let (w, keys, journal) = (watcher.clone(), keys.clone(), journal.clone());
-        tasks.push(tauri::async_runtime::spawn(async move {
-            let _ = w
-                .handle_notifications(|n| {
-                    let (keys, journal) = (keys.clone(), journal.clone());
-                    async move {
-                        if let RelayPoolNotification::Event { event, .. } = n {
-                            if let Some(msg) = journal::read(&keys, &maker, &event) {
-                                journal.seen(&msg, event.created_at.as_secs());
-                            }
-                        }
-                        Ok(false)
-                    }
-                })
-                .await;
-        }));
-    }
-    if needs_usd {
-        let prices = signer.prices.clone();
-        tasks.push(tauri::async_runtime::spawn(async move {
-            loop {
-                match fetch_btc_usd().await {
-                    Ok(p) => {
-                        *prices
-                            .lock()
-                            .unwrap_or_else(std::sync::PoisonError::into_inner) =
-                            Some((p, Timestamp::now().as_secs()))
-                    }
-                    Err(e) => log::warn!("[maker] reference price: {e}"),
-                }
-                tokio::time::sleep(Duration::from_secs(60)).await;
+    let mut answers = handle.answers();
+    tasks.push(tauri::async_runtime::spawn(async move {
+        use tokio::sync::broadcast::error::RecvError;
+        loop {
+            match answers.recv().await {
+                Ok(a) => journal.record(&a, Timestamp::now().as_secs()),
+                Err(RecvError::Lagged(n)) => log::warn!("[maker] journal skipped {n} answers"),
+                Err(RecvError::Closed) => break,
             }
-        }));
-    }
+        }
+    }));
     log::info!(
         "[maker] signer answering {} on {}",
         endpoint.maker_npub,
@@ -481,9 +445,8 @@ async fn start(app: &AppHandle, signer: &MakerSigner, network_key: &str) -> Resu
     *running = Some(Running {
         network: n.network,
         handle,
-        watcher,
         tasks,
-        started_at: now,
+        started_at: Timestamp::now().as_secs(),
     });
     Ok(())
 }

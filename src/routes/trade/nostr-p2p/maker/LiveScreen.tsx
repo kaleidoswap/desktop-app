@@ -32,9 +32,7 @@ export const fillsToday = (trades: Trade[], nowMs = Date.now()) =>
   )
 
 const statusTone: Record<JournalEntry['status'], Tone> = {
-  approved: 'info',
   refused: 'danger',
-  requested: 'muted',
   signed: 'success',
 }
 
@@ -98,7 +96,7 @@ export function LiveScreen({
       })
   const reachable = !info.error && !!info.data
   const signer = view.signer
-  const signerOnline = signer.running && signer.relays_connected > 0
+  const signerOnline = signer.running
 
   return (
     <div className="flex flex-col gap-4">
@@ -190,20 +188,12 @@ export function LiveScreen({
                 <SectionTitle>{tm('live.signer')}</SectionTitle>
                 <Pill
                   className="ml-auto"
-                  tone={
-                    signerOnline
-                      ? 'success'
-                      : signer.running
-                        ? 'warning'
-                        : 'danger'
-                  }
+                  tone={signerOnline ? 'success' : 'danger'}
                 >
                   <Radio size={12} />
                   {signerOnline
                     ? tm('live.signerOnline')
-                    : signer.running
-                      ? tm('live.signerNoRelay')
-                      : tm('live.signerOff')}
+                    : tm('live.signerOff')}
                 </Pill>
               </div>
               <p className="text-caption text-content-secondary">
@@ -214,16 +204,13 @@ export function LiveScreen({
               <div className="grid grid-cols-3 gap-2">
                 <Stat label={tm('live.signed')} value={signer.signed} />
                 <Stat label={tm('live.refused')} value={signer.refused} />
-                <Stat
-                  label={tm('live.relays')}
-                  value={`${signer.relays_connected}/${signer.relays_total}`}
-                />
+                <Stat label={tm('live.relays')} value={signer.relays} />
               </div>
-              <span className="text-caption text-content-tertiary">
-                {signer.last_ping
-                  ? tm('live.lastPing', { when: ago(signer.last_ping * 1000) })
-                  : tm('live.noPing')}
-              </span>
+              {signer.started_at && (
+                <span className="text-caption text-content-tertiary">
+                  {tm('live.since', { when: ago(signer.started_at * 1000) })}
+                </span>
+              )}
               {signer.error && !signer.running && (
                 <p className="text-caption text-status-danger">
                   {signer.error}
@@ -346,7 +333,10 @@ export function LiveScreen({
                       ? tickerById.get(e.asset_id)
                       : undefined
                     return (
-                      <li className="flex flex-col gap-0.5 py-2" key={e.id}>
+                      <li
+                        className="flex flex-col gap-0.5 py-2"
+                        key={`${e.swap_id}${e.at}`}
+                      >
                         <div className="flex items-center gap-2 text-caption">
                           <Pill tone={statusTone[e.status]}>
                             {tm(`live.status.${e.status}`)}

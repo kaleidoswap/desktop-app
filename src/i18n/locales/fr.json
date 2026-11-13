@@ -3742,7 +3742,7 @@
     },
     "policy": {
       "title": "Your signing policy",
-      "explain": "The signer in this app checks every swap the hosted maker brings against this policy before it signs. Anything outside it is refused, even if our server asks for it.",
+      "explain": "The signer in this app works out what each swap really gives and takes from the transaction itself, then checks it against this policy before it signs. Anything outside it is refused, even if our server asks for it.",
       "explainKeys": "The policy is signed with your signer's key and kept on this computer. KaleidoSwap's server cannot see or change it, and holds no key that can move your funds.",
       "beta": "Mutinynet beta: the signer has not been audited yet. Use test funds only.",
       "empty": "No market to sign for",
@@ -3751,7 +3751,7 @@
       "sell": "May sell {{ticker}}",
       "sellHint": "Swaps that give {{ticker}} and receive BTC.",
       "buy": "May buy {{ticker}}",
-      "buyHint": "Swaps that give BTC and receive {{ticker}}.",
+      "buyHint": "Swaps that give BTC and receive {{ticker}}. Off by default.",
       "reference": "Your reference",
       "refFixed": "Fixed price (sat)",
       "refUsd": "USD peg (your own BTC/USD)",
@@ -3776,8 +3776,13 @@
         "reference": "set a reference above zero",
         "band": "the band must be between 0.01% and 50%",
         "maxSwap": "the most per swap must be above zero",
-        "maxDailyNet": "the daily limit cannot be negative"
-      }
+        "maxDailyNet": "the daily limit cannot be negative",
+        "maxSwapSat": "the most BTC per swap cannot be negative"
+      },
+      "buyTrust": "Buying trusts our server: your signer counts the asset a purchase delivers but cannot yet check that the transfer is valid, which the hosted maker does. Leave buying off unless you trust the host.",
+      "salesState": "Selling needs this app's signer wallet to hold the asset's RGB state (its contracts and allocations). A wallet restored from the recovery phrase alone sees the coins but not what they carry, and the signer refuses those sales.",
+      "maxSwapSat": "Most BTC per swap",
+      "maxSwapSatHint": "0 for no limit."
     },
     "live": {
       "title": "Live",
@@ -3792,15 +3797,12 @@
       "inventory": "Holds",
       "signer": "Signer in this app",
       "signerOnline": "Online",
-      "signerNoRelay": "No relay",
       "signerOff": "Off",
       "signerOnlineHint": "Answering your hosted maker. Keep the app open for swaps to be signed; an offline signer means the swap times out, not a loss.",
       "signerOffHint": "While the signer is off, takers of your quotes are told the maker did not sign and the offer is listed again.",
       "signed": "Signed",
       "refused": "Refused",
       "relays": "Relays",
-      "lastPing": "Maker checked in {{when}}",
-      "noPing": "No check-in from the maker yet",
       "startSigner": "Start signer",
       "stopSigner": "Stop signer",
       "selfSigning": "Signing",
@@ -3817,13 +3819,11 @@
       "ask": "Ask",
       "bid": "Bid",
       "requests": "Recent sign requests",
-      "requestsHint": "Refusal reasons stay between your signer and your maker; takers only hear that the maker did not sign.",
+      "requestsHint": "What your signer decided, from the terms it read in each PSBT. The maker only hears the category of a refusal; takers only hear that the maker did not sign.",
       "noRequests": "No sign request yet",
       "sell": "Sell",
       "buy": "Buy",
       "status": {
-        "requested": "Asked",
-        "approved": "Approved",
         "signed": "Signed",
         "refused": "Refused"
       },
@@ -3838,7 +3838,8 @@
       "day": "Day",
       "offersPosted": "Offers posted",
       "swapsSettled": "Swaps settled",
-      "volume": "Volume"
+      "volume": "Volume",
+      "since": "Answering since {{when}}"
     }
   }
 }

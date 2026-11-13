@@ -76,7 +76,7 @@ pub fn make_code(network: &str, endpoint: &Endpoint, token: &str) -> String {
 
 /// What the client sends KaleidoSwap so the hosted maker can be set up for it: the signer's key,
 /// which the maker gets as `--remote-signer`, and the wallet's public keys, from which the maker
-/// opens its watch-only copy. Nothing in it can spend.
+/// opens its watch-only copy (`p2pd --watch-only-keys`, same field names). Nothing in it can spend.
 pub fn pairing_request(network: &str, signer: &PublicKey, keys: &rgb_lib::keys::Keys) -> String {
     let json = serde_json::json!({
         "v": 1,
@@ -85,6 +85,7 @@ pub fn pairing_request(network: &str, signer: &PublicKey, keys: &rgb_lib::keys::
         "account_xpub_vanilla": keys.account_xpub_vanilla,
         "account_xpub_colored": keys.account_xpub_colored,
         "master_fingerprint": keys.master_fingerprint,
+        "witness_version": keys.witness_version,
     });
     format!(
         "{REQUEST_PREFIX}{}",

@@ -18,6 +18,8 @@ export interface RuleForm {
   refValue: number
   bandPct: number
   maxSwap: number
+  /** Most sats per swap; 0 for no limit. */
+  maxSwapSat: number
   maxDailyNet: number
 }
 
@@ -26,6 +28,7 @@ export const toRule = (r: RuleForm): MarketRule => ({
   band_bps: Math.round(r.bandPct * 100),
   buy: r.buy,
   max_daily_net_units: toBase(r.maxDailyNet, r.precision),
+  max_swap_sat: r.maxSwapSat > 0 ? Math.round(r.maxSwapSat) : null,
   max_swap_units: toBase(r.maxSwap, r.precision),
   precision: r.precision,
   reference:
@@ -42,6 +45,7 @@ export const fromRule = (m: MarketRule): RuleForm => ({
   buy: m.buy,
   maxDailyNet: fromBase(m.max_daily_net_units, m.precision),
   maxSwap: fromBase(m.max_swap_units, m.precision),
+  maxSwapSat: m.max_swap_sat ?? 0,
   precision: m.precision,
   refKind: m.reference.kind,
   refValue:
@@ -53,7 +57,8 @@ export const fromRule = (m: MarketRule): RuleForm => ({
 })
 
 /**
- * A first rule for a market the strategy quotes: the sides it quotes, its largest level as the
+ * A first rule for a market the strategy quotes: selling if it quotes asks (buying stays off: the
+ * signer cannot yet check the asset a purchase delivers, so it trusts the host), its largest level as the
  * most per swap, its daily net cap (or ten swaps), and, for an issuer-set or fixed price, that
  * price and band as the reference.
  */
@@ -68,9 +73,11 @@ export function ruleFor(
   return {
     asset_id: m.asset_id,
     bandPct: form?.priceKind === 'issuer' ? form.bandPct : 2,
-    buy: m.bid_amount > 0,
+    // a purchase trusts the host's check of the asset delivered: off until the user opts in
+    buy: false,
     maxDailyNet: m.max_daily_net != null ? unit(m.max_daily_net) : maxSwap * 10,
     maxSwap,
+    maxSwapSat: 0,
     precision: m.precision,
     refKind: 'fixed',
     refValue: m.price.source === 'fixed' ? m.price.sat_per_unit : 0,
@@ -87,6 +94,7 @@ export function ruleErrors(r: RuleForm): string[] {
   if (!(r.bandPct >= 0.01 && r.bandPct <= 50)) out.push('band')
   if (!(toBase(r.maxSwap, r.precision) > 0)) out.push('maxSwap')
   if (!(r.maxDailyNet >= 0)) out.push('maxDailyNet')
+  if (!(r.maxSwapSat >= 0)) out.push('maxSwapSat')
   return out
 }
 

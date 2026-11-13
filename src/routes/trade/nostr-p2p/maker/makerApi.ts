@@ -30,6 +30,8 @@ export interface MarketRule {
   reference: Reference
   band_bps: number
   max_swap_units: number
+  /** Most sats in one swap; null for no limit. */
+  max_swap_sat: number | null
   max_daily_net_units: number
 }
 
@@ -50,11 +52,9 @@ export interface SignedPolicy {
 export interface SignerView {
   running: boolean
   started_at: number | null
-  relays_connected: number
-  relays_total: number
+  relays: number
   signed: number
   refused: number
-  last_ping: number | null
   error: string | null
 }
 
@@ -71,23 +71,22 @@ export interface MakerView {
   biometric: boolean
 }
 
-export type JournalStatus = 'requested' | 'approved' | 'signed' | 'refused'
+export type JournalStatus = 'signed' | 'refused'
 
+/** One answer of the signer: a signed swap with the terms read from its PSBT, or a refusal. */
 export interface JournalEntry {
-  id: string
   swap_id: string
   at: number
+  status: JournalStatus
   side: 'sell' | 'buy' | null
   asset_id: string | null
   units: number
   sat: number
-  status: JournalStatus
   reason: string | null
 }
 
 export interface JournalData {
   entries: JournalEntry[]
-  last_ping: number | null
 }
 
 // ─── p2pd's bot config (docs/BOT.md on feat/maker-engine) ─────────────────────
