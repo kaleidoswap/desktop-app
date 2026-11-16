@@ -1,4 +1,5 @@
 import type { Order } from './api'
+import { takerSettlement } from './costs'
 
 export const units = (amount: number, precision: number) =>
   amount / 10 ** precision
@@ -114,16 +115,36 @@ export const short = (s: string, n = 6) =>
 export const tickerOf = (o: { ticker: string | null; asset_id: string }) =>
   o.ticker ?? short(o.asset_id, 5)
 
-/** What taking this order costs the taker, fees included. A seller's fees come out of its coin. */
+/**
+ * What the taker reserves, and the gross sats a selling taker is paid.
+ * `pay` is the reservation: price and the RGB output when buying, plus the
+ * platform and network fees the taker funds in either direction. `receive`
+ * is the gross price when selling, never that price minus the fees.
+ */
 export function takerCost(o: Order): {
   pay: number
   receive: number
   fees: number
+  reserveSat: number
+  retainedSat: number
 } {
-  const fees = o.platform_fee_sat + o.network_fee_sat
-  return o.side === 'sell'
-    ? { fees, pay: o.price_sat + fees, receive: 0 }
-    : { fees, pay: 0, receive: o.price_sat }
+  const s = takerSettlement(o)
+  if (
+    s.reserveSat === null ||
+    s.receiveSat === null ||
+    s.platformFeeSat === null ||
+    s.networkFeeSat === null ||
+    s.retainedSat === null
+  ) {
+    throw new Error('an order is missing a reported cost')
+  }
+  return {
+    fees: s.platformFeeSat + s.networkFeeSat,
+    pay: s.reserveSat,
+    receive: s.receiveSat,
+    reserveSat: s.reserveSat,
+    retainedSat: s.retainedSat,
+  }
 }
 
 /** The network as a person names it: the daemon says `signetcustom`, people say Mutinynet. */

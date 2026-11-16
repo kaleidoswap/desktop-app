@@ -88,8 +88,9 @@ describe('a market order', () => {
     expect(plan.picks.map((o) => o.amount)).toEqual([1000, 500])
     expect(plan.baseAmount).toBe(1500)
     expect(plan.shortBy).toBe(0)
-    // 75_500 sats of price plus two sets of fees
-    expect(plan.sats).toBe(75_500 + 2 * 3000)
+    // price, plus the taker fees, plus the RGB output on each buy
+    expect(plan.sats).toBe(75_500 + 2 * 3000 + 2 * 1000)
+    expect(plan.reserveSat).toBe(plan.sats)
     expect(plan.fees).toBe(6000)
     expect(plan.avgPrice).toBeCloseTo(75_500 / 1500)
   })
@@ -112,7 +113,9 @@ describe('a market order', () => {
     const plan = planMarket(book, 'sell', 1200, 0.2)
     expect(plan.picks.map((o) => o.amount)).toEqual([800, 400])
     expect(plan.baseAmount).toBe(1200)
+    // gross price, not the price minus the fees the taker also reserves
     expect(plan.sats).toBe(39_200 + 18_000)
+    expect(plan.reserveSat).toBe(2 * 3000)
   })
 
   it('never trades against its own orders', () => {
@@ -132,7 +135,7 @@ describe('a market order', () => {
 describe('a market order and what the wallet and the makers allow', () => {
   const maker = (m: string) => ({ maker: m })
   const asks = [
-    order('sell', 100, 5000, maker('A')), // pays 8000
+    order('sell', 100, 5000, maker('A')), // reserves 9000
     order('sell', 100, 5100, maker('A')),
     order('sell', 100, 5200, maker('B')),
     order('sell', 100, 5300, maker('A')),
@@ -147,8 +150,8 @@ describe('a market order and what the wallet and the makers allow', () => {
   })
 
   it('takes no more orders than the wallet has coins for', () => {
-    // two coins that can each pay one order (price + 3000 in fees)
-    const plan = planMarket(asks, 'buy', 1000, 0.2, { coins: [8300, 8200] })
+    // two coins that can each cover one reservation (price + 3000 fees + 1000 rgb)
+    const plan = planMarket(asks, 'buy', 1000, 0.2, { coins: [9300, 9200] })
     expect(plan.picks).toHaveLength(2)
     expect(plan.noCoinFor).toBe(3)
     expect(plan.picks.map((o) => o.unit_price)).toEqual([50, 51])
@@ -156,7 +159,7 @@ describe('a market order and what the wallet and the makers allow', () => {
 
   it('gives each swap a coin large enough for what it pays', () => {
     // one coin is too small for any order, the other covers exactly one
-    const plan = planMarket(asks, 'buy', 1000, 0.2, { coins: [1000, 8100] })
+    const plan = planMarket(asks, 'buy', 1000, 0.2, { coins: [1000, 9000] })
     expect(plan.picks).toHaveLength(1)
     expect(plan.noCoinFor).toBe(4)
   })
@@ -177,17 +180,60 @@ describe('a market order and what the wallet and the makers allow', () => {
 })
 
 describe('numbers', () => {
-  it('a buyer pays price and fees, a seller gets the price', () => {
-    expect(takerCost(order('sell', 1000, 50_000))).toEqual({
-      fees: 3000,
-      pay: 53_000,
+  it('a buying taker reserves 14000, not 13000, and keeps the RGB output', () => {
+    const buy = order('sell', 100, 10_000, {
+      network_fee_sat: 2_000,
+      platform_fee_sat: 1_000,
+      rgb_output_sat: 1_000,
+    })
+    expect(takerCost(buy)).toEqual({
+      fees: 3_000,
+      pay: 14_000,
       receive: 0,
+      reserveSat: 14_000,
+      retainedSat: 1_000,
     })
-    expect(takerCost(order('buy', 1000, 50_000))).toEqual({
-      fees: 3000,
-      pay: 0,
-      receive: 50_000,
+    const another = order('sell', 100, 10_000, {
+      network_fee_sat: 2_000,
+      platform_fee_sat: 1_000,
+      rgb_output_sat: 1_000,
     })
+    expect(takerCost(buy).reserveSat + takerCost(another).reserveSat).toBe(
+      28_000
+    )
+  })
+
+  it('a selling taker reserves only the fees and is still paid the gross price', () => {
+    expect(
+      takerCost(
+        order('buy', 100, 10_000, {
+          network_fee_sat: 2_000,
+          platform_fee_sat: 1_000,
+          rgb_output_sat: 1_000,
+        })
+      )
+    ).toEqual({
+      fees: 3_000,
+      pay: 3_000,
+      receive: 10_000,
+      reserveSat: 3_000,
+      retainedSat: 0,
+    })
+  })
+
+  it('a coin of 13000 does not cover the 14000 buy reservation', () => {
+    const ask = order('sell', 100, 10_000, {
+      network_fee_sat: 2_000,
+      platform_fee_sat: 1_000,
+      rgb_output_sat: 1_000,
+    })
+    expect(planMarket([ask], 'buy', 100, 1, { coins: [13_000] }).picks).toEqual(
+      []
+    )
+    const covered = planMarket([ask], 'buy', 100, 1, { coins: [14_000] })
+    expect(covered.picks).toHaveLength(1)
+    expect(covered.reserveSat).toBe(14_000)
+    expect(covered.sats).toBe(14_000)
   })
 
   it('reads typed amounts without float drift', () => {

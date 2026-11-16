@@ -120,7 +120,23 @@ export interface Trade {
    */
   precision?: number
   price_sat: number
+  /**
+   * Platform fee. Older daemons send only this. It is not the network fee or
+   * the RGB output, and it must not be split or replaced from today's policy.
+   */
   fee_sat: number
+  /**
+   * Platform fee from the accepted offer. Present with the other two new
+   * fields on new trades, omitted with them on older ones. A reported 0 is real.
+   */
+  platform_fee_sat?: number
+  /** Network fee from the accepted offer. Same presence rule. A reported 0 is real. */
+  network_fee_sat?: number
+  /**
+   * Bitcoin the asset buyer locks to the RGB output and keeps. Not a fee.
+   * Same presence rule. A reported 0 is real.
+   */
+  rgb_output_sat?: number
   status: TradeStatus
   txid: string | null
   error: string | null

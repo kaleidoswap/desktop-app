@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { toast } from 'react-toastify'
 
 import { marketApi, type Balance, type Order, type Trade } from '../api'
+import { makerSettlement, tradeSettlement } from '../costs'
 import {
   ago,
   fmtPrice,
@@ -16,6 +17,7 @@ import {
   type PrecisionSource,
 } from '../format'
 
+import { CostBreakdown } from './CostBreakdown'
 import { useTr } from './hooks'
 import { SwapSteps } from './SwapSteps'
 import { EmptyState, Panel, Pill, cx, type Tone } from './ui'
@@ -33,6 +35,7 @@ interface Props {
   tradesLoading?: boolean
   onChanged: () => void
   onOpenFunds?: () => void
+  initialTab?: Tab
 }
 
 export function Activity({
@@ -44,9 +47,10 @@ export function Activity({
   tradesLoading = false,
   onChanged,
   onOpenFunds,
+  initialTab = 'orders',
 }: Props) {
   const tr = useTr()
-  const [tab, setTab] = useState<Tab>('orders')
+  const [tab, setTab] = useState<Tab>(initialTab)
   const live = orders.filter(
     (o) => o.state === 'open' || o.state === 'matching'
   )
@@ -163,39 +167,46 @@ export function Activity({
               const [tone, label] = orderTone(o.state)
               return (
                 <li
-                  className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-xl bg-surface-inset px-3 py-2.5 text-caption"
+                  className="flex flex-col gap-2 rounded-xl bg-surface-inset px-3 py-2.5 text-caption"
                   key={o.order_id}
                 >
-                  <Pill tone={o.side === 'buy' ? 'success' : 'danger'}>
-                    {o.side === 'buy'
-                      ? tr('activity.buy', 'Buy')
-                      : tr('activity.sell', 'Sell')}
-                  </Pill>
-                  <span className="truncate tabular-nums text-content-primary">
-                    {fmtUnits(o.amount, o.precision)} {tickerOf(o)}{' '}
-                    <span className="text-content-tertiary">
-                      @ {fmtPrice(o.unit_price)}
+                  <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3">
+                    <Pill tone={o.side === 'buy' ? 'success' : 'danger'}>
+                      {o.side === 'buy'
+                        ? tr('activity.buy', 'Buy')
+                        : tr('activity.sell', 'Sell')}
+                    </Pill>
+                    <span className="truncate tabular-nums text-content-primary">
+                      {fmtUnits(o.amount, o.precision)} {tickerOf(o)}{' '}
+                      <span className="text-content-tertiary">
+                        @ {fmtPrice(o.unit_price)}
+                      </span>
                     </span>
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Pill tone={tone}>{label}</Pill>
-                    <span className="tabular-nums text-content-tertiary">
-                      {timeLeft(o.expiry)}
+                    <span className="flex items-center gap-2">
+                      <Pill tone={tone}>{label}</Pill>
+                      <span className="tabular-nums text-content-tertiary">
+                        {timeLeft(o.expiry)}
+                      </span>
                     </span>
-                  </span>
-                  {o.state === 'open' ? (
-                    <button
-                      aria-label={tr('activity.cancel', 'Cancel order')}
-                      className="rounded-lg p-1.5 text-content-tertiary transition-colors hover:bg-status-danger-subtle hover:text-status-danger"
-                      onClick={() => void cancel(o.order_id)}
-                      title={tr('activity.cancel', 'Cancel order')}
-                      type="button"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  ) : (
-                    <span className="w-7" />
-                  )}
+                    {o.state === 'open' ? (
+                      <button
+                        aria-label={tr('activity.cancel', 'Cancel order')}
+                        className="rounded-lg p-1.5 text-content-tertiary transition-colors hover:bg-status-danger-subtle hover:text-status-danger"
+                        onClick={() => void cancel(o.order_id)}
+                        title={tr('activity.cancel', 'Cancel order')}
+                        type="button"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    ) : (
+                      <span className="w-7" />
+                    )}
+                  </div>
+                  <CostBreakdown
+                    asset={`${fmtUnits(o.amount, o.precision)} ${tickerOf(o)}`}
+                    priceHint={`${fmtPrice(o.unit_price)} sats`}
+                    settlement={makerSettlement(o)}
+                  />
                 </li>
               )
             })}
@@ -260,6 +271,10 @@ export function Activity({
                     </span>
                   </div>
                   <SwapSteps trade={t} />
+                  <CostBreakdown
+                    asset={amount.text}
+                    settlement={tradeSettlement(t)}
+                  />
                 </li>
               )
             })}
