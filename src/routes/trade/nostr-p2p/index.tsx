@@ -1,21 +1,15 @@
 import { KeyRound, RadioTower, RefreshCw } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useAppDispatch } from '../../../app/store/hooks'
 import { uiSliceActions } from '../../../slices/ui/ui.slice'
-import { setWalletOverride } from '../../../api/wallet-override'
 import { IssueAssetModal } from '../../../components/IssueAssetModal'
 import { UTXOManagementModal } from '../../../components/UTXOManagementModal'
 import { useSettings } from '../../../hooks/useSettings'
 import { marketApi } from './api'
 import { TradeNav } from '../../../components/Trade'
 import { Alert, Button } from '../../../components/ui'
-import {
-  allocateWalletId,
-  type P2pNetworkOption,
-  walletAccountFor,
-} from '../../../constants/p2p'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 
 import { Component as AssetsHistory } from '../../wallet-history/assets'
@@ -25,263 +19,46 @@ import { Component as WithdrawalsHistory } from '../../wallet-history/withdrawal
 import { DepositModal } from './DepositModal'
 import { FundsModal, type Direction } from './FundsModal'
 import { Market } from './market/Market'
+import { p2pGenerateSeed } from './p2p'
 import { RecoveryPhraseModal } from './RecoveryPhraseModal'
 import { RelaysModal } from './RelaysModal'
 import {
-  p2pAvailability,
-  type P2pAvailability,
-  p2pGenerateSeed,
-  p2pProfileGet,
-  p2pProfileSet,
-  p2pStart,
-  p2pStatus,
-  p2pStop,
-  p2pNetworks,
-  startConfigFor,
-} from './p2p'
-import { createP2pWalletWrapper } from './walletClient'
+  isTauri,
+  type P2pWalletSession,
+  useOptionalP2pSession,
+  useP2pWalletSession,
+} from './session'
 import { WalletSetup } from './WalletSetup'
 import { WalletSwitch } from './WalletSwitch'
-import {
-  originalWallet,
-  readSelectedWalletId,
-  readWalletList,
-  removeWallet,
-  saveWallet,
-  writeSelectedWalletId,
-  type TradingWallet,
-} from './wallets'
 import { WithdrawModal } from './WithdrawModal'
-
-const isTauri = () =>
-  typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
-
-const NETWORK_KEY = 'p2p-market.network'
-
-const savedNetwork = (): string | null => {
-  try {
-    return localStorage.getItem(NETWORK_KEY)
-  } catch {
-    return null
-  }
-}
-
-const saveNetwork = (key: string) => {
-  try {
-    localStorage.setItem(NETWORK_KEY, key)
-  } catch {
-    // the choice is just not remembered
-  }
-}
-
-/** Which wallet the running daemon belongs to, so coming back to the page does not restart it. */
-let runningAccount: string | null = null
 
 type Tab = 'market' | 'assets' | 'deposits' | 'withdrawals'
 
-type Phase =
-  'loading' | 'unavailable' | 'setup' | 'starting' | 'running' | 'error'
-
 /**
- * The P2P market. It has a wallet of its own, made here and kept with a recovery phrase, so it
- * needs no node: a node only adds a way to move funds in and out.
+ * What stands between the user and a running trading wallet: no desktop, no network, the daemon
+ * cannot run here, the wallet is not set up yet, it is starting, or it failed. Once it runs, the
+ * children show.
  */
-/**
- * The market page. `showNav` adds the Trade menu, which belongs to the node's sections; the
- * stand-alone P2P app has no such menu.
- */
-export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
+export function P2pGate({
+  session,
+  children,
+}: {
+  session: P2pWalletSession
+  children: ReactNode
+}) {
   const { t } = useTranslation()
-  const [options, setOptions] = useState<P2pNetworkOption[] | null>(null)
-  useEffect(() => {
-    if (!isTauri()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setOptions([])
-      return
-    }
-    p2pNetworks()
-      .then(setOptions)
-      .catch(() => setOptions([]))
-  }, [])
-  const [networkKey, setNetworkKey] = useState(() => savedNetwork() ?? '')
-  const list = options ?? []
-  const option = list.find((o) => o.key === networkKey) ?? list[0]
-  const config = option
-  const network = config?.network ?? ''
-  const [walletLists, setWalletLists] = useState<
-    Record<string, TradingWallet[]>
-  >({})
-  const [selection, setSelection] = useState<{
-    network: string
-    id: string
-  } | null>(null)
-  const [draft, setDraft] = useState<{
-    network: string
-    id: string
-    label: string
-  } | null>(null)
-  const wallets = network
-    ? (walletLists[network] ?? readWalletList(network))
-    : [originalWallet()]
-  const savedWalletId = network ? readSelectedWalletId(network) : ''
-  const walletId =
-    draft && draft.network === network
-      ? draft.id
-      : selection && selection.network === network
-        ? selection.id
-        : savedWalletId
-  const account = config ? walletAccountFor(config, walletId) : ''
-  const walletLabel =
-    wallets.find((w) => w.id === walletId)?.label ??
-    (draft?.network === network ? draft.label : undefined)
-
-  const [phase, setPhase] = useState<Phase>('loading')
-  const [error, setError] = useState<string | null>(null)
-  const [attempt, setAttempt] = useState(0)
-  const [hint, setHint] = useState<P2pAvailability['hint']>(null)
-
-  // The stand-alone app has no node: while its pages are open the wallet screens read the trading
-  // wallet instead. Inside the node's Trading section the connected node stays what they read.
-  const standalone = !showNav
-  const dispatch = useAppDispatch()
-  const [tab, setTab] = useState<Tab>('market')
-  useEffect(() => {
-    if (!standalone || phase !== 'running') return
-    setWalletOverride(createP2pWalletWrapper())
-    dispatch(nodeApi.util.resetApiState())
-    return () => {
-      setWalletOverride(null)
-      dispatch(nodeApi.util.resetApiState())
-    }
-  }, [standalone, phase, dispatch])
-
-  // a node is optional: when one is connected, funds can also move to and from it
-  const nodeBtc = nodeApi.endpoints.btcBalance.useQuery(undefined, {
-    pollingInterval: 15_000,
-    skip: standalone,
-  })
-  const nodeConnected = !standalone && nodeBtc.data !== undefined
-
-  const [deposit, setDeposit] = useState(false)
-  const [withdraw, setWithdraw] = useState(false)
-  const [coins, setCoins] = useState(false)
-  const [issue, setIssue] = useState(false)
-  const { bitcoinUnit } = useSettings()
-  const [nodeTransfer, setNodeTransfer] = useState<Direction | null>(null)
-  const [recovery, setRecovery] = useState(false)
-  const [relays, setRelays] = useState(false)
-
-  const begin = useCallback(async () => {
-    if (!config) return
-    const where = await p2pAvailability().catch(() => null)
-    if (!where?.backend) {
-      setHint(where?.hint ?? null)
-      setPhase('unavailable')
-      return
-    }
-    const status = await p2pStatus().catch(() => null)
-    if (status?.running && runningAccount === account) {
-      setPhase('running')
-      return
-    }
-    await p2pStop()
-    runningAccount = null
-    const profile = await p2pProfileGet(account)
-    if (!profile) {
-      setPhase('setup')
-      return
-    }
-    setPhase('starting')
-    await p2pStart(startConfigFor(account, config))
-    runningAccount = account
-    setPhase('running')
-  }, [account, config])
-
-  useEffect(() => {
-    if (!isTauri() || !config) return
-    let cancelled = false
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPhase('loading')
-    setError(null)
-    void begin().catch((e) => {
-      if (cancelled) return
-      setError(e instanceof Error ? e.message : String(e))
-      setPhase('error')
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [begin, config, attempt])
-
-  const createWallet = async (phrase: string) => {
-    if (!config) return
-    await p2pStop()
-    runningAccount = null
-    setPhase('starting')
-    try {
-      await p2pStart({
-        ...startConfigFor(account, config),
-        seed_mnemonic: phrase,
-      })
-    } catch (e) {
-      setPhase('setup')
-      throw e
-    }
-    await p2pProfileSet(account, {
-      backed_up: true,
-      created_at: Date.now(),
-      version: 1,
-    })
-    setDraft(null)
-    runningAccount = account
-    setPhase('running')
-  }
-
-  const chooseWallet = (id: string) => {
-    if (!config) return
-    writeSelectedWalletId(config.network, id)
-    setDraft(null)
-    setSelection({ id, network: config.network })
-  }
-
-  const addWallet = (name: string) => {
-    if (!config) return
-    const id = allocateWalletId(
-      name,
-      wallets.map((w) => w.id)
-    )
-    const label =
-      name.trim() || `Wallet ${wallets.filter((w) => w.id).length + 2}`
-    const next = saveWallet(config.network, { id, label })
-    writeSelectedWalletId(config.network, id)
-    setWalletLists((m) => ({ ...m, [config.network]: next }))
-    setDraft({ id, label, network: config.network })
-    setSelection({ id, network: config.network })
-  }
-
-  const leaveUnfinishedWallet = () => {
-    if (!config || !walletId) return
-    const next = removeWallet(config.network, walletId)
-    setWalletLists((m) => ({ ...m, [config.network]: next }))
-    writeSelectedWalletId(config.network, '')
-    setDraft(null)
-    setSelection({ id: '', network: config.network })
-  }
-
-  const rescan = async () => {
-    if (!config) return
-    await p2pStop()
-    runningAccount = null
-    await p2pStart({ ...startConfigFor(account, config), rescan: true })
-    runningAccount = account
-  }
-
-  const stop = async () => {
-    await p2pStop()
-    runningAccount = null
-    setAttempt((n) => n + 1)
-  }
-
+  const {
+    config,
+    createWallet,
+    error,
+    hint,
+    leaveUnfinishedWallet,
+    options,
+    phase,
+    retry,
+    walletId,
+    walletLabel,
+  } = session
   let body
   if (!isTauri()) {
     body = <Alert variant="info">{t('p2pMarket.desktopOnly')}</Alert>
@@ -313,7 +90,7 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
           })}
         </p>
         <div>
-          <Button onClick={() => setAttempt((n) => n + 1)}>
+          <Button onClick={() => retry()}>
             {t('p2pMarket.retry', { defaultValue: 'Try again' })}
           </Button>
         </div>
@@ -323,7 +100,7 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
     body = (
       <WalletSetup
         generate={() => p2pGenerateSeed(config.network)}
-        networkLabel={option?.label ?? config.network}
+        networkLabel={config.label ?? config.network}
         onCancel={walletId ? leaveUnfinishedWallet : undefined}
         onComplete={createWallet}
         walletLabel={walletId ? walletLabel : undefined}
@@ -339,7 +116,7 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
         </h2>
         <p className="text-content-secondary">{error}</p>
         <div>
-          <Button onClick={() => setAttempt((n) => n + 1)}>
+          <Button onClick={() => retry()}>
             {t('p2pMarket.retry', { defaultValue: 'Try again' })}
           </Button>
         </div>
@@ -356,8 +133,64 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
       </p>
     )
   } else {
-    body = (
-      <div className="flex flex-col gap-3">
+    body = children
+  }
+  return <>{body}</>
+}
+
+/**
+ * The P2P market with its wallet. In the node's Trading section (`showNav`) it has the Trade menu;
+ * on its own it also has the wallet's tabs and settings. Inside the P2P app (`inShell`) those live
+ * in the app's own menu, so only the market shows.
+ */
+function MarketView({
+  session,
+  showNav,
+  inShell,
+}: {
+  session: P2pWalletSession
+  showNav: boolean
+  inShell: boolean
+}) {
+  const { t } = useTranslation()
+  const {
+    addWallet,
+    chooseWallet,
+    config,
+    networkKey,
+    networks,
+    rescan,
+    restart,
+    setNetworkKey,
+    walletId,
+    walletLabel,
+    wallets,
+  } = session
+  const standalone = !showNav
+  const dispatch = useAppDispatch()
+  const [tab, setTab] = useState<Tab>('market')
+
+  // a node is optional: when one is connected, funds can also move to and from it
+  const nodeBtc = nodeApi.endpoints.btcBalance.useQuery(undefined, {
+    pollingInterval: 15_000,
+    skip: standalone,
+  })
+  const nodeConnected = !standalone && nodeBtc.data !== undefined
+
+  const [deposit, setDeposit] = useState(false)
+  const [withdraw, setWithdraw] = useState(false)
+  const [coins, setCoins] = useState(false)
+  const [issue, setIssue] = useState(false)
+  const { bitcoinUnit } = useSettings()
+  const [nodeTransfer, setNodeTransfer] = useState<Direction | null>(null)
+  const [recovery, setRecovery] = useState(false)
+  const [relays, setRelays] = useState(false)
+
+  if (!config) return null
+
+  const running = (
+    <div className="flex flex-col gap-3">
+      {!inShell && (
         <div className="flex flex-wrap items-center justify-end gap-2">
           {standalone && (
             <div
@@ -409,17 +242,14 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
             selectedId={walletId}
             wallets={wallets}
           />
-          {list.length > 1 && (
+          {networks.length > 1 && (
             <select
               aria-label={t('p2pMarket.network', { defaultValue: 'Network' })}
               className="rounded-lg bg-surface-inset px-3 py-1.5 text-caption text-content-primary outline-none"
-              onChange={(e) => {
-                saveNetwork(e.target.value)
-                setNetworkKey(e.target.value)
-              }}
+              onChange={(e) => setNetworkKey(e.target.value)}
               value={networkKey}
             >
-              {list.map((o) => (
+              {networks.map((o) => (
                 <option key={o.key} value={o.key}>
                   {o.label}
                 </option>
@@ -444,7 +274,7 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
           </Button>
           <Button
             icon={<RefreshCw size={14} />}
-            onClick={() => void stop()}
+            onClick={() => void restart()}
             size="sm"
             title={t('p2pMarket.restartHelp', {
               defaultValue:
@@ -455,89 +285,91 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
             {t('p2pMarket.restart', { defaultValue: 'Restart' })}
           </Button>
         </div>
-        {standalone && tab === 'assets' && <AssetsHistory />}
-        {standalone && tab === 'deposits' && <DepositsHistory />}
-        {standalone && tab === 'withdrawals' && <WithdrawalsHistory />}
-        {(!standalone || tab === 'market') && (
-          <Market
-            node={
-              nodeConnected
-                ? { btc: nodeBtc.data?.vanilla.spendable ?? 0, connected: true }
-                : undefined
-            }
-            onIssueAsset={standalone ? () => setIssue(true) : undefined}
-            onManageCoins={standalone ? () => setCoins(true) : undefined}
-            onOpenFunds={(d) =>
-              d === 'toNode'
-                ? setWithdraw(true)
-                : standalone
-                  ? // the app's own deposit screen, which reads the trading wallet while this page is open
-                    dispatch(
-                      uiSliceActions.setModal({
-                        assetId: undefined,
-                        type: 'deposit',
-                      })
-                    )
-                  : setDeposit(true)
-            }
-            onRescan={rescan}
-            walletLabel={walletLabel}
-          />
-        )}
-        {coins && (
-          <UTXOManagementModal
-            bitcoinUnit={bitcoinUnit}
-            onClose={() => setCoins(false)}
-          />
-        )}
-        {issue && (
-          <IssueAssetModal
-            onClose={() => setIssue(false)}
-            onSuccess={() => void marketApi.refresh()}
-          />
-        )}
-        <DepositModal
-          isOpen={deposit}
-          onClose={() => setDeposit(false)}
-          onFromNode={
+      )}
+      {standalone && tab === 'assets' && <AssetsHistory />}
+      {standalone && tab === 'deposits' && <DepositsHistory />}
+      {standalone && tab === 'withdrawals' && <WithdrawalsHistory />}
+      {(!standalone || tab === 'market') && (
+        <Market
+          node={
             nodeConnected
-              ? () => {
-                  setDeposit(false)
-                  setNodeTransfer('toTrading')
-                }
+              ? { btc: nodeBtc.data?.vanilla.spendable ?? 0, connected: true }
               : undefined
           }
-        />
-        <WithdrawModal
-          isOpen={withdraw}
-          onClose={() => setWithdraw(false)}
-          onToNode={
-            nodeConnected
-              ? () => {
-                  setWithdraw(false)
-                  setNodeTransfer('toNode')
-                }
-              : undefined
+          onIssueAsset={standalone ? () => setIssue(true) : undefined}
+          onManageCoins={standalone ? () => setCoins(true) : undefined}
+          onOpenFunds={(d) =>
+            d === 'toNode'
+              ? setWithdraw(true)
+              : standalone
+                ? // the app's own deposit screen, which reads the trading wallet while this page is open
+                  dispatch(
+                    uiSliceActions.setModal({
+                      assetId: undefined,
+                      type: 'deposit',
+                    })
+                  )
+                : setDeposit(true)
           }
+          onRescan={rescan}
+          walletLabel={walletLabel}
         />
-        <FundsModal
-          initialDirection={nodeTransfer ?? 'toTrading'}
-          isOpen={nodeTransfer !== null}
-          onClose={() => setNodeTransfer(null)}
+      )}
+      {coins && (
+        <UTXOManagementModal
+          bitcoinUnit={bitcoinUnit}
+          onClose={() => setCoins(false)}
         />
-        <RelaysModal
-          isOpen={relays}
-          networkKey={config.key}
-          onClose={() => setRelays(false)}
-          onSaved={() => void stop()}
+      )}
+      {issue && (
+        <IssueAssetModal
+          onClose={() => setIssue(false)}
+          onSuccess={() => void marketApi.refresh()}
         />
-        <RecoveryPhraseModal
-          isOpen={recovery}
-          onClose={() => setRecovery(false)}
-        />
-      </div>
-    )
-  }
+      )}
+      <DepositModal
+        isOpen={deposit}
+        onClose={() => setDeposit(false)}
+        onFromNode={
+          nodeConnected
+            ? () => {
+                setDeposit(false)
+                setNodeTransfer('toTrading')
+              }
+            : undefined
+        }
+      />
+      <WithdrawModal
+        isOpen={withdraw}
+        onClose={() => setWithdraw(false)}
+        onToNode={
+          nodeConnected
+            ? () => {
+                setWithdraw(false)
+                setNodeTransfer('toNode')
+              }
+            : undefined
+        }
+      />
+      <FundsModal
+        initialDirection={nodeTransfer ?? 'toTrading'}
+        isOpen={nodeTransfer !== null}
+        onClose={() => setNodeTransfer(null)}
+      />
+      <RelaysModal
+        isOpen={relays}
+        networkKey={config.key}
+        onClose={() => setRelays(false)}
+        onSaved={() => void restart()}
+      />
+      <RecoveryPhraseModal
+        isOpen={recovery}
+        onClose={() => setRecovery(false)}
+      />
+    </div>
+  )
+
+  if (inShell) return <P2pGate session={session}>{running}</P2pGate>
 
   return (
     <div className="w-full min-h-full">
@@ -546,8 +378,29 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
           <TradeNav />
         </div>
       )}
-      <div className="mx-auto w-full max-w-screen-xl px-4 py-4">{body}</div>
+      <div className="mx-auto w-full max-w-screen-xl px-4 py-4">
+        <P2pGate session={session}>{running}</P2pGate>
+      </div>
     </div>
+  )
+}
+
+function OwnSession({ showNav }: { showNav: boolean }) {
+  const session = useP2pWalletSession(!showNav)
+  return <MarketView inShell={false} session={session} showNav={showNav} />
+}
+
+/**
+ * The P2P market. It has a wallet of its own, made here and kept with a recovery phrase, so it
+ * needs no node: a node only adds a way to move funds in and out. Inside the P2P app it uses the
+ * app's session; elsewhere it holds its own.
+ */
+export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
+  const shared = useOptionalP2pSession()
+  return shared ? (
+    <MarketView inShell session={shared} showNav={false} />
+  ) : (
+    <OwnSession showNav={showNav} />
   )
 }
 
