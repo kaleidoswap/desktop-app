@@ -1,4 +1,4 @@
-import { KeyRound, RefreshCw } from 'lucide-react'
+import { KeyRound, RadioTower, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -26,6 +26,7 @@ import { DepositModal } from './DepositModal'
 import { FundsModal, type Direction } from './FundsModal'
 import { Market } from './market/Market'
 import { RecoveryPhraseModal } from './RecoveryPhraseModal'
+import { RelaysModal } from './RelaysModal'
 import {
   p2pAvailability,
   type P2pAvailability,
@@ -168,6 +169,7 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
   const { bitcoinUnit } = useSettings()
   const [nodeTransfer, setNodeTransfer] = useState<Direction | null>(null)
   const [recovery, setRecovery] = useState(false)
+  const [relays, setRelays] = useState(false)
 
   const begin = useCallback(async () => {
     if (!config) return
@@ -425,6 +427,14 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
             </select>
           )}
           <Button
+            icon={<RadioTower size={14} />}
+            onClick={() => setRelays(true)}
+            size="sm"
+            variant="outline"
+          >
+            {t('p2pMarket.relays', { defaultValue: 'Relays' })}
+          </Button>
+          <Button
             icon={<KeyRound size={14} />}
             onClick={() => setRecovery(true)}
             size="sm"
@@ -514,6 +524,12 @@ export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
           initialDirection={nodeTransfer ?? 'toTrading'}
           isOpen={nodeTransfer !== null}
           onClose={() => setNodeTransfer(null)}
+        />
+        <RelaysModal
+          isOpen={relays}
+          networkKey={config.key}
+          onClose={() => setRelays(false)}
+          onSaved={() => void stop()}
         />
         <RecoveryPhraseModal
           isOpen={recovery}

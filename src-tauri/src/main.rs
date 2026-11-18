@@ -61,7 +61,8 @@ async fn p2p_start(
     p2p: State<'_, Arc<P2pProcess>>,
     config: P2pStartRequest,
 ) -> Result<P2pStatus, String> {
-    let config = p2p_networks::resolve(config)?;
+    let custom = p2p_networks::stored_relays(&p2p_base(&app)?, &config.network_key);
+    let config = p2p_networks::resolve(config, custom)?;
     let p2p = Arc::clone(&*p2p);
     tauri::async_runtime::spawn_blocking(move || p2p.ensure_started(&app, &config))
         .await
@@ -71,6 +72,34 @@ async fn p2p_start(
 #[tauri::command]
 fn p2p_networks() -> Vec<p2p_networks::NetworkInfo> {
     p2p_networks::list()
+}
+
+/// The daemon's data directory, where the user's relay lists are kept too.
+fn p2p_base(app: &AppHandle) -> Result<std::path::PathBuf, String> {
+    Ok(app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("no app data dir: {e}"))?
+        .join("p2pd"))
+}
+
+#[tauri::command]
+fn p2p_relays_get(
+    app: AppHandle,
+    network_key: String,
+) -> Result<p2p_networks::RelaySettings, String> {
+    p2p_networks::relay_settings(&p2p_base(&app)?, &network_key)
+}
+
+/// Save the user's relays for a network (`None` goes back to the app's defaults). They are checked
+/// in `p2p_networks` and used from the daemon's next start.
+#[tauri::command]
+fn p2p_relays_set(
+    app: AppHandle,
+    network_key: String,
+    relays: Option<Vec<String>>,
+) -> Result<p2p_networks::RelaySettings, String> {
+    p2p_networks::set_relays(&p2p_base(&app)?, &network_key, relays)
 }
 
 #[tauri::command]
@@ -343,6 +372,8 @@ fn main() {
             p2p_profile_set,
             p2p_available,
             p2p_networks,
+            p2p_relays_get,
+            p2p_relays_set,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
