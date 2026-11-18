@@ -3,7 +3,14 @@
 /// Exercise the actual Windows Credential Manager backend, never a user credential.
 #[test]
 fn windows_credential_manager_round_trip() {
-    let account = format!("beta-ci-{}-{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos());
+    let account = format!(
+        "beta-ci-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    );
     let entry = keyring::Entry::new("com.kaleidoswap.beta.qa.disposable", &account).unwrap();
     let secret = "disposable-test-value-not-a-wallet-secret";
     entry.set_password(secret).unwrap();
