@@ -1,35 +1,20 @@
-import { invoke } from '@tauri-apps/api/core'
-import {
-  ArrowLeftRight,
-  Brain,
-  House,
-  Server,
-  Settings,
-  Wallet,
-} from 'lucide-react'
+import { ArrowLeftRight, House, Server, Settings, Wallet } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 
 import {
-  KALEIDO_MIND_PATH,
   P2P_ACTIVITY_PATH,
   P2P_SETTINGS_PATH,
   P2P_TRADE_PATH,
   P2P_WALLET_PATH,
   WALLET_SETUP_PATH,
 } from '../../app/router/paths'
-import { useAppDispatch } from '../../app/store/hooks'
 import logoFull from '../../assets/logo-full.svg'
 import { AppVersion } from '../../components/AppVersion'
 import { Layout } from '../../components/Layout'
-import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
-import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
-import { setAppMode } from '../../slices/settings/settings.slice'
-import { networkLabel } from '../trade/nostr-p2p/format'
 import { P2pGate } from '../trade/nostr-p2p'
 import { P2pSessionProvider, useP2pSession } from '../trade/nostr-p2p/session'
-import { WalletSwitch } from '../trade/nostr-p2p/WalletSwitch'
 
 const NavItem = ({
   to,
@@ -58,25 +43,10 @@ const NavItem = ({
   </NavLink>
 )
 
-/** The menu of the P2P app: its pages, the node it does not need yet, and the open wallet. */
+/** The menu of the P2P app: its pages, and the node it does not need yet. */
 function Sidebar() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const dispatch = useAppDispatch()
-  const session = useP2pSession()
-
-  // the same way into KaleidoMind as the start screen's: without a node
-  const openMind = async () => {
-    try {
-      await invoke('set_current_account', { accountName: null })
-    } catch {
-      // Mind opens anyway; the node it would have shown is simply not connected
-    }
-    dispatch(nodeSettingsActions.resetNodeSettings())
-    dispatch(nodeApi.util.resetApiState())
-    dispatch(setAppMode('mind'))
-    navigate(KALEIDO_MIND_PATH)
-  }
 
   return (
     <nav
@@ -104,27 +74,17 @@ function Sidebar() {
         label={t('p2pShell.wallet', { defaultValue: 'Wallet' })}
         to={P2P_ACTIVITY_PATH}
       />
-      <button
-        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-content-secondary transition-colors hover:bg-surface-overlay/50 hover:text-content-primary"
-        onClick={() => void openMind()}
-        type="button"
-      >
-        <Brain className="h-[18px] w-[18px]" />
-        KaleidoMind
-      </button>
 
-      <p className="mx-3 mb-1 mt-5 text-[11px] font-medium uppercase tracking-wider text-content-tertiary">
-        {t('p2pShell.node', { defaultValue: 'Lightning node' })}
-      </p>
-      <div className="mx-1 flex flex-col gap-2 rounded-xl border border-dashed border-divider/30 p-3">
+      <div className="flex-1" />
+      <div className="mx-1 mb-3 flex flex-col gap-2 rounded-xl border border-dashed border-divider/30 p-3">
         <span className="flex items-center gap-2 text-sm font-medium text-content-primary">
           <Server className="h-4 w-4 text-content-tertiary" />
-          {t('p2pShell.nodeOff', { defaultValue: 'Not connected' })}
+          {t('p2pShell.nodeOff', { defaultValue: 'No Lightning node' })}
         </span>
         <span className="text-xs leading-relaxed text-content-tertiary">
           {t('p2pShell.nodeWhy', {
             defaultValue:
-              'Channels and instant Lightning swaps show up here once a node is connected.',
+              'Connect one to add channels and instant Lightning swaps.',
           })}
         </span>
         <button
@@ -135,28 +95,12 @@ function Sidebar() {
           {t('p2pShell.connectNode', { defaultValue: 'Connect a node' })}
         </button>
       </div>
-
-      <div className="flex-1" />
       <NavItem
         icon={<Settings className="h-[18px] w-[18px]" />}
         label={t('p2pShell.settings', { defaultValue: 'Settings' })}
         to={P2P_SETTINGS_PATH}
       />
-      <div className="mt-2 flex flex-col gap-1.5 rounded-xl border border-divider/20 bg-surface-elevated/40 p-2">
-        <WalletSwitch
-          onCreate={session.addWallet}
-          onSelect={session.chooseWallet}
-          selectedId={session.walletId}
-          wallets={session.wallets}
-        />
-        {session.config && (
-          <span className="px-1 text-[11px] text-content-tertiary">
-            {networkLabel(session.config.network)} ·{' '}
-            {t('p2pShell.onchain', { defaultValue: 'on-chain RGB' })}
-          </span>
-        )}
-      </div>
-      <AppVersion className="relative mt-2 self-center" />
+      <AppVersion className="relative mt-3 self-center" />
     </nav>
   )
 }
