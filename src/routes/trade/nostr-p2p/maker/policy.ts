@@ -57,41 +57,27 @@ export const fromRule = (m: MarketRule): RuleForm => ({
 })
 
 /**
- * A first rule for a market the strategy quotes. The policy bounds what the maker may do, so its
- * reference price never comes from the maker: it is the price the user set on this computer, or empty
- * until the user types one (a rule without a reference cannot be signed). Selling is on if the
- * strategy quotes asks; buying stays off (the signer cannot yet check the asset a purchase delivers,
- * so it trusts the host). The caps start from the strategy's largest level, the daily cap at most ten
- * swaps' worth, whatever the maker reports.
+ * A first rule for a market the strategy quotes. The policy bounds what the maker may do, and the
+ * market's numbers come from the maker, so none of them seeds a limit: the reference price and both
+ * caps start empty and the user types them (a rule without them cannot be signed). Only the sides
+ * follow the strategy: selling if it quotes asks; buying stays off (the signer cannot yet check the
+ * asset a purchase delivers, so it trusts the host).
  */
 export function ruleFor(
   m: BotMarket,
-  form?: Pick<StrategyForm, 'priceKind' | 'bandPct' | 'ticker'> & {
-    satPerUnit?: number
-  }
+  form?: Pick<StrategyForm, 'priceKind' | 'bandPct' | 'ticker'>
 ): RuleForm {
-  const unit = (b: number) => fromBase(b, m.precision)
-  const largest =
-    Math.max(m.ask_amount, m.bid_amount) * m.size_growth ** (m.levels - 1)
-  const maxSwap = unit(Math.ceil(largest))
-  const tenSwaps = maxSwap * 10
   return {
     asset_id: m.asset_id,
     bandPct: form?.priceKind === 'issuer' ? form.bandPct : 2,
     // a purchase trusts the host's check of the asset delivered: off until the user opts in
     buy: false,
-    maxDailyNet:
-      m.max_daily_net != null
-        ? Math.min(unit(m.max_daily_net), tenSwaps)
-        : tenSwaps,
-    maxSwap,
+    maxDailyNet: 0,
+    maxSwap: 0,
     maxSwapSat: 0,
     precision: m.precision,
     refKind: 'fixed',
-    refValue:
-      form && form.priceKind !== 'feed' && (form.satPerUnit ?? 0) > 0
-        ? (form.satPerUnit as number)
-        : 0,
+    refValue: 0,
     sell: m.ask_amount > 0,
     ticker: form?.ticker ?? '',
   }
@@ -104,7 +90,7 @@ export function ruleErrors(r: RuleForm): string[] {
   if (!(r.refValue > 0)) out.push('reference')
   if (!(r.bandPct >= 0.01 && r.bandPct <= 50)) out.push('band')
   if (!(toBase(r.maxSwap, r.precision) > 0)) out.push('maxSwap')
-  if (!(r.maxDailyNet >= 0)) out.push('maxDailyNet')
+  if (!(toBase(r.maxDailyNet, r.precision) > 0)) out.push('maxDailyNet')
   if (!(r.maxSwapSat >= 0)) out.push('maxSwapSat')
   return out
 }

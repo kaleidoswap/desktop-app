@@ -154,22 +154,22 @@ describe('maker signing policy', () => {
     satPerUnit: 1_000,
   })
 
-  it('starts from the strategy: its sides, its largest level, the price set here and band', () => {
+  it('takes only the sides from the strategy: price and caps are for the user to type', () => {
     const r = ruleFor(market, {
       bandPct: 3,
       priceKind: 'issuer',
-      satPerUnit: 1_000,
       ticker: 'TUSD',
     })
     expect(r).toMatchObject({
       bandPct: 3,
       buy: false,
-      maxDailyNet: 400,
-      maxSwap: 40,
+      maxDailyNet: 0,
+      maxSwap: 0,
       refKind: 'fixed',
-      refValue: 1_000,
+      refValue: 0,
       sell: true,
     })
+    expect(ruleErrors(r)).toEqual(['reference', 'maxSwap', 'maxDailyNet'])
   })
 
   it('leaves buying off even when the strategy quotes bids: a purchase trusts the host', () => {
@@ -185,21 +185,13 @@ describe('maker signing policy', () => {
     })
   })
 
-  it('never takes the reference price or a large daily cap from the maker', () => {
-    const fromHost = { ...market, max_daily_net: 1e12 }
-    const r = ruleFor(fromHost, { bandPct: 2, priceKind: 'fixed', ticker: 'X' })
-    expect(r.refValue).toBe(0)
-    expect(ruleErrors(r)).toContain('reference')
-    expect(r.maxDailyNet).toBe(r.maxSwap * 10)
-  })
-
   it('turns into the rule the signer checks, in base units and bps', () => {
-    const r = ruleFor(market, {
-      bandPct: 2.5,
-      priceKind: 'issuer',
-      satPerUnit: 1_000,
-      ticker: 'TUSD',
-    })
+    const r = {
+      ...ruleFor(market, { bandPct: 2.5, priceKind: 'issuer', ticker: 'TUSD' }),
+      maxDailyNet: 400,
+      maxSwap: 40,
+      refValue: 1_000,
+    }
     const rule = toRule(r)
     expect(rule).toMatchObject({
       band_bps: 250,
@@ -213,7 +205,7 @@ describe('maker signing policy', () => {
   })
 
   it('refuses a rule that allows nothing or has no reference', () => {
-    const r = ruleFor(market)
+    const r = { ...ruleFor(market), maxDailyNet: 400, maxSwap: 40 }
     expect(ruleErrors({ ...r, buy: false, refValue: 0, sell: false })).toEqual([
       'sides',
       'reference',

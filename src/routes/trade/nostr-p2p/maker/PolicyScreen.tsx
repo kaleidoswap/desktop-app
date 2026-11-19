@@ -75,7 +75,6 @@ export function PolicyScreen({
             ruleFor(m, {
               bandPct: hints[m.asset_id]?.bandPct ?? 2,
               priceKind: hints[m.asset_id]?.kind ?? 'fixed',
-              satPerUnit: hints[m.asset_id]?.satPerUnit,
               ticker: tickers.get(m.asset_id) ?? '',
             })
           )

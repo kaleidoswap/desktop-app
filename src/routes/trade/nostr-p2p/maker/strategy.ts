@@ -262,7 +262,7 @@ const HINT_KEY = 'p2p-maker.price-kind'
 
 export function readPriceHints(): Record<
   string,
-  { kind: PriceKind; bandPct?: number; satPerUnit?: number }
+  { kind: PriceKind; bandPct?: number }
 > {
   try {
     return JSON.parse(localStorage.getItem(HINT_KEY) ?? '{}')
@@ -274,12 +274,7 @@ export function readPriceHints(): Record<
 export function savePriceHint(f: StrategyForm) {
   try {
     const all = readPriceHints()
-    all[f.asset_id] = {
-      bandPct: f.bandPct,
-      kind: f.priceKind,
-      // the price the user set here, so the policy never takes it from the host
-      satPerUnit: f.priceKind === 'feed' ? undefined : f.satPerUnit,
-    }
+    all[f.asset_id] = { bandPct: f.bandPct, kind: f.priceKind }
     localStorage.setItem(HINT_KEY, JSON.stringify(all))
   } catch {
     // the hint is only a convenience
