@@ -87,6 +87,9 @@ enum ControlMessage {
 // DockerNodeManager
 
 #[allow(dead_code)]
+/// How long `docker info` may take before Docker counts as not available.
+const DOCKER_INFO_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
 pub struct DockerNodeManager {
     state: Arc<RwLock<NodeState>>,
     logs: Arc<Mutex<Vec<String>>>,
@@ -326,7 +329,25 @@ impl DockerNodeManager {
             cmd.creation_flags(CREATE_NO_WINDOW);
         }
 
-        cmd.status().map(|s| s.success()).unwrap_or(false)
+        // A Docker that is installed but hung never answers `docker info`; whoever asks must not
+        // wait with it, so after a few seconds it counts as not available.
+        let Ok(mut child) = cmd.spawn() else {
+            return false;
+        };
+        let deadline = std::time::Instant::now() + DOCKER_INFO_TIMEOUT;
+        loop {
+            match child.try_wait() {
+                Ok(Some(status)) => return status.success(),
+                Ok(None) if std::time::Instant::now() < deadline => {
+                    std::thread::sleep(std::time::Duration::from_millis(100))
+                }
+                _ => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return false;
+                }
+            }
+        }
     }
 
     /// Format an account name into a Docker environment name. Mirrors the

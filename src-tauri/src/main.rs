@@ -1136,24 +1136,33 @@ fn delete_channel_order(
     db::delete_channel_order(account.id, orderId).map_err(|e| e.to_string())
 }
 
+// These ask Docker, which can take seconds or hang: off the main thread, or the whole app waits.
 #[tauri::command]
-fn is_local_node_supported() -> bool {
+async fn is_local_node_supported() -> bool {
     // Local node is supported if native binary OR Docker is available
-    rgb_node::NodeProcess::is_local_node_supported() || DockerNodeManager::is_docker_available()
+    tauri::async_runtime::spawn_blocking(|| {
+        rgb_node::NodeProcess::is_local_node_supported() || DockerNodeManager::is_docker_available()
+    })
+    .await
+    .unwrap_or(false)
 }
 
 #[tauri::command]
-fn get_local_node_capabilities() -> HashMap<String, bool> {
-    let mut caps = HashMap::new();
-    caps.insert(
-        "native".to_string(),
-        rgb_node::NodeProcess::is_local_node_supported(),
-    );
-    caps.insert(
-        "docker".to_string(),
-        DockerNodeManager::is_docker_available(),
-    );
-    caps
+async fn get_local_node_capabilities() -> HashMap<String, bool> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let mut caps = HashMap::new();
+        caps.insert(
+            "native".to_string(),
+            rgb_node::NodeProcess::is_local_node_supported(),
+        );
+        caps.insert(
+            "docker".to_string(),
+            DockerNodeManager::is_docker_available(),
+        );
+        caps
+    })
+    .await
+    .unwrap_or_default()
 }
 
 #[tauri::command]
@@ -1477,8 +1486,10 @@ fn check_docker_environment(account_name: String) -> Option<DockerEnvironment> {
 }
 
 #[tauri::command]
-fn is_docker_available() -> bool {
-    DockerNodeManager::is_docker_available()
+async fn is_docker_available() -> bool {
+    tauri::async_runtime::spawn_blocking(DockerNodeManager::is_docker_available)
+        .await
+        .unwrap_or(false)
 }
 
 #[tauri::command]
