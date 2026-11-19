@@ -65,6 +65,17 @@ export function LiveScreen({
   const usage = usePoll(api.usage, 60_000)
   const balance = usePoll(api.balance, 30_000)
   const journal = usePoll(backend.journal, 3_000)
+  // hosted: the place to deposit is the signer's own address, never one the host reports
+  const localAddress = usePoll(
+    () => (hosted ? backend.walletAddress() : Promise.resolve(null)),
+    60_000
+  )
+  const fundAddress = hosted ? localAddress.data : info.data?.address
+  const hostDiffers =
+    hosted &&
+    !!localAddress.data &&
+    !!info.data?.address &&
+    info.data.address !== localAddress.data
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -154,12 +165,19 @@ export function LiveScreen({
             </div>
             {info.data && (
               <div className="flex flex-col gap-1 text-caption text-content-secondary">
-                <span>
-                  {tm('live.fund')}{' '}
-                  <span className="break-all font-mono text-content-primary">
-                    {info.data.address}
+                {fundAddress && (
+                  <span>
+                    {tm('live.fund')}{' '}
+                    <span className="break-all font-mono text-content-primary">
+                      {fundAddress}
+                    </span>
                   </span>
-                </span>
+                )}
+                {hostDiffers && (
+                  <span className="text-status-danger">
+                    {tm('live.hostAddressDiffers')}
+                  </span>
+                )}
                 {balance.data && (
                   <span>
                     {tm('live.inventory')}{' '}

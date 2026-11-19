@@ -154,10 +154,11 @@ describe('maker signing policy', () => {
     satPerUnit: 1_000,
   })
 
-  it('starts from the strategy: its sides, its largest level, its price and band', () => {
+  it('starts from the strategy: its sides, its largest level, the price set here and band', () => {
     const r = ruleFor(market, {
       bandPct: 3,
       priceKind: 'issuer',
+      satPerUnit: 1_000,
       ticker: 'TUSD',
     })
     expect(r).toMatchObject({
@@ -184,10 +185,19 @@ describe('maker signing policy', () => {
     })
   })
 
+  it('never takes the reference price or a large daily cap from the maker', () => {
+    const fromHost = { ...market, max_daily_net: 1e12 }
+    const r = ruleFor(fromHost, { bandPct: 2, priceKind: 'fixed', ticker: 'X' })
+    expect(r.refValue).toBe(0)
+    expect(ruleErrors(r)).toContain('reference')
+    expect(r.maxDailyNet).toBe(r.maxSwap * 10)
+  })
+
   it('turns into the rule the signer checks, in base units and bps', () => {
     const r = ruleFor(market, {
       bandPct: 2.5,
       priceKind: 'issuer',
+      satPerUnit: 1_000,
       ticker: 'TUSD',
     })
     const rule = toRule(r)
@@ -208,7 +218,7 @@ describe('maker signing policy', () => {
       'sides',
       'reference',
     ])
-    expect(ruleErrors({ ...r, bandPct: 60 })).toEqual(['band'])
+    expect(ruleErrors({ ...r, bandPct: 60, refValue: 1_000 })).toEqual(['band'])
   })
 
   it('compares policies whatever order their fields come in', () => {

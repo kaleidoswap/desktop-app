@@ -4033,7 +4033,8 @@
       "offersPosted": "Offers posted",
       "swapsSettled": "Swaps settled",
       "volume": "Volume",
-      "since": "Answering since {{when}}"
+      "since": "Answering since {{when}}",
+      "hostAddressDiffers": "Il maker indica un indirizzo di deposito diverso da quello del tuo signer. Deposita solo all’indirizzo qui sopra."
     },
     "launch": {
       "title": "Launch a token",

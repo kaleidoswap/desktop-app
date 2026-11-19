@@ -4033,7 +4033,8 @@
       "offersPosted": "Offers posted",
       "swapsSettled": "Swaps settled",
       "volume": "Volume",
-      "since": "Answering since {{when}}"
+      "since": "Answering since {{when}}",
+      "hostAddressDiffers": "메이커가 알려 준 입금 주소가 서명자 주소와 다릅니다. 위 주소로만 입금하세요."
     },
     "launch": {
       "title": "Launch a token",

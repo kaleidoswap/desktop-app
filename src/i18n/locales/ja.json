@@ -4039,7 +4039,8 @@
       "offersPosted": "Offers posted",
       "swapsSettled": "Swaps settled",
       "volume": "Volume",
-      "since": "Answering since {{when}}"
+      "since": "Answering since {{when}}",
+      "hostAddressDiffers": "メイカーが示す入金先アドレスが署名者のものと異なります。上のアドレスにだけ入金してください。"
     },
     "launch": {
       "title": "Launch a token",

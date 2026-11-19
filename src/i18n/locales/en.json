@@ -4033,7 +4033,8 @@
       "offersPosted": "Offers posted",
       "swapsSettled": "Swaps settled",
       "volume": "Volume",
-      "since": "Answering since {{when}}"
+      "since": "Answering since {{when}}",
+      "hostAddressDiffers": "The maker reports a different deposit address from your signer’s. Deposit only to the address above."
     },
     "launch": {
       "title": "Launch a token",

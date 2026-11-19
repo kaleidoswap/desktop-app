@@ -16,6 +16,7 @@ mod node_backend;
 mod nwc;
 mod p2p;
 mod p2p_docker;
+mod p2p_media;
 mod p2p_networks;
 // kept as it is on main; only the daemon container's passphrase uses it here
 mod rgb_node;
@@ -91,6 +92,36 @@ fn p2p_base(app: &AppHandle) -> Result<std::path::PathBuf, String> {
         .app_data_dir()
         .map_err(|e| format!("no app data dir: {e}"))?
         .join("p2pd"))
+}
+
+/// Let the user pick an image for a new asset and copy it where the trading wallet's daemon reads
+/// media from. The page never names a path: the dialog opens here.
+#[tauri::command]
+async fn p2p_pick_media(
+    app: AppHandle,
+    account: String,
+) -> Result<Option<p2p_media::StagedMedia>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    if account.is_empty()
+        || !account
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_'))
+    {
+        return Err("the account name must be letters, digits, - or _".into());
+    }
+    let data_dir = p2p_base(&app)?.join(&account);
+    tauri::async_runtime::spawn_blocking(move || {
+        let picked = app
+            .dialog()
+            .file()
+            .add_filter("Images", &["png", "jpg", "jpeg", "gif", "webp"])
+            .blocking_pick_file();
+        let Some(file) = picked else { return Ok(None) };
+        let path = file.into_path().map_err(|e| e.to_string())?;
+        p2p_media::stage(&path, &data_dir).map(Some)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -384,6 +415,7 @@ fn main() {
             p2p_available,
             p2p_networks,
             p2p_relays_get,
+            p2p_pick_media,
             p2p_relays_set,
             maker::maker_view,
             maker::maker_set_mode,

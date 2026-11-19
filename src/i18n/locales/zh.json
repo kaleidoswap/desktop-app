@@ -4030,7 +4030,8 @@
       "offersPosted": "Offers posted",
       "swapsSettled": "Swaps settled",
       "volume": "Volume",
-      "since": "Answering since {{when}}"
+      "since": "Answering since {{when}}",
+      "hostAddressDiffers": "做市商报告的入账地址与你的签名器地址不同。请只向上面的地址入账。"
     },
     "launch": {
       "title": "Launch a token",

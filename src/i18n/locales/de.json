@@ -4033,7 +4033,8 @@
       "offersPosted": "Offers posted",
       "swapsSettled": "Swaps settled",
       "volume": "Volume",
-      "since": "Answering since {{when}}"
+      "since": "Answering since {{when}}",
+      "hostAddressDiffers": "Der Maker meldet eine andere Einzahlungsadresse als dein Signer. Zahle nur an die Adresse oben ein."
     },
     "launch": {
       "title": "Launch a token",

@@ -1,4 +1,4 @@
-import { open } from '@tauri-apps/plugin-dialog'
+import { invoke } from '@tauri-apps/api/core'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -18,6 +18,7 @@ import { Modal } from '../../components/ui'
 import { fmtUnits, toBase } from '../trade/nostr-p2p/format'
 import { AssetMark } from '../trade/nostr-p2p/market/AssetSelect'
 import { Picker } from '../trade/nostr-p2p/market/Picker'
+import { useP2pSession } from '../trade/nostr-p2p/session'
 import { transport } from '../trade/nostr-p2p/transport'
 
 import {
@@ -68,6 +69,8 @@ export function IssueDialog({ isOpen, onClose, onIssued }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [issued, setIssued] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [mediaName, setMediaName] = useState<string | null>(null)
+  const { account } = useP2pSession()
 
   const set = (patch: Partial<IssueForm>) =>
     setForm((f) => ({ ...f, ...patch }))
@@ -149,17 +152,20 @@ export function IssueDialog({ isOpen, onClose, onIssued }: Props) {
     }),
   }
 
+  // the native dialog picks the file and copies it where the daemon may read it: no path from here
   const chooseMedia = async () => {
-    const path = await open({
-      filters: [
-        {
-          extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'],
-          name: t('p2pIssue.images', { defaultValue: 'Images' }),
-        },
-      ],
-      multiple: false,
-    })
-    if (typeof path === 'string') set({ mediaPath: path })
+    try {
+      const staged = await invoke<{ path: string; name: string } | null>(
+        'p2p_pick_media',
+        { account }
+      )
+      if (staged) {
+        set({ mediaPath: staged.path })
+        setMediaName(staged.name)
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
   }
 
   const issue = async () => {
@@ -429,7 +435,7 @@ export function IssueDialog({ isOpen, onClose, onIssued }: Props) {
                 <ImageIcon className="h-5 w-5 text-content-tertiary" />
                 <span className="min-w-0 flex-1 truncate text-sm text-content-secondary">
                   {form.mediaPath
-                    ? form.mediaPath.split(/[\\/]/).pop()
+                    ? mediaName
                     : form.kind === 'UDA'
                       ? t('p2pIssue.mediaNeeded', {
                           defaultValue: 'The item’s image (required)',

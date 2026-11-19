@@ -57,30 +57,41 @@ export const fromRule = (m: MarketRule): RuleForm => ({
 })
 
 /**
- * A first rule for a market the strategy quotes: selling if it quotes asks (buying stays off: the
- * signer cannot yet check the asset a purchase delivers, so it trusts the host), its largest level as the
- * most per swap, its daily net cap (or ten swaps), and, for an issuer-set or fixed price, that
- * price and band as the reference.
+ * A first rule for a market the strategy quotes. The policy bounds what the maker may do, so its
+ * reference price never comes from the maker: it is the price the user set on this computer, or empty
+ * until the user types one (a rule without a reference cannot be signed). Selling is on if the
+ * strategy quotes asks; buying stays off (the signer cannot yet check the asset a purchase delivers,
+ * so it trusts the host). The caps start from the strategy's largest level, the daily cap at most ten
+ * swaps' worth, whatever the maker reports.
  */
 export function ruleFor(
   m: BotMarket,
-  form?: Pick<StrategyForm, 'priceKind' | 'bandPct' | 'ticker'>
+  form?: Pick<StrategyForm, 'priceKind' | 'bandPct' | 'ticker'> & {
+    satPerUnit?: number
+  }
 ): RuleForm {
   const unit = (b: number) => fromBase(b, m.precision)
   const largest =
     Math.max(m.ask_amount, m.bid_amount) * m.size_growth ** (m.levels - 1)
   const maxSwap = unit(Math.ceil(largest))
+  const tenSwaps = maxSwap * 10
   return {
     asset_id: m.asset_id,
     bandPct: form?.priceKind === 'issuer' ? form.bandPct : 2,
     // a purchase trusts the host's check of the asset delivered: off until the user opts in
     buy: false,
-    maxDailyNet: m.max_daily_net != null ? unit(m.max_daily_net) : maxSwap * 10,
+    maxDailyNet:
+      m.max_daily_net != null
+        ? Math.min(unit(m.max_daily_net), tenSwaps)
+        : tenSwaps,
     maxSwap,
     maxSwapSat: 0,
     precision: m.precision,
     refKind: 'fixed',
-    refValue: m.price.source === 'fixed' ? m.price.sat_per_unit : 0,
+    refValue:
+      form && form.priceKind !== 'feed' && (form.satPerUnit ?? 0) > 0
+        ? (form.satPerUnit as number)
+        : 0,
     sell: m.ask_amount > 0,
     ticker: form?.ticker ?? '',
   }
