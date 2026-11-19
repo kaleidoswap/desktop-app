@@ -43,6 +43,8 @@ interface Props {
   generate: () => Promise<string>
   /** Create the wallet from `phrase` (a new one, or one the user brought). */
   onComplete: (phrase: string) => Promise<void>
+  /** Open straight on restoring from a phrase, when the user already chose that. */
+  startWithRestore?: boolean
 }
 
 /** Creating a trading wallet: see the recovery phrase, prove it was written down, or restore one. */
@@ -52,9 +54,12 @@ export function WalletSetup({
   onCancel,
   generate,
   onComplete,
+  startWithRestore = false,
 }: Props) {
   const tr = useTr()
-  const [step, setStep] = useState<Step>('choose')
+  const [step, setStep] = useState<Step>(
+    startWithRestore ? 'restore' : 'choose'
+  )
   const [phrase, setPhrase] = useState('')
   const [positions, setPositions] = useState<number[]>([])
   const [typed, setTyped] = useState<string[]>([])
@@ -114,8 +119,8 @@ export function WalletSetup({
             </p>
           </header>
           <ol
-            className="flex gap-4 text-caption text-content-secondary"
             aria-label="Getting started"
+            className="flex gap-4 text-caption text-content-secondary"
           >
             <li className="font-semibold text-primary">1 · Create wallet</li>
             <li>2 · Add funds</li>

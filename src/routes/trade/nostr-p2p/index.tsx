@@ -1,6 +1,7 @@
 import { KeyRound, RadioTower, RefreshCw } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 
 import { useAppDispatch } from '../../../app/store/hooks'
 import { uiSliceActions } from '../../../slices/ui/ui.slice'
@@ -47,6 +48,7 @@ export function P2pGate({
   children: ReactNode
 }) {
   const { t } = useTranslation()
+  const [params] = useSearchParams()
   const {
     config,
     createWallet,
@@ -103,6 +105,7 @@ export function P2pGate({
         networkLabel={config.label ?? config.network}
         onCancel={walletId ? leaveUnfinishedWallet : undefined}
         onComplete={createWallet}
+        startWithRestore={params.get('setup') === 'restore'}
         walletLabel={walletId ? walletLabel : undefined}
       />
     )
