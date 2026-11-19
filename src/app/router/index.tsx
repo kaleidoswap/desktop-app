@@ -47,6 +47,7 @@ export const router = createBrowserRouter([
       { index: true, lazy: () => import('../../routes/p2p-home/home') },
       { lazy: () => import('../../routes/p2p-home/trade'), path: 'trade' },
       { lazy: () => import('../../routes/p2p-home/wallet'), path: 'wallet' },
+      { lazy: () => import('../../routes/p2p-home/maker'), path: 'maker' },
       {
         lazy: () => import('../../routes/p2p-home/settings'),
         path: 'settings',

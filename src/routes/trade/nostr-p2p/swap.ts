@@ -9,6 +9,14 @@ export interface SwapAsset {
   name: string | null
   precision: number
   offers: number
+  /** On the app's listing: the asset is the one its ticker names. */
+  listed: boolean
+  /** The listed asset this one copies the ticker of: very likely an imitation. */
+  imitates: string | null
+  /** Cheapest price a maker sells at, sats per display unit. */
+  bestAsk: number | null
+  /** Highest price a maker buys at, sats per display unit. */
+  bestBid: number | null
 }
 
 /** Assets with offers first (most offers first), then the ones the wallet holds. */
@@ -21,18 +29,34 @@ export function swapAssets(
     if (o.mine) continue
     const a = by.get(o.asset_id) ?? {
       assetId: o.asset_id,
+      bestAsk: null,
+      bestBid: null,
+      imitates: null,
+      listed: false,
       name: o.name,
       offers: 0,
       precision: o.precision,
       ticker: tickerOf(o),
     }
     a.offers += 1
+    a.listed ||= o.verified
+    a.imitates ??= o.impersonates
+    if (o.side === 'sell')
+      a.bestAsk =
+        a.bestAsk === null ? o.unit_price : Math.min(a.bestAsk, o.unit_price)
+    else
+      a.bestBid =
+        a.bestBid === null ? o.unit_price : Math.max(a.bestBid, o.unit_price)
     by.set(o.asset_id, a)
   }
   for (const a of balance?.assets ?? []) {
     if (by.has(a.asset_id) || a.total <= 0) continue
     by.set(a.asset_id, {
       assetId: a.asset_id,
+      bestAsk: null,
+      bestBid: null,
+      imitates: null,
+      listed: false,
       name: a.name,
       offers: 0,
       precision: a.precision,
@@ -40,9 +64,21 @@ export function swapAssets(
     })
   }
   return [...by.values()].sort(
-    (x, y) => y.offers - x.offers || x.ticker.localeCompare(y.ticker)
+    (x, y) =>
+      Number(y.listed) - Number(x.listed) ||
+      y.offers - x.offers ||
+      x.ticker.localeCompare(y.ticker)
   )
 }
+
+/**
+ * The assets to offer in the picker: listed ones, plus the unlisted when the user asked to see them.
+ * With nothing listed at all (a network without a listing), everything shows.
+ */
+export const pickableAssets = (assets: SwapAsset[], showUnlisted: boolean) =>
+  showUnlisted || !assets.some((a) => a.listed)
+    ? assets
+    : assets.filter((a) => a.listed)
 
 /** Why the swap as asked cannot go ahead, the first reason that applies. */
 export type SwapProblem =
@@ -100,4 +136,25 @@ export function quoteSwap(
   else if (plan.baseAmount < wantBase) problem = 'partial'
 
   return { makers, plan, problem, wantBase }
+}
+
+/** Assets matching what the user typed: ticker, name, or (part of) the asset id. Exact id first. */
+export function searchAssets(assets: SwapAsset[], query: string): SwapAsset[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return assets
+  const hits = assets.filter(
+    (a) =>
+      a.ticker.toLowerCase().includes(q) ||
+      (a.name ?? '').toLowerCase().includes(q) ||
+      a.assetId.toLowerCase().includes(q)
+  )
+  const rank = (a: SwapAsset) =>
+    a.assetId.toLowerCase() === q
+      ? 0
+      : a.ticker.toLowerCase() === q
+        ? 1
+        : a.ticker.toLowerCase().startsWith(q)
+          ? 2
+          : 3
+  return hits.sort((x, y) => rank(x) - rank(y))
 }

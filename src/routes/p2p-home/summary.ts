@@ -10,6 +10,8 @@ export interface PairSummary {
   /** Highest price a maker buys at (what selling pays), sats per display unit. */
   sellAt: number | null
   offers: number
+  /** On the app's listing. */
+  listed: boolean
 }
 
 /**
@@ -25,11 +27,13 @@ export function marketSummary(book: Order[]): PairSummary[] {
       ({
         assetId: o.asset_id,
         buyAt: null,
+        listed: false,
         offers: 0,
         sellAt: null,
         ticker: tickerOf(o),
       } satisfies PairSummary)
     p.offers += 1
+    p.listed ||= o.verified
     if (o.side === 'sell')
       p.buyAt =
         p.buyAt === null ? o.unit_price : Math.min(p.buyAt, o.unit_price)
@@ -39,7 +43,10 @@ export function marketSummary(book: Order[]): PairSummary[] {
     by.set(o.asset_id, p)
   }
   return [...by.values()].sort(
-    (a, b) => b.offers - a.offers || a.ticker.localeCompare(b.ticker)
+    (a, b) =>
+      Number(b.listed) - Number(a.listed) ||
+      b.offers - a.offers ||
+      a.ticker.localeCompare(b.ticker)
   )
 }
 

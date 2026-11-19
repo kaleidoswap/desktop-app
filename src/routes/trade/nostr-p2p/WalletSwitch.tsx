@@ -1,8 +1,10 @@
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button, Modal } from '../../../components/ui'
 
 import { useTr } from './market/hooks'
+import { Picker } from './market/Picker'
 import type { TradingWallet } from './wallets'
 
 interface Props {
@@ -35,29 +37,38 @@ export function WalletSwitch({
 
   return (
     <>
-      <label className="sr-only" htmlFor="p2p-wallet">
-        {tr('walletSwitch.label', 'Trading wallet')}
-      </label>
-      <select
-        className="rounded-lg bg-surface-inset px-3 py-1.5 text-caption text-content-primary outline-none"
-        id="p2p-wallet"
-        onChange={(e) => onSelect(e.target.value)}
+      <Picker
+        footer={(close) => (
+          <button
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-primary hover:bg-surface-overlay/60"
+            onClick={() => {
+              close()
+              setOpen(true)
+            }}
+            type="button"
+          >
+            <Plus className="h-4 w-4" />
+            {tr('walletSwitch.new', 'New wallet')}
+          </button>
+        )}
+        label={tr('walletSwitch.label', 'Trading wallet')}
+        onChange={onSelect}
+        options={wallets.map((w) => ({
+          leading: (
+            <span
+              aria-hidden
+              className="h-6 w-6 flex-none rounded-md bg-gradient-to-br from-primary to-purple"
+            />
+          ),
+          subtitle: w.id
+            ? undefined
+            : tr('walletSwitch.original', 'The first wallet on this computer'),
+          title: w.label,
+          value: w.id,
+        }))}
         value={selectedId}
-      >
-        {wallets.map((w) => (
-          <option key={w.id || 'original'} value={w.id}>
-            {w.label}
-          </option>
-        ))}
-      </select>
-      <Button
-        onClick={() => setOpen(true)}
-        size="sm"
-        type="button"
-        variant="outline"
-      >
-        {tr('walletSwitch.new', 'New wallet')}
-      </Button>
+        variant="pill"
+      />
       <Modal
         isOpen={open}
         onClose={() => setOpen(false)}

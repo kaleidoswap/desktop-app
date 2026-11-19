@@ -8,6 +8,7 @@ mod crypto;
 mod db;
 mod dca;
 mod docker_node;
+mod maker;
 mod mind;
 mod mind_hardware;
 mod mind_runtime;
@@ -61,8 +62,17 @@ async fn p2p_start(
     p2p: State<'_, Arc<P2pProcess>>,
     config: P2pStartRequest,
 ) -> Result<P2pStatus, String> {
-    let custom = p2p_networks::stored_relays(&p2p_base(&app)?, &config.network_key);
-    let config = p2p_networks::resolve(config, custom)?;
+    let base = p2p_base(&app)?;
+    let custom = p2p_networks::stored_relays(&base, &config.network_key);
+    let listing = p2p_networks::listing_json(&config.network_key);
+    let mut config = p2p_networks::resolve(config, custom)?;
+    // the app's listing goes to the daemon as a file, rewritten at each start
+    if let Some(json) = listing {
+        std::fs::create_dir_all(&base).map_err(|e| format!("{}: {e}", base.display()))?;
+        let path = base.join(format!("listed-{}.json", config.network));
+        std::fs::write(&path, json).map_err(|e| format!("{}: {e}", path.display()))?;
+        config.verified_assets_path = Some(path.to_string_lossy().into_owned());
+    }
     let p2p = Arc::clone(&*p2p);
     tauri::async_runtime::spawn_blocking(move || p2p.ensure_started(&app, &config))
         .await
@@ -224,6 +234,7 @@ fn main() {
         .manage(Arc::clone(&nwc_manager))
         .manage(Arc::clone(&mind_process))
         .manage(Arc::clone(&p2p_process))
+        .manage(Arc::new(maker::MakerSigner::default()))
         .manage(CurrentAccount::default())
         .on_window_event(|window, event| {
             if window.label() == "main" {
@@ -374,6 +385,21 @@ fn main() {
             p2p_networks,
             p2p_relays_get,
             p2p_relays_set,
+            maker::maker_view,
+            maker::maker_set_mode,
+            maker::maker_pair,
+            maker::maker_pairing_request,
+            maker::maker_api,
+            maker::maker_sign_policy,
+            maker::maker_signer_start,
+            maker::maker_signer_stop,
+            maker::maker_journal,
+            maker::maker_btc_usd,
+            maker::maker_wallet,
+            maker::maker_wallet_address,
+            maker::maker_wallet_create_coins,
+            maker::maker_wallet_mint,
+            maker::maker_send_state,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

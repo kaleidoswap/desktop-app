@@ -8,6 +8,8 @@ import { RecoveryPhraseModal } from '../trade/nostr-p2p/RecoveryPhraseModal'
 import { RelaysModal } from '../trade/nostr-p2p/RelaysModal'
 import { useP2pSession } from '../trade/nostr-p2p/session'
 
+import { NetworkPicker } from './NetworkPicker'
+
 const Section = ({
   title,
   body,
@@ -30,8 +32,7 @@ const Section = ({
 export const Component = () => {
   const { t } = useTranslation()
   const session = useP2pSession()
-  const { config, networks, networkKey, setNetworkKey, restart, rescan } =
-    session
+  const { config, networks, restart, rescan } = session
   const [relays, setRelays] = useState<P2pRelaySettings | null>(null)
   const [editRelays, setEditRelays] = useState(false)
   const [recovery, setRecovery] = useState(false)
@@ -70,18 +71,7 @@ export const Component = () => {
           })}
           title={t('p2pSettings.network', { defaultValue: 'Network' })}
         >
-          <select
-            aria-label={t('p2pSettings.network', { defaultValue: 'Network' })}
-            className="min-h-11 rounded-lg bg-surface-inset px-3 text-sm text-content-primary outline-none"
-            onChange={(e) => setNetworkKey(e.target.value)}
-            value={networkKey || config.key}
-          >
-            {networks.map((o) => (
-              <option key={o.key} value={o.key}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+          <NetworkPicker className="w-64" />
         </Section>
       )}
 

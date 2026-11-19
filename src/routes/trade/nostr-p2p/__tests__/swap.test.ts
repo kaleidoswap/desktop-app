@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Balance, Order } from '../api'
-import { quoteSwap, swapAssets } from '../swap'
+import { pickableAssets, quoteSwap, swapAssets } from '../swap'
 
 let n = 0
 const order = (o: Partial<Order>): Order => ({
@@ -144,5 +144,39 @@ describe('quoteSwap', () => {
       ],
     })
     expect(quoteSwap([bid], usd, 'sell', '10', held).problem).toBeNull()
+  })
+})
+
+describe('listing', () => {
+  const book = [
+    order({ asset_id: 'rgb:usd', ticker: 'USD', verified: true }),
+    order({ asset_id: 'rgb:fake', impersonates: 'USD', ticker: 'USD' }),
+    order({ asset_id: 'rgb:fake', impersonates: 'USD', ticker: 'USD' }),
+    order({ asset_id: 'rgb:other', ticker: 'OTH' }),
+  ]
+
+  it('marks listed assets and imitations, listed first', () => {
+    const assets = swapAssets(book, balance())
+    expect(assets.map((a) => [a.assetId, a.listed, a.imitates])).toEqual([
+      ['rgb:usd', true, null],
+      ['rgb:fake', false, 'USD'],
+      ['rgb:other', false, null],
+    ])
+  })
+
+  it('offers only listed assets unless the user asks for the rest', () => {
+    const assets = swapAssets(book, balance())
+    expect(pickableAssets(assets, false).map((a) => a.assetId)).toEqual([
+      'rgb:usd',
+    ])
+    expect(pickableAssets(assets, true)).toHaveLength(3)
+  })
+
+  it('offers everything on a network without a listing', () => {
+    const assets = swapAssets(
+      [order({}), order({ asset_id: 'rgb:x' })],
+      balance()
+    )
+    expect(pickableAssets(assets, false)).toHaveLength(2)
   })
 })

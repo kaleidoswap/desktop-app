@@ -1,10 +1,18 @@
-import { ArrowLeftRight, House, Server, Settings, Wallet } from 'lucide-react'
+import {
+  ArrowLeftRight,
+  House,
+  Rocket,
+  Server,
+  Settings,
+  Wallet,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 
 import {
   P2P_ACTIVITY_PATH,
+  P2P_MAKER_PATH,
   P2P_SETTINGS_PATH,
   P2P_TRADE_PATH,
   P2P_WALLET_PATH,
@@ -14,6 +22,8 @@ import logoFull from '../../assets/logo-full.svg'
 import { AppVersion } from '../../components/AppVersion'
 import { Layout } from '../../components/Layout'
 import { P2pGate } from '../trade/nostr-p2p'
+import { makerAvailableOn } from '../trade/nostr-p2p/maker/makerApi'
+import { NetworkPicker } from './NetworkPicker'
 import { P2pSessionProvider, useP2pSession } from '../trade/nostr-p2p/session'
 
 const NavItem = ({
@@ -47,6 +57,8 @@ const NavItem = ({
 function Sidebar() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { config } = useP2pSession()
+  const maker = !!config && makerAvailableOn(config.network)
 
   return (
     <nav
@@ -55,9 +67,10 @@ function Sidebar() {
     >
       <img
         alt="KaleidoSwap"
-        className="mb-5 ml-2 h-7 self-start"
+        className="mb-4 ml-2 h-7 self-start"
         src={logoFull}
       />
+      <NetworkPicker className="mb-4" />
       <NavItem
         end
         icon={<House className="h-[18px] w-[18px]" />}
@@ -74,6 +87,13 @@ function Sidebar() {
         label={t('p2pShell.wallet', { defaultValue: 'Wallet' })}
         to={P2P_ACTIVITY_PATH}
       />
+      {maker && (
+        <NavItem
+          icon={<Rocket className="h-[18px] w-[18px]" />}
+          label={t('p2pShell.maker', { defaultValue: 'Maker' })}
+          to={P2P_MAKER_PATH}
+        />
+      )}
 
       <div className="flex-1" />
       <div className="mx-1 mb-3 flex flex-col gap-2 rounded-xl border border-dashed border-divider/30 p-3">

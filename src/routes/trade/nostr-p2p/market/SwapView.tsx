@@ -1,11 +1,17 @@
-import { ArrowDown } from 'lucide-react'
+import { AlertTriangle, ArrowDown, BadgeCheck } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { marketApi, type Order, type Side } from '../api'
 import { fmtPrice, fmtSats, fmtUnits, short } from '../format'
-import { quoteSwap, swapAssets, type SwapProblem } from '../swap'
+import {
+  pickableAssets,
+  quoteSwap,
+  swapAssets,
+  type SwapProblem,
+} from '../swap'
 
 import { useTr, usePoll } from './hooks'
+import { AssetButton, AssetSelect } from './AssetSelect'
 import { TakeSheet } from './TakeSheet'
 
 /**
@@ -23,8 +29,11 @@ export function SwapView() {
     () => swapAssets(book.data ?? [], balance.data),
     [book.data, balance.data]
   )
+  const [choosing, setChoosing] = useState(false)
   const [assetId, setAssetId] = useState<string | null>(null)
-  const asset = assets.find((a) => a.assetId === assetId) ?? assets[0]
+  const asset =
+    assets.find((a) => a.assetId === assetId) ??
+    pickableAssets(assets, false)[0]
   const [side, setSide] = useState<Side>('buy')
   const [amount, setAmount] = useState('')
   const [taking, setTaking] = useState<Order[] | null>(null)
@@ -134,21 +143,35 @@ export function SwapView() {
           placeholder="0"
           value={amount}
         />
-        <select
-          aria-label={tr('swap.asset', 'Asset')}
-          className="min-h-11 rounded-full border border-divider/30 bg-surface-elevated px-3 text-sm font-medium text-content-primary outline-none"
-          onChange={(e) => {
-            setAssetId(e.target.value)
-            setAmount('')
-          }}
-          value={asset.assetId}
-        >
-          {assets.map((a) => (
-            <option key={a.assetId} value={a.assetId}>
-              {a.ticker}
-            </option>
-          ))}
-        </select>
+        <AssetButton asset={asset} onClick={() => setChoosing(true)} />
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        {asset.imitates ? (
+          <span className="flex items-center gap-1 text-status-danger">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            {tr(
+              'swap.imitation',
+              'Uses the ticker of the listed {{name}}: very likely an imitation.',
+              { name: asset.imitates }
+            )}
+          </span>
+        ) : asset.listed ? (
+          <span className="flex items-center gap-1 text-status-success">
+            <BadgeCheck className="h-3.5 w-3.5" />
+            {tr('swap.listed', 'Listed by KaleidoSwap')}
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 text-status-warning">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            {tr(
+              'swap.unlisted',
+              'Not listed. Anyone can issue an asset with any name: check the asset ID.'
+            )}
+          </span>
+        )}
+        <span className="font-mono text-content-tertiary">
+          {short(asset.assetId, 8)}
+        </span>
       </div>
       {side === 'sell' && (
         <span className="text-xs text-content-tertiary">
@@ -324,6 +347,17 @@ export function SwapView() {
         </p>
       </section>
 
+      <AssetSelect
+        assets={assets}
+        balance={balance.data}
+        isOpen={choosing}
+        onClose={() => setChoosing(false)}
+        onSelect={(id) => {
+          setAssetId(id)
+          setAmount('')
+        }}
+        selected={asset.assetId}
+      />
       {taking && info.data && (
         <TakeSheet
           book={(book.data ?? []).filter((o) => o.asset_id === asset.assetId)}

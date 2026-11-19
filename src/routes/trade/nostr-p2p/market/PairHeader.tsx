@@ -1,5 +1,7 @@
 import { ShieldAlert, ShieldCheck } from 'lucide-react'
 
+import { AssetMark } from './AssetSelect'
+import { Picker } from './Picker'
 import type { Info, RegistryNote } from '../api'
 import { fmtPrice, networkLabel, short } from '../format'
 
@@ -119,25 +121,26 @@ export function PairHeader({
     <header className="flex flex-col gap-4 rounded-2xl bg-surface-card/70 px-4 py-3 lg:flex-row lg:items-center lg:gap-8">
       <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-2">
-          <label className="sr-only" htmlFor="p2p-market">
-            {tr('header.market', 'Market')}
-          </label>
-          <select
-            className="rounded-xl bg-surface-inset px-3 py-2 text-body font-semibold text-content-primary outline-none focus:ring-2 focus:ring-primary/40"
-            disabled={!markets.length}
-            id="p2p-market"
-            onChange={(e) => onSelect(e.target.value)}
+          <Picker
+            className="min-w-44"
+            emptyText={tr('header.noMarkets', 'No markets yet')}
+            label={tr('header.market', 'Market')}
+            onChange={onSelect}
+            options={markets.map((m) => ({
+              keywords: m.asset_id,
+              leading: (
+                <AssetMark
+                  asset={{ assetId: m.asset_id, ticker: m.ticker }}
+                  size={24}
+                />
+              ),
+              title: `${m.ticker} / BTC`,
+              value: m.asset_id,
+            }))}
+            searchFrom={6}
+            searchPlaceholder={tr('header.search', 'Ticker or asset ID')}
             value={selected ?? ''}
-          >
-            {markets.length === 0 && (
-              <option>{tr('header.noMarkets', 'No markets yet')}</option>
-            )}
-            {markets.map((m) => (
-              <option key={m.asset_id} value={m.asset_id}>
-                {m.ticker} / BTC
-              </option>
-            ))}
-          </select>
+          />
           {registryFlag && (
             <Pill tone={registryFlag.tone}>{registryFlag.text}</Pill>
           )}
