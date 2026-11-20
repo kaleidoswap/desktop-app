@@ -87,6 +87,8 @@ pub struct P2pStartConfig {
     pub min_fee_sat: u64,
     /// JSON list of the assets to show as verified.
     pub verified_assets_path: Option<String>,
+    /// A curator (npub) whose asset listing on Nostr the daemon also vouches for.
+    pub listing_curator: Option<String>,
     pub seed_mnemonic: Option<Secret>,
     pub rescan: bool,
 }
@@ -152,9 +154,15 @@ pub fn route_allowed(method: &str, path: &str) -> bool {
         "DELETE" => named("/api/orders/", |c| {
             c.is_ascii_alphanumeric() || matches!(c, '-' | '_')
         }),
-        "GET" => named("/api/asset/", |c| {
-            c.is_ascii_alphanumeric() || matches!(c, ':' | '-' | '_' | '~')
-        }),
+        "GET" => {
+            named("/api/asset/", |c| {
+                c.is_ascii_alphanumeric() || matches!(c, ':' | '-' | '_' | '~')
+            }) || path.strip_prefix("/api/makers?npubs=").is_some_and(|q| {
+                !q.is_empty()
+                    && q.len() <= 20 * 64
+                    && q.chars().all(|c| c.is_ascii_alphanumeric() || c == ',')
+            })
+        }
         _ => false,
     }
 }
@@ -260,6 +268,9 @@ impl P2pProcess {
             }
             if let Some(path) = &cfg.verified_assets_path {
                 cmd.args(["--verified-assets", path]);
+            }
+            if let Some(npub) = &cfg.listing_curator {
+                cmd.args(["--listing-curator", npub]);
             }
             if cfg.network == "mainnet" {
                 cmd.arg("--allow-mainnet");
@@ -542,6 +553,15 @@ pub fn profile_set(
     std::fs::write(&path, profile.to_string()).map_err(|e| format!("{}: {e}", path.display()))
 }
 
+/// A bech32 npub: `npub1` and 58 characters of the bech32 alphabet.
+pub(crate) fn npub_ok(n: &str) -> bool {
+    n.len() == 63
+        && n.strip_prefix("npub1").is_some_and(|d| {
+            d.chars()
+                .all(|c| "qpzry9x8gf2tvdw0s3jn54khce6mua7l".contains(c))
+        })
+}
+
 fn validate(cfg: &P2pStartConfig) -> Result<(), String> {
     if !account_ok(&cfg.account) {
         return Err("the account name must be letters, digits, - or _".into());
@@ -555,6 +575,9 @@ fn validate(cfg: &P2pStartConfig) -> Result<(), String> {
         || cfg.proxy_url.is_empty()
     {
         return Err("relays, indexer, proxy and fee address are all required".into());
+    }
+    if cfg.listing_curator.as_deref().is_some_and(|n| !npub_ok(n)) {
+        return Err("the listing curator must be an npub".into());
     }
     Ok(())
 }
@@ -715,6 +738,7 @@ mod tests {
             fee_bps: 100,
             min_fee_sat: 1_000,
             verified_assets_path: None,
+            listing_curator: None,
             seed_mnemonic: None,
             rescan: false,
         }
@@ -762,6 +786,18 @@ mod tests {
             ..cfg()
         })
         .is_err());
+        assert!(validate(&P2pStartConfig {
+            listing_curator: Some("npub1; rm -rf".into()),
+            ..cfg()
+        })
+        .is_err());
+        assert!(validate(&P2pStartConfig {
+            listing_curator: Some(
+                "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6".into()
+            ),
+            ..cfg()
+        })
+        .is_ok());
     }
 
     #[test]
@@ -783,6 +819,7 @@ mod tests {
                 "GET",
                 "/api/asset/rgb:4bU8bbHe-171EgfO-0q6Hy8Q-_xczpHF-56GrDjt-KNMyzCA",
             ),
+            ("GET", "/api/makers?npubs=npub1abc,npub1def"),
         ] {
             assert!(route_allowed(m, p), "{m} {p}");
         }
@@ -798,6 +835,10 @@ mod tests {
             ("GET", "/api/asset/"),
             ("GET", "/api/asset/rgb:a/b"),
             ("GET", "/api/asset/../info"),
+            ("GET", "/api/makers"),
+            ("GET", "/api/makers?npubs="),
+            ("GET", "/api/makers?npubs=a&x=1"),
+            ("GET", "/api/makers?npubs=../info"),
             ("POST", "/api/asset/rgb:abc"),
             ("PUT", "/api/orders"),
             ("PUT", "/api/bot/pause"),

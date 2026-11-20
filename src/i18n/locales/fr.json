@@ -3512,7 +3512,10 @@
         "notEnoughAsset": "Pas assez de {{ticker}}",
         "notEnoughBtc": "Pas assez de bitcoins",
         "amountTooSmall": "Montant trop petit",
-        "howItWorks": "Comment fonctionne un swap P2P ?"
+        "howItWorks": "Comment fonctionne un swap P2P ?",
+        "nip05Verified": "{{domain}} confirme cette clé",
+        "nip05Unconfirmed": "non confirmé",
+        "makerNamesNote": "Les noms sont ceux que chaque maker se donne. La coche signifie que le site indiqué confirme la clé du maker."
       },
       "take": {
         "copied": "Copied",

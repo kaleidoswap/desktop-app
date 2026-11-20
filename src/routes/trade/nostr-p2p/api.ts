@@ -97,12 +97,23 @@ export interface Order {
   expiry: number
   mine: boolean
   maker: string
+  /** The maker's whole Nostr key. Absent from an older daemon. */
+  maker_npub?: string
   state: string | null
   last_seen: number
   away: boolean
   verified: boolean
   impersonates: string | null
   registry: RegistryNote | null
+}
+
+/** Who a maker says it is (its Nostr profile), with its NIP-05 name checked against the domain. */
+export interface MakerProfile {
+  npub: string
+  name: string | null
+  picture: string | null
+  nip05: string | null
+  nip05_verified: boolean
 }
 
 export type TradeStatus = 'negotiating' | 'broadcast' | 'settled' | 'failed'
@@ -186,6 +197,9 @@ export const marketApi = {
       `/api/orders/${encodeURIComponent(id)}`
     ),
   info: () => get<Info>('/api/info'),
+  /** Profiles of up to 20 makers. Checking a NIP-05 name asks its domain, so ask only on demand. */
+  makers: (npubs: string[]) =>
+    get<MakerProfile[]>(`/api/makers?npubs=${npubs.join(',')}`),
   orders: () => get<Order[]>('/api/orders'),
 
   placeOrder: (o: NewOrder) => post<Order>('/api/orders', o),

@@ -3512,7 +3512,10 @@
         "notEnoughAsset": "{{ticker}} が足りません",
         "notEnoughBtc": "ビットコインが足りません",
         "amountTooSmall": "数量が少なすぎます",
-        "howItWorks": "P2P スワップのしくみ"
+        "howItWorks": "P2P スワップのしくみ",
+        "nip05Verified": "{{domain}} がこの鍵を確認済み",
+        "nip05Unconfirmed": "未確認",
+        "makerNamesNote": "名前は各メイカーが自分で名乗ったものです。チェックマークは、示されたウェブサイトがメイカーの鍵を確認していることを表します。"
       },
       "take": {
         "copied": "Copied",
