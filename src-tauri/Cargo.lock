@@ -6830,8 +6830,9 @@ dependencies = [
 [[package]]
 name = "signer-core"
 version = "0.1.0"
-source = "git+https://github.com/kaleidoswap/p2pd?rev=ed6e51d15899c762060714e1c94becba7b1f037e#ed6e51d15899c762060714e1c94becba7b1f037e"
+source = "git+https://github.com/kaleidoswap/p2pd?rev=09fa402d6432777ad21a414eb93e909ad943682a#09fa402d6432777ad21a414eb93e909ad943682a"
 dependencies = [
+ "amplify",
  "getrandom 0.3.4",
  "hex",
  "nostr-sdk",
