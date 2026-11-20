@@ -26,6 +26,7 @@ import {
   ROOT_PATH,
   WALLET_SETUP_PATH,
   KALEIDO_MIND_PATH,
+  P2P_WALLET_PATH,
 } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import logoFull from '../../assets/logo-full.svg'
@@ -568,7 +569,10 @@ export const Layout = (props: Props) => {
   const location = useLocation()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const shouldHideNavbar = HIDE_NAVBAR_PATHS.includes(location.pathname)
+  // the P2P app draws its own menu on every page under it
+  const shouldHideNavbar =
+    HIDE_NAVBAR_PATHS.includes(location.pathname) ||
+    location.pathname.startsWith(`${P2P_WALLET_PATH}/`)
   // KaleidoMind does not depend on the node, so the node-offline overlay must
   // never block it — a node-less or "KaleidoMind only" user can keep using it.
   const isMindRoute = location.pathname.startsWith(KALEIDO_MIND_PATH)

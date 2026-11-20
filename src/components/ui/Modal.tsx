@@ -13,6 +13,8 @@ export interface ModalProps {
   onClose: () => void
   children: ReactNode
   size?: 'sm' | 'md' | 'lg' | 'xl'
+  /** Centre on the window instead of on the page container, for a page taller than the window. */
+  viewport?: boolean
 }
 
 /** Modal component for displaying content in a overlay */
@@ -22,6 +24,7 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   children,
   size = 'md',
+  viewport = false,
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
@@ -98,7 +101,7 @@ export const Modal: React.FC<ModalProps> = ({
     xl: 'max-w-6xl',
   }
 
-  const pos = getModalPositionClass()
+  const pos = viewport ? 'fixed' : getModalPositionClass()
 
   return createPortal(
     <div
@@ -135,6 +138,6 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
       </div>
     </div>,
-    getModalPortalTarget()
+    viewport ? document.body : getModalPortalTarget()
   )
 }

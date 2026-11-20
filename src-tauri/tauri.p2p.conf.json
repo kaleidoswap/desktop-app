@@ -1,0 +1,9 @@
+{
+  "bundle": {
+    "resources": [
+      "../docs",
+      "../bin/rgb-lightning-node",
+      "../bin/p2pd*"
+    ]
+  }
+}

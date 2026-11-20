@@ -23,6 +23,12 @@ export const TRADE_PATH = makePath(['trade'])
 export const TRADE_MARKET_MAKER_PATH = makePath(['market-maker'])
 export const TRADE_MANUAL_PATH = makePath(['manual'])
 export const TRADE_NOSTR_P2P_PATH = makePath(['nostr-p2p'])
+/** The P2P market as an app of its own: no node, its own wallet. */
+export const P2P_WALLET_PATH = makePath(['p2p'])
+/** The P2P app's own pages, under its shell. */
+export const P2P_TRADE_PATH = `${P2P_WALLET_PATH}/trade`
+export const P2P_ACTIVITY_PATH = `${P2P_WALLET_PATH}/wallet`
+export const P2P_SETTINGS_PATH = `${P2P_WALLET_PATH}/settings`
 export const TRADE_DCA_PATH = makePath(['dca'])
 export const TRADE_LIMIT_PATH = makePath(['limit-orders'])
 

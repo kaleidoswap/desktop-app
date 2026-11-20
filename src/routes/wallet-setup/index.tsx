@@ -1,17 +1,20 @@
 import { invoke } from '@tauri-apps/api/core'
 import {
-  Wallet,
+  ArrowRight,
   ArrowLeftRight,
+  Wallet,
+  Lock,
+  Network,
+  ShieldCheck,
   Cloud,
   Server,
   Container,
   ArrowLeft,
   HelpCircle,
   Bell,
-  Boxes,
   Brain,
 } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
@@ -23,57 +26,27 @@ import {
   WALLET_REMOTE_PATH,
   WALLET_RESTORE_PATH,
   KALEIDO_MIND_PATH,
+  P2P_WALLET_PATH,
 } from '../../app/router/paths'
 import logoFull from '../../assets/logo-full.svg'
-import logoIcon from '../../assets/logo.svg'
 import { AppVersion } from '../../components/AppVersion'
 import { Layout } from '../../components/Layout'
 import { SupportModal } from '../../components/SupportModal'
 import { Toolbar } from '../../components/Toolbar'
-import {
-  NodeOption,
-  WalletAction,
-  IconWrapper,
-} from '../../components/wallet-setup'
-import { setAppMode, type AppMode } from '../../slices/settings/settings.slice'
+import { WalletAction, IconWrapper } from '../../components/wallet-setup'
+import { setAppMode } from '../../slices/settings/settings.slice'
 import { logger } from '../../utils/logger'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
-
-const MODE_OPTIONS: {
-  mode: AppMode
-  icon: React.ReactNode
-  labelKey: string
-  label: string
-}[] = [
-  {
-    icon: <Boxes className="w-4 h-4" />,
-    label: 'Node + Mind',
-    labelKey: 'launcher.modes.both.title',
-    mode: 'both',
-  },
-  {
-    icon: <Server className="w-4 h-4" />,
-    label: 'Only Node',
-    labelKey: 'launcher.modes.node.title',
-    mode: 'node',
-  },
-  {
-    icon: <Brain className="w-4 h-4" />,
-    label: 'Only Mind',
-    labelKey: 'launcher.modes.mind.title',
-    mode: 'mind',
-  },
-]
+import { walletAccountFor } from '../../constants/p2p'
+import { p2pNetworks, p2pProfileGet } from '../trade/nostr-p2p/p2p'
+import { readSelectedWalletId } from '../trade/nostr-p2p/wallets'
 
 export const Component = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const [nodeType, setNodeType] = useState<'local' | 'remote' | null>(null)
-  // Which capabilities the user wants. 'both' (Node + Mind) is the default;
-  // 'mind' skips node setup entirely and opens KaleidoMind.
-  const [selectedMode, setSelectedMode] = useState<AppMode>('both')
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
   const { toggleNotificationPanel, notifications } = useNotification()
@@ -129,6 +102,62 @@ export const Component = () => {
     }
 
     checkCapabilities()
+  }, [])
+
+  // the P2P market is not bundled on every system (not on Windows yet)
+  const [p2pWhere, setP2pWhere] = useState<{
+    backend: string | null
+    hint: string | null
+  } | null>(null)
+  useEffect(() => {
+    invoke<{ backend: string | null; hint: string | null }>('p2p_available')
+      .then(setP2pWhere)
+      .catch(() => setP2pWhere({ backend: null, hint: 'unknown' }))
+  }, [])
+
+  const p2pBlocked = p2pWhere?.hint === 'image_unpublished'
+  const p2pNote =
+    p2pWhere?.hint === 'docker_missing'
+      ? t('launcher.p2pNeedsDocker', {
+          defaultValue:
+            'On this system the P2P wallet runs in Docker: install Docker Desktop first.',
+        })
+      : p2pWhere?.hint === 'docker_stopped'
+        ? t('launcher.p2pStartDocker', {
+            defaultValue:
+              'Start Docker Desktop first: the P2P wallet runs in it here.',
+          })
+        : p2pBlocked
+          ? t('launcher.p2pUnavailable', {
+              defaultValue:
+                'The P2P wallet is not available on this system yet.',
+            })
+          : null
+
+  // someone who already made a trading wallet here goes straight back to it
+  const [hasTradingWallet, setHasTradingWallet] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    p2pNetworks()
+      .then(async (nets) => {
+        const net = nets[0]
+        if (!net) return
+        const account = walletAccountFor(net, readSelectedWalletId(net.network))
+        const profile = await p2pProfileGet(account)
+        if (!cancelled) setHasTradingWallet(!!profile)
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // the node list only earns its column when there are nodes in it
+  const [hasNodes, setHasNodes] = useState(false)
+  useEffect(() => {
+    invoke<unknown[]>('get_accounts')
+      .then((a) => setHasNodes(Array.isArray(a) && a.length > 0))
+      .catch(() => setHasNodes(false))
   }, [])
 
   // Handle transitions
@@ -191,32 +220,41 @@ export const Component = () => {
   return (
     <Layout>
       <div className="flex h-screen overflow-hidden">
-        {/* Sidebar with Toolbar */}
-        <div className="w-72 h-full bg-surface-base border-r border-divider/10 flex flex-col">
-          <div className="flex items-center p-4 border-b border-divider/10">
-            <img
-              alt="KaleidoSwap"
-              className="h-8 cursor-pointer"
-              onClick={() => {}}
-              src={logoFull}
-            />
-          </div>
+        {/* Sidebar with the node list, when there are nodes */}
+        {hasNodes && (
+          <div className="w-72 h-full bg-surface-base border-r border-divider/10 flex flex-col">
+            <div className="flex items-center p-4 border-b border-divider/10">
+              <img
+                alt="KaleidoSwap"
+                className="h-8 cursor-pointer"
+                onClick={() => {}}
+                src={logoFull}
+              />
+            </div>
 
-          {/* Toolbar */}
-          <div className="flex-1 overflow-hidden">
-            <Toolbar />
-          </div>
+            {/* Toolbar */}
+            <div className="flex-1 overflow-hidden">
+              <Toolbar />
+            </div>
 
-          {/* App version at bottom of sidebar */}
-          <div className="p-4 border-t border-divider/10">
-            <AppVersion className="relative" />
+            {/* App version at bottom of sidebar */}
+            <div className="p-4 border-t border-divider/10">
+              <AppVersion className="relative" />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden relative flex flex-col">
           {/* Top bar with Support + Notifications */}
           <div className="flex-shrink-0 z-30 bg-surface-base/80 backdrop-blur-xl border-b border-divider/20 px-6 py-4 flex justify-end items-center gap-2">
+            {!hasNodes && (
+              <>
+                <img alt="KaleidoSwap" className="h-7" src={logoFull} />
+                <span className="flex-1" />
+                <AppVersion className="relative mr-2" />
+              </>
+            )}
             <button
               aria-label="Support"
               className="p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
@@ -244,134 +282,239 @@ export const Component = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-cyan/5 via-transparent to-blue-500/5 pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(6,182,212,0.1),transparent_50%)] pointer-events-none" />
 
-          <div className="flex-1 flex items-center justify-center p-4 relative z-10 overflow-hidden">
-            <div className="w-full max-w-4xl">
+          <div className="flex-1 flex items-center justify-center px-8 py-10 relative z-10 overflow-y-auto">
+            <div
+              className={`w-full ${!nodeType || nodeType === 'remote' ? 'max-w-6xl' : 'max-w-4xl'}`}
+            >
               <div
                 className="fade-in content-container"
                 id="wallet-setup-content"
               >
                 {!nodeType || nodeType === 'remote' ? (
-                  <>
-                    <div className="text-center mb-12 slide-in">
-                      <div className="relative inline-flex mb-6">
-                        {/* Purple ripple rings */}
-                        <div className="absolute inset-0 rounded-2xl bg-purple/15 animate-ripple-1 pointer-events-none" />
-                        <div className="absolute inset-0 rounded-2xl bg-purple/10 animate-ripple-2 pointer-events-none" />
-                        <div className="absolute inset-0 rounded-2xl bg-purple/8 animate-ripple-3 pointer-events-none" />
-                        <div
-                          className={`${IconWrapper} bg-gradient-to-br from-primary/20 via-primary/10 to-purple/10 border-2 border-primary/40
-                          rounded-2xl shadow-2xl shadow-primary/20
-                          relative z-10`}
-                        >
-                          <img
-                            alt="KaleidoSwap"
-                            className="w-8 h-8 brightness-0 invert"
-                            src={logoIcon}
-                          />
-                        </div>
-                        {/* Green glow */}
-                        <div className="absolute inset-0 bg-primary/10 rounded-2xl blur-xl scale-150 opacity-30 [animation:pulse_6s_ease-in-out_infinite]" />
-                      </div>
-                      <h1 className="text-3xl md:text-5xl font-bold mb-4 text-white tracking-tight leading-tight py-2">
-                        {t('walletSetup.welcomeTo')}{' '}
-                        <span className="bg-gradient-to-r from-primary to-purple bg-clip-text text-transparent">
-                          KaleidoSwap
-                        </span>
-                      </h1>
-                    </div>
-
-                    {/* Mode selector — Node + Mind (default) / Only Node / Only Mind */}
-                    <div className="flex justify-center mb-8 slide-in">
-                      <div className="flex gap-1 rounded-xl bg-surface-base/35 p-1">
-                        {MODE_OPTIONS.map((m) => {
-                          const active = selectedMode === m.mode
-                          return (
-                            <button
-                              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none ${
-                                active
-                                  ? 'bg-primary/15 text-primary border border-primary/30'
-                                  : 'text-content-secondary hover:text-white border border-transparent'
-                              }`}
-                              key={m.mode}
-                              onClick={() => setSelectedMode(m.mode)}
-                              type="button"
-                            >
-                              {m.icon}
-                              <span>
-                                {t(m.labelKey, { defaultValue: m.label })}
-                              </span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
+                  <div className="flex flex-col gap-12 slide-in">
                     {mindLaunchError && (
-                      <p className="text-sm text-red-400" role="alert">
+                      <p className="text-sm text-status-danger" role="alert">
                         {mindLaunchError}
                       </p>
                     )}
-                    {selectedMode === 'mind' ? (
-                      <div className="flex justify-center slide-in">
-                        <div
-                          className="relative overflow-hidden transition-all duration-300 border-2 rounded-2xl backdrop-blur-sm
-                            hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 cursor-pointer fade-in
-                            bg-surface-elevated/40 hover:bg-surface-elevated/60 border-divider/20 w-full max-w-sm"
-                          onClick={() => void openMindOnly()}
-                        >
-                          <div className="p-6">
-                            <div className="flex items-center gap-4 mb-4">
-                              <div className="p-4 rounded-xl backdrop-blur-sm bg-primary/5 text-primary/80 flex items-center justify-center">
-                                <Brain className="w-6 h-6" strokeWidth={2} />
-                              </div>
-                              <h2 className="text-2xl font-bold text-white">
-                                KaleidoMind
-                              </h2>
-                            </div>
-                            <p className="text-content-secondary text-sm leading-relaxed">
-                              Run local AI models on this desktop. You can
-                              connect the app to a RGB Lightning node any time
-                              later.
-                            </p>
-                          </div>
+
+                    <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
+                      <section className="flex flex-col gap-5">
+                        <span className="text-xs font-medium tracking-[0.12em] text-primary">
+                          {t('launcher.eyebrow', {
+                            defaultValue:
+                              'PEER TO PEER · ON BITCOIN · OVER NOSTR',
+                          })}
+                        </span>
+                        <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-white md:text-5xl">
+                          {t('launcher.headline', {
+                            defaultValue:
+                              'Trade RGB assets directly with other people.',
+                          })}
+                        </h1>
+                        <p className="max-w-xl text-lg leading-relaxed text-content-secondary">
+                          {t('launcher.lede', {
+                            defaultValue:
+                              'A wallet of your own, a market run by independent makers, and every swap settled in one Bitcoin transaction you sign. No account, no node to set up.',
+                          })}
+                        </p>
+                        <div className="flex flex-wrap gap-3 pt-1">
+                          {hasTradingWallet ? (
+                            <button
+                              className="flex min-h-12 items-center gap-2 rounded-lg bg-primary px-6 text-base font-bold text-surface-base transition-opacity hover:opacity-90 disabled:opacity-50"
+                              disabled={p2pBlocked}
+                              onClick={() => navigate(P2P_WALLET_PATH)}
+                              type="button"
+                            >
+                              {t('launcher.openWallet', {
+                                defaultValue: 'Open your trading wallet',
+                              })}
+                              <ArrowRight className="h-4 w-4" />
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                className="flex min-h-12 items-center rounded-lg bg-primary px-6 text-base font-bold text-surface-base transition-opacity hover:opacity-90 disabled:opacity-50"
+                                disabled={p2pBlocked}
+                                onClick={() => navigate(P2P_WALLET_PATH)}
+                                type="button"
+                              >
+                                {t('launcher.createWallet', {
+                                  defaultValue: 'Create a wallet',
+                                })}
+                              </button>
+                              <button
+                                className="flex min-h-12 items-center rounded-lg border border-divider/30 px-5 text-base font-medium text-content-primary transition-colors hover:bg-surface-overlay/50 disabled:opacity-50"
+                                disabled={p2pBlocked}
+                                onClick={() =>
+                                  navigate(`${P2P_WALLET_PATH}?setup=restore`)
+                                }
+                                type="button"
+                              >
+                                {t('launcher.restoreWallet', {
+                                  defaultValue:
+                                    'Restore from a recovery phrase',
+                                })}
+                              </button>
+                            </>
+                          )}
                         </div>
-                      </div>
-                    ) : !capabilitiesLoaded ? (
-                      <div className="flex justify-center py-12">
-                        <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                      </div>
-                    ) : (
-                      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                        <NodeOption
-                          description={t('walletSetup.remoteNodeDescription')}
-                          icon={<Cloud className="w-6 h-6" />}
+                        {p2pNote ? (
+                          <p className="text-sm text-status-warning">
+                            {p2pNote}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-content-tertiary">
+                            {hasTradingWallet
+                              ? t('launcher.walletReady', {
+                                  defaultValue:
+                                    'Your trading wallet is on this computer. Touch ID unlocks it.',
+                                })
+                              : t('launcher.twoMinutes', {
+                                  defaultValue:
+                                    'Takes about two minutes: you write down 12 words, then you can deposit and trade.',
+                                })}
+                          </p>
+                        )}
+                      </section>
+
+                      <ul className="flex flex-col gap-3">
+                        {(
+                          [
+                            [
+                              <Lock className="h-5 w-5" key="i" />,
+                              'bg-primary/10 text-primary',
+                              t('launcher.why.keys.title', {
+                                defaultValue: 'Your keys, on this computer',
+                              }),
+                              t('launcher.why.keys.body', {
+                                defaultValue:
+                                  'Kept in the system keychain behind Touch ID. Nobody else can move your funds.',
+                              }),
+                            ],
+                            [
+                              <Network className="h-5 w-5" key="i" />,
+                              'bg-purple/15 text-purple',
+                              t('launcher.why.relays.title', {
+                                defaultValue: 'A market on open relays',
+                              }),
+                              t('launcher.why.relays.body', {
+                                defaultValue:
+                                  'Offers travel over Nostr relays you can choose. If one goes down, the market keeps working.',
+                              }),
+                            ],
+                            [
+                              <ShieldCheck className="h-5 w-5" key="i" />,
+                              'bg-primary/10 text-primary',
+                              t('launcher.why.atomic.title', {
+                                defaultValue: 'All or nothing',
+                              }),
+                              t('launcher.why.atomic.body', {
+                                defaultValue:
+                                  'Both sides of a swap are in the same transaction: you get the asset, or your bitcoin never leaves.',
+                              }),
+                            ],
+                          ] as const
+                        ).map(([icon, tone, title, body]) => (
+                          <li
+                            className="flex gap-4 rounded-2xl border border-divider/10 bg-surface-elevated/40 p-5"
+                            key={title}
+                          >
+                            <span
+                              className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${tone}`}
+                            >
+                              {icon}
+                            </span>
+                            <span className="flex flex-col gap-1">
+                              <span className="font-medium text-content-primary">
+                                {title}
+                              </span>
+                              <span className="text-sm leading-relaxed text-content-tertiary">
+                                {body}
+                              </span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <section className="flex flex-col gap-3 border-t border-divider/10 pt-6">
+                      <h2 className="text-sm text-content-tertiary">
+                        {t('launcher.nodeQuestion', {
+                          defaultValue:
+                            'Already run an RGB Lightning node, or want to try KaleidoMind?',
+                        })}
+                      </h2>
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <button
+                          className="group flex items-center gap-3 rounded-xl border border-divider/20 bg-surface-elevated/30 p-4 text-left transition-colors hover:border-primary/40"
                           onClick={() => {
-                            dispatch(setAppMode(selectedMode))
+                            dispatch(setAppMode('both'))
                             navigate(WALLET_REMOTE_PATH)
                           }}
-                          recommended={true}
-                          title={
-                            selectedMode === 'both'
-                              ? 'Remote Node + Mind'
-                              : t('walletSetup.remoteNodeTitle')
-                          }
-                        />
-                        <NodeOption
-                          description={t('walletSetup.localNodeDescription')}
-                          icon={<Server className="w-6 h-6" />}
+                          type="button"
+                        >
+                          <Cloud className="h-5 w-5 flex-none text-content-tertiary group-hover:text-primary" />
+                          <span className="flex flex-col">
+                            <span className="text-sm font-medium text-content-primary">
+                              {t('launcher.cards.remote', {
+                                defaultValue: 'Connect a node',
+                              })}
+                            </span>
+                            <span className="text-xs text-content-tertiary">
+                              {t('launcher.remoteShort', {
+                                defaultValue: 'Hosted or self-hosted',
+                              })}
+                            </span>
+                          </span>
+                        </button>
+                        <button
+                          className="group flex items-center gap-3 rounded-xl border border-divider/20 bg-surface-elevated/30 p-4 text-left transition-colors hover:border-primary/40 disabled:cursor-wait disabled:opacity-50"
+                          disabled={!capabilitiesLoaded}
                           onClick={() => {
-                            dispatch(setAppMode(selectedMode))
+                            dispatch(setAppMode('both'))
                             handleNodeTypeChange('local')
                           }}
-                          title={
-                            selectedMode === 'both'
-                              ? 'Local Node + Mind'
-                              : t('walletSetup.localNodeTitle')
-                          }
-                        />
+                          type="button"
+                        >
+                          <Server className="h-5 w-5 flex-none text-content-tertiary group-hover:text-primary" />
+                          <span className="flex flex-col">
+                            <span className="text-sm font-medium text-content-primary">
+                              {t('launcher.cards.local', {
+                                defaultValue: 'Run a node here',
+                              })}
+                            </span>
+                            <span className="text-xs text-content-tertiary">
+                              {capabilitiesLoaded
+                                ? t('launcher.localShort', {
+                                    defaultValue: 'For developers and testing',
+                                  })
+                                : t('launcher.checking', {
+                                    defaultValue: 'Checking this computer…',
+                                  })}
+                            </span>
+                          </span>
+                        </button>
+                        <button
+                          className="group flex items-center gap-3 rounded-xl border border-divider/20 bg-surface-elevated/30 p-4 text-left transition-colors hover:border-primary/40"
+                          onClick={() => void openMindOnly()}
+                          type="button"
+                        >
+                          <Brain className="h-5 w-5 flex-none text-content-tertiary group-hover:text-primary" />
+                          <span className="flex flex-col">
+                            <span className="text-sm font-medium text-content-primary">
+                              KaleidoMind
+                            </span>
+                            <span className="text-xs text-content-tertiary">
+                              {t('launcher.mindShort', {
+                                defaultValue: 'Local AI on this desktop',
+                              })}
+                            </span>
+                          </span>
+                        </button>
                       </div>
-                    )}
-                  </>
+                    </section>
+                  </div>
                 ) : nodeType === 'local' ? (
                   <>
                     <div className="mb-8 slide-in">
