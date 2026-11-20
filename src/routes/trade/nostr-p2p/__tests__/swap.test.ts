@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Balance, Order } from '../api'
-import { pickableAssets, quoteSwap, swapAssets } from '../swap'
+import {
+  baseForSats,
+  pickableAssets,
+  quoteSwap,
+  quoteSwapBase,
+  swapAssets,
+} from '../swap'
 
 let n = 0
 const order = (o: Partial<Order>): Order => ({
@@ -178,5 +184,89 @@ describe('listing', () => {
       balance()
     )
     expect(pickableAssets(assets, false)).toHaveLength(2)
+  })
+})
+
+describe('quoteSwap estimate', () => {
+  it('prices the swap even when the wallet cannot pay for it', () => {
+    const book = [order({ maker: 'a' }), order({ maker: 'b' })]
+    const poor = quoteSwap(
+      book,
+      usd,
+      'buy',
+      '20',
+      balance({ btc_coins: [872], btc_settled_sat: 872 })
+    )
+    expect(poor.problem).toBe('not_enough_btc')
+    expect(poor.estimate.baseAmount).toBe(2000)
+    expect(poor.makers).toBe(2)
+  })
+
+  it('tells a missing free coin apart from missing bitcoin', () => {
+    const book = [order({ maker: 'a' }), order({ maker: 'b' })]
+    const q = quoteSwapBase(
+      book,
+      usd,
+      'buy',
+      2000,
+      balance({ btc_coins: [200_000] })
+    )
+    expect(q.problem).toBe('no_free_coin')
+    expect(q.plan.baseAmount).toBe(1000)
+    expect(q.estimate.baseAmount).toBe(2000)
+  })
+})
+
+describe('baseForSats', () => {
+  const book = [
+    order({ maker: 'a', unit_price: 1500 }),
+    order({ maker: 'b', unit_price: 1505 }),
+    order({ maker: 'c', unit_price: 1600 }),
+  ]
+
+  it('buying, takes the most whole orders the sats can pay for', () => {
+    const one = quoteSwapBase(book, usd, 'buy', 1000, balance()).estimate
+    const two = quoteSwapBase(book, usd, 'buy', 2000, balance()).estimate
+    expect(baseForSats(book, usd, 'buy', one.reserveSat)).toBe(1000)
+    expect(baseForSats(book, usd, 'buy', two.reserveSat - 1)).toBe(1000)
+    expect(baseForSats(book, usd, 'buy', two.reserveSat)).toBe(2000)
+    expect(baseForSats(book, usd, 'buy', one.reserveSat - 1)).toBe(0)
+  })
+
+  it('selling, takes the fewest whole orders that bring the sats in', () => {
+    const bids = book.map((o) => ({
+      ...o,
+      side: 'buy' as const,
+      unit_price: 1500,
+    }))
+    const one = quoteSwapBase(bids, usd, 'sell', 1000, balance()).estimate
+    expect(baseForSats(bids, usd, 'sell', 1)).toBe(1000)
+    expect(baseForSats(bids, usd, 'sell', one.sats + 1)).toBe(2000)
+  })
+
+  it('is zero for no sats', () => {
+    expect(baseForSats(book, usd, 'buy', 0)).toBe(0)
+    expect(baseForSats(book, usd, 'buy', Number.NaN)).toBe(0)
+  })
+})
+
+describe('swapAssets collectibles', () => {
+  it('names a held asset without a ticker by its name', () => {
+    const [a] = swapAssets(
+      [],
+      balance({
+        assets: [
+          {
+            asset_id: 'rgb:art',
+            name: 'Painting',
+            precision: 0,
+            spendable: 1,
+            ticker: '',
+            total: 1,
+          },
+        ],
+      })
+    )
+    expect(a.ticker).toBe('Painting')
   })
 })

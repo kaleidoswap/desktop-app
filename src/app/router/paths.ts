@@ -29,7 +29,6 @@ export const P2P_WALLET_PATH = makePath(['p2p'])
 export const P2P_TRADE_PATH = `${P2P_WALLET_PATH}/trade`
 export const P2P_ACTIVITY_PATH = `${P2P_WALLET_PATH}/wallet`
 export const P2P_SETTINGS_PATH = `${P2P_WALLET_PATH}/settings`
-export const P2P_MAKER_PATH = `${P2P_WALLET_PATH}/maker`
 export const TRADE_DCA_PATH = makePath(['dca'])
 export const TRADE_LIMIT_PATH = makePath(['limit-orders'])
 

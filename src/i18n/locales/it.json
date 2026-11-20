@@ -3498,7 +3498,15 @@
         "sectionUnlisted": "Non listati",
         "sectionAll": "Sul mercato",
         "showUnlistedCount_one": "Mostra {{count}} asset non listato",
-        "showUnlistedCount_other": "Mostra {{count}} asset non listati"
+        "showUnlistedCount_other": "Mostra {{count}} asset non listati",
+        "enterAmount": "Inserisci un importo",
+        "noSellersShort": "Nessuno vende",
+        "noBuyersShort": "Nessuno compra",
+        "prepareCoins": "Prima prepara le monete",
+        "notEnoughAsset": "{{ticker}} insufficienti",
+        "notEnoughBtc": "Bitcoin insufficienti",
+        "amountTooSmall": "Importo troppo piccolo",
+        "howItWorks": "Come funziona uno swap P2P?"
       },
       "take": {
         "copied": "Copiato",
@@ -3708,7 +3716,8 @@
     "connectNode": "Collega un nodo",
     "settings": "Impostazioni",
     "onchain": "RGB on-chain",
-    "maker": "Maker"
+    "maker": "Maker",
+    "guide": "Guida"
   },
   "p2pHome": {
     "bought": "Comprati {{what}}",
@@ -4149,5 +4158,30 @@
     "listingNote": "Gli altri lo vedono come “non listato” finché un curatore non lo lista. Condividi l’ID dell’asset con i tuoi acquirenti.",
     "close": "Fatto",
     "sell": "Vendilo sul mercato"
+  },
+  "p2pGuide": {
+    "title": "Come funziona il trading P2P",
+    "step": "PASSO {{n}} DI {{total}}",
+    "walletTitle": "Un wallet di trading tutto tuo",
+    "wallet1": "Questo wallet è solo tuo: le chiavi restano su questo computer, protette da Touch ID.",
+    "wallet2": "La frase di recupero di 12 parole ripristina i tuoi bitcoin. Tienila scritta, offline. (Impostazioni → Frase di recupero)",
+    "wallet3": "Niente nodo e niente account: l’app parla con gli altri trader direttamente tramite i relay Nostr.",
+    "fundTitle": "Metti dei bitcoin",
+    "fund1": "Invia bitcoin all’indirizzo del wallet. Puoi fare trading quando il deposito ha 3 conferme.",
+    "fund2": "Ogni swap usa una moneta bitcoin sua, abbastanza grande da pagarlo. Un unico deposito grande è una sola moneta: dividilo in alcune (Wallet → Gestisci monete) per comprare da più maker insieme.",
+    "fund3": "Su una rete di test le monete non hanno valore: usa un faucet per ottenerne.",
+    "receive": "Ricevi bitcoin",
+    "swapTitle": "Scambia direttamente con altre persone",
+    "swap1": "Le offerte arrivano da maker indipendenti. Scrivi quanto paghi o quanto ricevi: lo swap prende le offerte migliori e mostra prezzo, commissioni e chi lo esegue.",
+    "swap2": "Le offerte si prendono intere, quindi potresti ricevere un po’ meno di quanto chiesto. Vedi gli importi esatti prima di firmare.",
+    "swap3": "Ogni maker chiude in una transazione Bitcoin con entrambi i lati: ricevi l’asset, oppure i tuoi bitcoin non si muovono. È concluso dopo le conferme.",
+    "safetyTitle": "Sappi cosa stai comprando",
+    "safety1": "Chiunque può emettere un asset con qualsiasi nome. La spunta verde significa che KaleidoSwap lo lista: è l’asset che il ticker indica.",
+    "safety2": "Un avviso rosso significa che l’asset copia un ticker listato: quasi certamente un’imitazione.",
+    "safety3": "Gli asset non listati restano nascosti finché non li chiedi. Verifica l’ID dell’asset con chi scambi.",
+    "back": "Indietro",
+    "skip": "Salta",
+    "next": "Avanti",
+    "done": "Inizia a fare trading"
   }
 }

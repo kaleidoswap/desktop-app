@@ -3495,7 +3495,15 @@
         "sectionUnlisted": "未上架",
         "sectionAll": "市场上",
         "showUnlistedCount_one": "显示 {{count}} 个未上架资产",
-        "showUnlistedCount_other": "显示 {{count}} 个未上架资产"
+        "showUnlistedCount_other": "显示 {{count}} 个未上架资产",
+        "enterAmount": "输入数量",
+        "noSellersShort": "无人出售",
+        "noBuyersShort": "无人购买",
+        "prepareCoins": "请先准备好币",
+        "notEnoughAsset": "{{ticker}} 不足",
+        "notEnoughBtc": "比特币不足",
+        "amountTooSmall": "数量太小",
+        "howItWorks": "P2P 兑换如何运作？"
       },
       "take": {
         "copied": "Copied",
@@ -3705,7 +3713,8 @@
     "connectNode": "连接节点",
     "settings": "设置",
     "onchain": "链上 RGB",
-    "maker": "做市"
+    "maker": "做市",
+    "guide": "指南"
   },
   "p2pHome": {
     "bought": "买入 {{what}}",
@@ -4146,5 +4155,30 @@
     "listingNote": "在有策展人上架之前，别人看到的是“未上架”。请把资产 ID 分享给买家。",
     "close": "完成",
     "sell": "在市场上出售"
+  },
+  "p2pGuide": {
+    "title": "P2P 交易如何运作",
+    "step": "第 {{n}} 步，共 {{total}} 步",
+    "walletTitle": "属于你自己的交易钱包",
+    "wallet1": "这个钱包只属于你：密钥留在这台电脑上，由 Touch ID 保护。",
+    "wallet2": "12 个单词的恢复短语可以找回你的比特币。请写下来离线保存。（设置 → 恢复短语）",
+    "wallet3": "无需节点和账户：应用通过 Nostr 中继直接与其他交易者沟通。",
+    "fundTitle": "存入比特币",
+    "fund1": "把比特币发到钱包地址。入账获得 3 个确认后即可交易。",
+    "fund2": "每笔兑换各用一个足够支付的比特币币。一次大额入账只是一个币：把它拆成几个（钱包 → 管理币），就能同时向多个做市商购买。",
+    "fund3": "测试网络上的币没有价值：用水龙头领取即可。",
+    "receive": "接收比特币",
+    "swapTitle": "与他人直接兑换",
+    "swap1": "报价来自独立做市商。输入你支付或收到的数量：兑换会选取最佳报价，并显示价格、费用和成交方。",
+    "swap2": "报价只能整笔成交，所以拿到的可能比要的少一点。签名前你会看到确切数额。",
+    "swap3": "每个做市商都用一笔包含双方的比特币交易结算：要么你拿到资产，要么你的比特币原地不动。确认后即完成。",
+    "safetyTitle": "清楚自己在买什么",
+    "safety1": "任何人都能用任意名称发行资产。绿色对勾表示 KaleidoSwap 已上架：它就是代号所指的资产。",
+    "safety2": "红色警告表示该资产冒用了已上架的代号：几乎可以肯定是仿冒品。",
+    "safety3": "未上架资产会收起，直到你要求显示。请与交易对象核对资产 ID。",
+    "back": "上一步",
+    "skip": "跳过",
+    "next": "下一步",
+    "done": "开始交易"
   }
 }

@@ -3498,7 +3498,15 @@
         "sectionUnlisted": "Not listed",
         "sectionAll": "On the market",
         "showUnlistedCount_one": "Show {{count}} unlisted asset",
-        "showUnlistedCount_other": "Show {{count}} unlisted assets"
+        "showUnlistedCount_other": "Show {{count}} unlisted assets",
+        "enterAmount": "Enter an amount",
+        "noSellersShort": "Nobody is selling",
+        "noBuyersShort": "Nobody is buying",
+        "prepareCoins": "Prepare your coins first",
+        "notEnoughAsset": "Not enough {{ticker}}",
+        "notEnoughBtc": "Not enough bitcoin",
+        "amountTooSmall": "Amount too small",
+        "howItWorks": "How does a P2P swap work?"
       },
       "take": {
         "copied": "Copied",
@@ -3708,7 +3716,8 @@
     "connectNode": "Connect a node",
     "settings": "Settings",
     "onchain": "on-chain RGB",
-    "maker": "Maker"
+    "maker": "Maker",
+    "guide": "Guide"
   },
   "p2pHome": {
     "bought": "Bought {{what}}",
@@ -4149,5 +4158,30 @@
     "listingNote": "Others see it as “not listed” until a curator lists it. Share the asset ID with your buyers.",
     "close": "Done",
     "sell": "Sell it on the market"
+  },
+  "p2pGuide": {
+    "title": "How P2P trading works",
+    "step": "STEP {{n}} OF {{total}}",
+    "walletTitle": "A trading wallet of your own",
+    "wallet1": "This wallet is yours alone: its keys stay on this computer, locked behind Touch ID.",
+    "wallet2": "The 12-word recovery phrase brings back your bitcoin. Keep it written down, offline. (Settings → Recovery phrase)",
+    "wallet3": "No node and no account: the app talks to other traders directly over Nostr relays.",
+    "fundTitle": "Put bitcoin in it",
+    "fund1": "Send bitcoin to the wallet’s address. It can trade once the deposit has 3 confirmations.",
+    "fund2": "Each swap spends a bitcoin coin of its own, big enough to pay for it. One large deposit is one coin: split it into a few (Wallet → Manage coins) to buy from several makers at once.",
+    "fund3": "On a test network the coins have no value: use a faucet to get some.",
+    "receive": "Receive bitcoin",
+    "swapTitle": "Swap directly with other people",
+    "swap1": "Offers come from independent makers. Type what you pay or what you get: the swap takes the best offers and shows the price, the fees and who fills it.",
+    "swap2": "Offers fill whole, so you may get a little less than you asked. You see the exact amounts before signing anything.",
+    "swap3": "Each maker settles in one Bitcoin transaction holding both sides: you get the asset, or your bitcoin never leaves. It counts as done after its confirmations.",
+    "safetyTitle": "Know what you are buying",
+    "safety1": "Anyone can issue an asset with any name. A green check means KaleidoSwap lists it: it is the asset its ticker names.",
+    "safety2": "A red warning means an asset copies a listed ticker: almost certainly an imitation.",
+    "safety3": "Unlisted assets stay folded away until you ask for them. Check the asset ID with whoever you trade with.",
+    "back": "Back",
+    "skip": "Skip",
+    "next": "Next",
+    "done": "Start trading"
   }
 }

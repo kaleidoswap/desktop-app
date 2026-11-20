@@ -3504,7 +3504,15 @@
         "sectionUnlisted": "No listados",
         "sectionAll": "En el mercado",
         "showUnlistedCount_one": "Mostrar {{count}} activo no listado",
-        "showUnlistedCount_other": "Mostrar {{count}} activos no listados"
+        "showUnlistedCount_other": "Mostrar {{count}} activos no listados",
+        "enterAmount": "Introduce una cantidad",
+        "noSellersShort": "Nadie vende",
+        "noBuyersShort": "Nadie compra",
+        "prepareCoins": "Prepara antes tus monedas",
+        "notEnoughAsset": "No hay suficiente {{ticker}}",
+        "notEnoughBtc": "No hay suficientes bitcoin",
+        "amountTooSmall": "Cantidad demasiado pequeña",
+        "howItWorks": "¿Cómo funciona un swap P2P?"
       },
       "take": {
         "copied": "Copied",
@@ -3714,7 +3722,8 @@
     "connectNode": "Conectar un nodo",
     "settings": "Ajustes",
     "onchain": "RGB on-chain",
-    "maker": "Maker"
+    "maker": "Maker",
+    "guide": "Guía"
   },
   "p2pHome": {
     "bought": "Compraste {{what}}",
@@ -4155,5 +4164,30 @@
     "listingNote": "Los demás lo verán como “no listado” hasta que un curador lo liste. Comparte el ID del activo con tus compradores.",
     "close": "Listo",
     "sell": "Véndelo en el mercado"
+  },
+  "p2pGuide": {
+    "title": "Cómo funciona el trading P2P",
+    "step": "PASO {{n}} DE {{total}}",
+    "walletTitle": "Un monedero de trading propio",
+    "wallet1": "Este monedero es solo tuyo: sus claves se quedan en este ordenador, protegidas con Touch ID.",
+    "wallet2": "La frase de recuperación de 12 palabras recupera tus bitcoin. Guárdala escrita y sin conexión. (Ajustes → Frase de recuperación)",
+    "wallet3": "Sin nodo y sin cuenta: la app habla con otros traders directamente por relays de Nostr.",
+    "fundTitle": "Pon bitcoin en él",
+    "fund1": "Envía bitcoin a la dirección del monedero. Podrás operar cuando el depósito tenga 3 confirmaciones.",
+    "fund2": "Cada swap usa su propia moneda bitcoin, lo bastante grande para pagarlo. Un depósito grande es una sola moneda: divídela en varias (Monedero → Gestionar monedas) para comprar a varios makers a la vez.",
+    "fund3": "En una red de pruebas las monedas no tienen valor: usa un faucet para conseguirlas.",
+    "receive": "Recibir bitcoin",
+    "swapTitle": "Intercambia directamente con otras personas",
+    "swap1": "Las ofertas vienen de makers independientes. Escribe lo que pagas o lo que recibes: el swap toma las mejores ofertas y muestra el precio, las comisiones y quién lo ejecuta.",
+    "swap2": "Las ofertas se toman enteras, así que puedes recibir algo menos de lo pedido. Ves los importes exactos antes de firmar nada.",
+    "swap3": "Cada maker liquida en una transacción Bitcoin con los dos lados: recibes el activo o tus bitcoin no se mueven. Se da por hecho tras sus confirmaciones.",
+    "safetyTitle": "Sabe lo que compras",
+    "safety1": "Cualquiera puede emitir un activo con cualquier nombre. El check verde significa que KaleidoSwap lo lista: es el activo que su ticker indica.",
+    "safety2": "Un aviso rojo significa que el activo copia un ticker listado: casi seguro una imitación.",
+    "safety3": "Los activos no listados quedan plegados hasta que los pidas. Comprueba el ID del activo con quien comercies.",
+    "back": "Atrás",
+    "skip": "Omitir",
+    "next": "Siguiente",
+    "done": "Empezar a operar"
   }
 }

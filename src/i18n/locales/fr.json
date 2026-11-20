@@ -3504,7 +3504,15 @@
         "sectionUnlisted": "Non listés",
         "sectionAll": "Sur le marché",
         "showUnlistedCount_one": "Afficher {{count}} actif non listé",
-        "showUnlistedCount_other": "Afficher {{count}} actifs non listés"
+        "showUnlistedCount_other": "Afficher {{count}} actifs non listés",
+        "enterAmount": "Saisissez un montant",
+        "noSellersShort": "Personne ne vend",
+        "noBuyersShort": "Personne n’achète",
+        "prepareCoins": "Préparez d’abord vos pièces",
+        "notEnoughAsset": "Pas assez de {{ticker}}",
+        "notEnoughBtc": "Pas assez de bitcoins",
+        "amountTooSmall": "Montant trop petit",
+        "howItWorks": "Comment fonctionne un swap P2P ?"
       },
       "take": {
         "copied": "Copied",
@@ -3714,7 +3722,8 @@
     "connectNode": "Connecter un nœud",
     "settings": "Réglages",
     "onchain": "RGB on-chain",
-    "maker": "Maker"
+    "maker": "Maker",
+    "guide": "Guide"
   },
   "p2pHome": {
     "bought": "{{what}} acheté",
@@ -4155,5 +4164,30 @@
     "listingNote": "Les autres le voient « non listé » tant qu’un curateur ne l’a pas listé. Partagez l’ID de l’actif avec vos acheteurs.",
     "close": "Terminé",
     "sell": "Le vendre sur le marché"
+  },
+  "p2pGuide": {
+    "title": "Comment fonctionne le trading P2P",
+    "step": "ÉTAPE {{n}} SUR {{total}}",
+    "walletTitle": "Un portefeuille de trading à vous",
+    "wallet1": "Ce portefeuille n’appartient qu’à vous : ses clés restent sur cet ordinateur, protégées par Touch ID.",
+    "wallet2": "La phrase de récupération de 12 mots restaure vos bitcoins. Gardez-la écrite, hors ligne. (Réglages → Phrase de récupération)",
+    "wallet3": "Ni nœud ni compte : l’app parle directement aux autres traders via des relais Nostr.",
+    "fundTitle": "Approvisionnez-le en bitcoins",
+    "fund1": "Envoyez des bitcoins à l’adresse du portefeuille. Vous pourrez échanger une fois le dépôt à 3 confirmations.",
+    "fund2": "Chaque swap utilise sa propre pièce bitcoin, assez grande pour le payer. Un gros dépôt est une seule pièce : divisez-la (Portefeuille → Gérer les pièces) pour acheter à plusieurs makers en même temps.",
+    "fund3": "Sur un réseau de test, les pièces n’ont pas de valeur : utilisez un faucet pour en obtenir.",
+    "receive": "Recevoir des bitcoins",
+    "swapTitle": "Échangez directement avec d’autres personnes",
+    "swap1": "Les offres viennent de makers indépendants. Saisissez ce que vous payez ou recevez : le swap prend les meilleures offres et montre le prix, les frais et qui l’exécute.",
+    "swap2": "Les offres se prennent entières, vous pouvez donc recevoir un peu moins que demandé. Vous voyez les montants exacts avant de signer.",
+    "swap3": "Chaque maker règle dans une transaction Bitcoin contenant les deux côtés : vous recevez l’actif, ou vos bitcoins ne bougent pas. C’est terminé après les confirmations.",
+    "safetyTitle": "Sachez ce que vous achetez",
+    "safety1": "N’importe qui peut émettre un actif sous n’importe quel nom. La coche verte signifie que KaleidoSwap le liste : c’est l’actif que son ticker désigne.",
+    "safety2": "Un avertissement rouge signifie que l’actif copie un ticker listé : presque certainement une imitation.",
+    "safety3": "Les actifs non listés restent repliés tant que vous ne les demandez pas. Vérifiez l’ID de l’actif avec votre contrepartie.",
+    "back": "Retour",
+    "skip": "Passer",
+    "next": "Suivant",
+    "done": "Commencer à échanger"
   }
 }

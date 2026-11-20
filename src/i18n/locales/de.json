@@ -3498,7 +3498,15 @@
         "sectionUnlisted": "Nicht gelistet",
         "sectionAll": "Auf dem Markt",
         "showUnlistedCount_one": "{{count}} nicht gelistetes Asset zeigen",
-        "showUnlistedCount_other": "{{count}} nicht gelistete Assets zeigen"
+        "showUnlistedCount_other": "{{count}} nicht gelistete Assets zeigen",
+        "enterAmount": "Betrag eingeben",
+        "noSellersShort": "Niemand verkauft",
+        "noBuyersShort": "Niemand kauft",
+        "prepareCoins": "Zuerst Münzen vorbereiten",
+        "notEnoughAsset": "Nicht genug {{ticker}}",
+        "notEnoughBtc": "Nicht genug Bitcoin",
+        "amountTooSmall": "Betrag zu klein",
+        "howItWorks": "Wie funktioniert ein P2P-Swap?"
       },
       "take": {
         "copied": "Copied",
@@ -3708,7 +3716,8 @@
     "connectNode": "Node verbinden",
     "settings": "Einstellungen",
     "onchain": "RGB on-chain",
-    "maker": "Maker"
+    "maker": "Maker",
+    "guide": "Anleitung"
   },
   "p2pHome": {
     "bought": "{{what}} gekauft",
@@ -4149,5 +4158,30 @@
     "listingNote": "Andere sehen es als „nicht gelistet“, bis ein Kurator es listet. Teile die Asset-ID mit deinen Käufern.",
     "close": "Fertig",
     "sell": "Auf dem Markt verkaufen"
+  },
+  "p2pGuide": {
+    "title": "So funktioniert P2P-Handel",
+    "step": "SCHRITT {{n}} VON {{total}}",
+    "walletTitle": "Ein eigenes Trading-Wallet",
+    "wallet1": "Dieses Wallet gehört nur dir: Die Schlüssel bleiben auf diesem Computer, geschützt durch Touch ID.",
+    "wallet2": "Die 12-Wörter-Wiederherstellungsphrase stellt deine Bitcoin wieder her. Bewahre sie schriftlich und offline auf. (Einstellungen → Wiederherstellungsphrase)",
+    "wallet3": "Kein Node, kein Konto: Die App spricht über Nostr-Relays direkt mit anderen Händlern.",
+    "fundTitle": "Bitcoin einzahlen",
+    "fund1": "Sende Bitcoin an die Adresse des Wallets. Handeln kannst du, sobald die Einzahlung 3 Bestätigungen hat.",
+    "fund2": "Jeder Swap nutzt eine eigene Bitcoin-Münze, die groß genug ist. Eine große Einzahlung ist eine Münze: Teile sie auf (Wallet → Münzen verwalten), um bei mehreren Makern gleichzeitig zu kaufen.",
+    "fund3": "In einem Testnetz haben die Münzen keinen Wert: Hol dir welche über einen Faucet.",
+    "receive": "Bitcoin empfangen",
+    "swapTitle": "Direkt mit anderen tauschen",
+    "swap1": "Angebote kommen von unabhängigen Makern. Gib ein, was du zahlst oder bekommst: Der Swap nimmt die besten Angebote und zeigt Preis, Gebühren und wer ausführt.",
+    "swap2": "Angebote werden ganz genommen, du bekommst also vielleicht etwas weniger als gewünscht. Die genauen Beträge siehst du vor dem Signieren.",
+    "swap3": "Jeder Maker wickelt in einer Bitcoin-Transaktion mit beiden Seiten ab: Du bekommst das Asset, oder deine Bitcoin bleiben, wo sie sind. Erledigt ist es nach den Bestätigungen.",
+    "safetyTitle": "Wisse, was du kaufst",
+    "safety1": "Jeder kann ein Asset mit beliebigem Namen ausgeben. Ein grüner Haken heißt, KaleidoSwap listet es: Es ist das Asset, das der Ticker nennt.",
+    "safety2": "Eine rote Warnung heißt, das Asset kopiert einen gelisteten Ticker: fast sicher eine Imitation.",
+    "safety3": "Nicht gelistete Assets bleiben eingeklappt, bis du sie anforderst. Prüfe die Asset-ID mit deinem Handelspartner.",
+    "back": "Zurück",
+    "skip": "Überspringen",
+    "next": "Weiter",
+    "done": "Mit dem Handel beginnen"
   }
 }

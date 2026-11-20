@@ -60,7 +60,9 @@ export function swapAssets(
       name: a.name,
       offers: 0,
       precision: a.precision,
-      ticker: a.ticker || tickerOf({ asset_id: a.asset_id, ticker: null }),
+      // a collectible has no ticker: its name stands in
+      ticker:
+        a.ticker || a.name || tickerOf({ asset_id: a.asset_id, ticker: null }),
     })
   }
   return [...by.values()].sort(
@@ -85,14 +87,17 @@ export type SwapProblem =
   | 'no_amount'
   | 'no_offers'
   | 'too_small'
-  | 'partial'
   | 'not_enough_btc'
   | 'not_enough_asset'
   | 'no_free_coin'
+  | 'partial'
   | null
 
 export interface SwapQuote {
+  /** What the swap would be with the wallet's coins as they are: what can actually be taken. */
   plan: MarketPlan
+  /** The same swap as if the wallet had coins enough: the price to show even when it cannot pay. */
+  estimate: MarketPlan
   /** Asset units asked for, in base units. */
   wantBase: number
   /** Makers whose orders fill the swap. */
@@ -100,42 +105,102 @@ export interface SwapQuote {
   problem: SwapProblem
 }
 
+/** The orders on the other side of the book for `side`, best price first, others' only. */
+const facing = (book: Order[], assetId: string, side: Side) =>
+  book
+    .filter(
+      (o) =>
+        !o.mine &&
+        o.asset_id === assetId &&
+        o.side === (side === 'buy' ? 'sell' : 'buy')
+    )
+    .sort((a, b) =>
+      side === 'buy' ? a.unit_price - b.unit_price : b.unit_price - a.unit_price
+    )
+
 /**
  * The swap the user asked for, against the book: `side` is what the user does with the asset,
- * `amount` how much of it, as typed. Orders fill whole, so a swap may fill less than asked.
+ * `wantBase` how much of it in base units. Orders fill whole, so a swap may fill less than asked.
  */
-export function quoteSwap(
+export function quoteSwapBase(
   book: Order[],
   asset: Pick<SwapAsset, 'assetId' | 'precision'>,
   side: Side,
-  amount: string,
+  wantBase: number,
   balance: Balance | undefined,
   slippage = 0.01
 ): SwapQuote {
-  const wantBase = toBase(amount, asset.precision)
   const orders = book.filter((o) => o.asset_id === asset.assetId)
   const plan = planMarket(orders, side, wantBase, slippage, {
     coins: balance?.btc_coins,
   })
-  const makers = new Set(plan.picks.map((o) => o.maker)).size
-  const available = orders.some(
-    (o) => !o.mine && o.side === (side === 'buy' ? 'sell' : 'buy')
-  )
+  const estimate = planMarket(orders, side, wantBase, slippage)
+  const makers = new Set(estimate.picks.map((o) => o.maker)).size
   const btc = balance?.btc_settled_sat ?? balance?.btc_spendable_sat ?? 0
   const held =
     balance?.assets.find((a) => a.asset_id === asset.assetId)?.spendable ?? 0
 
   let problem: SwapProblem = null
   if (wantBase <= 0) problem = 'no_amount'
-  else if (!available) problem = 'no_offers'
-  else if (plan.picks.length === 0)
-    problem = plan.noCoinFor > 0 ? 'no_free_coin' : 'too_small'
-  else if (side === 'buy' && plan.reserveSat > btc) problem = 'not_enough_btc'
-  else if (side === 'sell' && plan.baseAmount > held)
+  else if (facing(book, asset.assetId, side).length === 0) problem = 'no_offers'
+  else if (estimate.picks.length === 0) problem = 'too_small'
+  else if (side === 'buy' && estimate.reserveSat > btc)
+    problem = 'not_enough_btc'
+  else if (side === 'sell' && estimate.baseAmount > held)
     problem = 'not_enough_asset'
-  else if (plan.baseAmount < wantBase) problem = 'partial'
+  else if (side === 'buy' && plan.baseAmount < estimate.baseAmount)
+    problem = 'no_free_coin'
+  else if (estimate.baseAmount < wantBase) problem = 'partial'
 
-  return { makers, plan, problem, wantBase }
+  return { estimate, makers, plan, problem, wantBase }
+}
+
+/** `quoteSwapBase` for an amount as typed, in whole units. */
+export const quoteSwap = (
+  book: Order[],
+  asset: Pick<SwapAsset, 'assetId' | 'precision'>,
+  side: Side,
+  amount: string,
+  balance: Balance | undefined,
+  slippage = 0.01
+): SwapQuote =>
+  quoteSwapBase(
+    book,
+    asset,
+    side,
+    toBase(amount, asset.precision),
+    balance,
+    slippage
+  )
+
+/**
+ * The asset amount to ask for when the user types bitcoin instead: buying, the most the sats can
+ * pay for (what the swap sets aside stays within them); selling, the least that brings them in.
+ * Orders fill whole, so the answer is a sum of whole orders.
+ */
+export function baseForSats(
+  book: Order[],
+  asset: Pick<SwapAsset, 'assetId' | 'precision'>,
+  side: Side,
+  sats: number,
+  slippage = 0.01
+): number {
+  if (!(sats > 0)) return 0
+  const orders = book.filter((o) => o.asset_id === asset.assetId)
+  let total = 0
+  let best = 0
+  for (const o of facing(book, asset.assetId, side)) {
+    total += o.amount
+    const p = planMarket(orders, side, total, slippage)
+    if (side === 'buy') {
+      if (p.reserveSat <= sats) best = p.baseAmount
+      else break
+    } else {
+      best = p.baseAmount
+      if (p.sats >= sats) break
+    }
+  }
+  return best
 }
 
 /** Assets matching what the user typed: ticker, name, or (part of) the asset id. Exact id first. */
