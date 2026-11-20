@@ -68,7 +68,25 @@ pub fn stage(source: &Path, data_dir: &Path) -> Result<StagedMedia, String> {
     }
     let digest = hex::encode(Sha256::digest(&bytes));
     let dest: PathBuf = dir.join(format!("{}.{kind}", &digest[..32]));
-    fs::write(&dest, &bytes).map_err(|e| format!("{}: {e}", dest.display()))?;
+    // The daemon can write to this folder (in Docker it is mounted into the container), so a link
+    // planted there must not be followed: write a new file, refused if anything is in its place,
+    // then rename it over the destination, which replaces a link rather than writing through it.
+    let tmp = dir.join(format!(".{}.{}.part", &digest[..32], std::process::id()));
+    let _ = fs::remove_file(&tmp);
+    let written = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&tmp)
+        .and_then(|mut f| {
+            use std::io::Write;
+            f.write_all(&bytes)?;
+            f.sync_all()
+        })
+        .and_then(|_| fs::rename(&tmp, &dest));
+    if let Err(e) = written {
+        let _ = fs::remove_file(&tmp);
+        return Err(format!("{}: {e}", dest.display()));
+    }
     Ok(StagedMedia {
         name: source
             .file_name()
@@ -103,6 +121,36 @@ mod tests {
         assert!(p.starts_with(data.join(UPLOAD_DIR)));
         assert!(staged.path.ends_with(".png"));
         assert_eq!(fs::read(p).unwrap(), PNG);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_link_planted_in_the_folder_is_replaced_not_written_through() {
+        let src = tmp("link-src");
+        let data = tmp("link-data");
+        let outside = tmp("link-outside");
+        fs::create_dir_all(&src).unwrap();
+        fs::create_dir_all(data.join(UPLOAD_DIR)).unwrap();
+        fs::create_dir_all(&outside).unwrap();
+        let victim = outside.join("victim");
+        fs::write(&victim, b"keep me").unwrap();
+        let img = src.join("a.png");
+        fs::write(&img, PNG).unwrap();
+        let digest = hex::encode(Sha256::digest(PNG));
+        let dest = data.join(UPLOAD_DIR).join(format!("{}.png", &digest[..32]));
+        std::os::unix::fs::symlink(&victim, &dest).unwrap();
+
+        stage(&img, &data).unwrap();
+
+        assert_eq!(fs::read(&victim).unwrap(), b"keep me");
+        assert!(!fs::symlink_metadata(&dest)
+            .unwrap()
+            .file_type()
+            .is_symlink());
+        assert_eq!(fs::read(&dest).unwrap(), PNG);
+        for d in [src, data, outside] {
+            let _ = fs::remove_dir_all(d);
+        }
     }
 
     #[test]
