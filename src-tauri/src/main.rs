@@ -99,6 +99,7 @@ fn p2p_base(app: &AppHandle) -> Result<std::path::PathBuf, String> {
 #[tauri::command]
 async fn p2p_pick_media(
     app: AppHandle,
+    p2p: State<'_, Arc<p2p::P2pProcess>>,
     account: String,
 ) -> Result<Option<p2p_media::StagedMedia>, String> {
     use tauri_plugin_dialog::DialogExt;
@@ -110,6 +111,8 @@ async fn p2p_pick_media(
         return Err("the account name must be letters, digits, - or _".into());
     }
     let data_dir = p2p_base(&app)?.join(&account);
+    // a daemon in Docker reads the same folder where it is mounted
+    let in_docker = p2p.in_docker();
     tauri::async_runtime::spawn_blocking(move || {
         let picked = app
             .dialog()
@@ -118,7 +121,12 @@ async fn p2p_pick_media(
             .blocking_pick_file();
         let Some(file) = picked else { return Ok(None) };
         let path = file.into_path().map_err(|e| e.to_string())?;
-        p2p_media::stage(&path, &data_dir).map(Some)
+        let mut staged = p2p_media::stage(&path, &data_dir)?;
+        if in_docker {
+            staged.path = p2p_docker::media_path_in_container(&staged.path)
+                .ok_or("the staged file has no name")?;
+        }
+        Ok(Some(staged))
     })
     .await
     .map_err(|e| e.to_string())?
