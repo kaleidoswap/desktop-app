@@ -40,6 +40,8 @@ struct Network {
     /// A curator (npub) whose listing on Nostr the daemon reads on top of `listing`. Unlike the
     /// built-in list it reaches a daemon in Docker too, and changes without an app release.
     listing_curator: Option<&'static str>,
+    /// Where to get free coins on a test network, for a wallet that has none yet.
+    faucet_url: Option<&'static str>,
 }
 
 const NETWORKS: &[Network] = &[
@@ -72,6 +74,7 @@ const NETWORKS: &[Network] = &[
             ),
         ],
         listing_curator: None,
+        faucet_url: Some("https://faucet.mutinynet.com"),
     },
     // the default public signet: a different chain from Mutinynet, indexed by our own esplora
     Network {
@@ -91,6 +94,7 @@ const NETWORKS: &[Network] = &[
         min_fee_sat: 1_000,
         listing: &[],
         listing_curator: None,
+        faucet_url: Some("https://signetfaucet.com"),
     },
     // the local test stack, for development only
     #[cfg(debug_assertions)]
@@ -106,6 +110,7 @@ const NETWORKS: &[Network] = &[
         min_fee_sat: 1_000,
         listing: &[],
         listing_curator: None,
+        faucet_url: None,
     },
 ];
 
@@ -116,6 +121,8 @@ pub struct NetworkInfo {
     pub label: &'static str,
     /// The daemon's name for it, which names the wallet.
     pub network: &'static str,
+    /// A faucet for free test coins, on a test network.
+    pub faucet_url: Option<&'static str>,
 }
 
 pub fn list() -> Vec<NetworkInfo> {
@@ -125,6 +132,7 @@ pub fn list() -> Vec<NetworkInfo> {
             key: n.key,
             label: n.label,
             network: n.daemon_network,
+            faucet_url: n.faucet_url,
         })
         .collect()
 }
@@ -431,7 +439,14 @@ mod tests {
         let l = list();
         let m = l.iter().find(|n| n.key == "SignetCustom").unwrap();
         assert_eq!((m.label, m.network), ("Mutinynet", "signetcustom"));
-        assert!(!serde_json::to_string(&l).unwrap().contains("http"));
+        assert_eq!(m.faucet_url, Some("https://faucet.mutinynet.com"));
+        // the daemon's endpoints stay on this side; only the faucet, a page for the user, goes out
+        let json = serde_json::to_string(&l).unwrap();
+        for n in NETWORKS {
+            for e in n.relays.iter().chain([&n.indexer_url, &n.proxy_url]) {
+                assert!(!json.contains(e), "{e} reached the page");
+            }
+        }
     }
 
     #[test]
