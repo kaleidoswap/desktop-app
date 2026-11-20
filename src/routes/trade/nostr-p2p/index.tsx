@@ -20,6 +20,7 @@ import { Component as WithdrawalsHistory } from '../../wallet-history/withdrawal
 import { DepositModal } from './DepositModal'
 import { FundsModal, type Direction } from './FundsModal'
 import { Market } from './market/Market'
+import { Picker } from './market/Picker'
 import { p2pGenerateSeed } from './p2p'
 import { RecoveryPhraseModal } from './RecoveryPhraseModal'
 import { RelaysModal } from './RelaysModal'
@@ -246,18 +247,13 @@ function MarketView({
             wallets={wallets}
           />
           {networks.length > 1 && (
-            <select
-              aria-label={t('p2pMarket.network', { defaultValue: 'Network' })}
-              className="rounded-lg bg-surface-inset px-3 py-1.5 text-caption text-content-primary outline-none"
-              onChange={(e) => setNetworkKey(e.target.value)}
-              value={networkKey}
-            >
-              {networks.map((o) => (
-                <option key={o.key} value={o.key}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            <Picker
+              label={t('p2pMarket.network', { defaultValue: 'Network' })}
+              onChange={setNetworkKey}
+              options={networks.map((o) => ({ title: o.label, value: o.key }))}
+              value={networkKey || config.key}
+              variant="pill"
+            />
           )}
           <Button
             icon={<RadioTower size={14} />}

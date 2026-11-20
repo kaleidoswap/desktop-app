@@ -1,4 +1,9 @@
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight } from 'lucide-react'
+import {
+  ArrowDownLeft,
+  ArrowLeftRight,
+  ArrowUpRight,
+  BadgeCheck,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
@@ -281,8 +286,16 @@ export const Component = () => {
               key={p.assetId}
               to={P2P_TRADE_PATH}
             >
-              <span className="flex-1 font-medium text-content-primary">
+              <span className="flex flex-1 items-center gap-1.5 font-medium text-content-primary">
                 {p.ticker} / BTC
+                {p.listed && (
+                  <BadgeCheck
+                    aria-label={t('p2pHome.listed', {
+                      defaultValue: 'Listed by KaleidoSwap',
+                    })}
+                    className="h-4 w-4 text-status-success"
+                  />
+                )}
               </span>
               <span className="flex flex-col text-right text-xs">
                 <span className="text-content-secondary">

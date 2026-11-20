@@ -46,6 +46,7 @@ describe('marketSummary', () => {
       {
         assetId: 'rgb:usd',
         buyAt: 1555,
+        listed: false,
         offers: 4,
         sellAt: 1545,
         ticker: 'USD',
@@ -62,6 +63,18 @@ describe('marketSummary', () => {
     ])
     expect(s.map((p) => p.ticker)).toEqual(['B', 'A'])
     expect(s[1]).toMatchObject({ buyAt: 100, sellAt: null })
+  })
+
+  it('puts listed assets first', () => {
+    const s = marketSummary([
+      order({ asset_id: 'rgb:a', ticker: 'A' }),
+      order({ asset_id: 'rgb:a', ticker: 'A' }),
+      order({ asset_id: 'rgb:b', ticker: 'B', verified: true }),
+    ])
+    expect(s.map((p) => [p.ticker, p.listed])).toEqual([
+      ['B', true],
+      ['A', false],
+    ])
   })
 })
 

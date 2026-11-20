@@ -1,4 +1,11 @@
-import { ArrowLeftRight, House, Server, Settings, Wallet } from 'lucide-react'
+import {
+  ArrowLeftRight,
+  CircleHelp,
+  House,
+  Server,
+  Settings,
+  Wallet,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
@@ -14,6 +21,8 @@ import logoFull from '../../assets/logo-full.svg'
 import { AppVersion } from '../../components/AppVersion'
 import { Layout } from '../../components/Layout'
 import { P2pGate } from '../trade/nostr-p2p'
+import { NetworkPicker } from './NetworkPicker'
+import { openGuide, P2pGuide } from './P2pGuide'
 import { P2pSessionProvider, useP2pSession } from '../trade/nostr-p2p/session'
 
 const NavItem = ({
@@ -55,9 +64,10 @@ function Sidebar() {
     >
       <img
         alt="KaleidoSwap"
-        className="mb-5 ml-2 h-7 self-start"
+        className="mb-4 ml-2 h-7 self-start"
         src={logoFull}
       />
+      <NetworkPicker className="mb-4" />
       <NavItem
         end
         icon={<House className="h-[18px] w-[18px]" />}
@@ -95,6 +105,14 @@ function Sidebar() {
           {t('p2pShell.connectNode', { defaultValue: 'Connect a node' })}
         </button>
       </div>
+      <button
+        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-content-secondary transition-colors hover:bg-surface-overlay/50 hover:text-content-primary"
+        onClick={() => openGuide()}
+        type="button"
+      >
+        <CircleHelp className="h-[18px] w-[18px]" />
+        {t('p2pShell.guide', { defaultValue: 'Guide' })}
+      </button>
       <NavItem
         icon={<Settings className="h-[18px] w-[18px]" />}
         label={t('p2pShell.settings', { defaultValue: 'Settings' })}
@@ -114,6 +132,7 @@ function Shell() {
         <div className="mx-auto w-full max-w-screen-xl px-6 py-6">
           <P2pGate session={session}>
             <Outlet />
+            <P2pGuide />
           </P2pGate>
         </div>
       </main>

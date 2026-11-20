@@ -3,7 +3,6 @@ import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useAppDispatch } from '../../app/store/hooks'
-import { IssueAssetModal } from '../../components/IssueAssetModal'
 import { UTXOManagementModal } from '../../components/UTXOManagementModal'
 import { useSettings } from '../../hooks/useSettings'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
@@ -21,9 +20,11 @@ import { Component as AssetsHistory } from '../wallet-history/assets'
 import { Component as DepositsHistory } from '../wallet-history/deposits'
 import { Component as WithdrawalsHistory } from '../wallet-history/withdrawals'
 
+import { IssueDialog } from './IssueDialog'
 import { bitcoinSummary } from './summary'
+import { SwapsHistory } from './SwapsHistory'
 
-type Tab = 'assets' | 'deposits' | 'withdrawals'
+type Tab = 'swaps' | 'assets' | 'deposits' | 'withdrawals'
 
 const ActionButton = ({
   icon,
@@ -55,7 +56,7 @@ export const Component = () => {
   const session = useP2pSession()
   const balance = usePoll(marketApi.balance, 5_000)
   const info = usePoll(marketApi.info, 60_000)
-  const [tab, setTab] = useState<Tab>('deposits')
+  const [tab, setTab] = useState<Tab>('swaps')
   const [coins, setCoins] = useState(false)
   const [issue, setIssue] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -67,6 +68,7 @@ export const Component = () => {
   )
 
   const tabs: [Tab, string][] = [
+    ['swaps', t('p2pSwaps.tab', { defaultValue: 'Swaps' })],
     ['deposits', t('p2pMarket.tabDeposits', { defaultValue: 'Deposits' })],
     [
       'withdrawals',
@@ -329,6 +331,7 @@ export const Component = () => {
             ))}
           </div>
         </div>
+        {tab === 'swaps' && <SwapsHistory />}
         {tab === 'assets' && <AssetsHistory />}
         {tab === 'deposits' && <DepositsHistory />}
         {tab === 'withdrawals' && <WithdrawalsHistory />}
@@ -343,12 +346,11 @@ export const Component = () => {
           }}
         />
       )}
-      {issue && (
-        <IssueAssetModal
-          onClose={() => setIssue(false)}
-          onSuccess={() => balance.refresh()}
-        />
-      )}
+      <IssueDialog
+        isOpen={issue}
+        onClose={() => setIssue(false)}
+        onIssued={() => balance.refresh()}
+      />
     </div>
   )
 }

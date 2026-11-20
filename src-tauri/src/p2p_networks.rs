@@ -34,6 +34,9 @@ struct Network {
     fee_address: &'static str,
     fee_bps: u64,
     min_fee_sat: u64,
+    /// The assets KaleidoSwap lists on this network: (asset id, ticker, name). The daemon marks
+    /// their offers as listed, and offers that borrow one of these tickers as imitations.
+    listing: &'static [(&'static str, &'static str, &'static str)],
 }
 
 const NETWORKS: &[Network] = &[
@@ -53,6 +56,36 @@ const NETWORKS: &[Network] = &[
         fee_address: "tb1qksue05dv7z57mezp3j74cr64lrah57vufhjktw",
         fee_bps: 100,
         min_fee_sat: 1_000,
+        listing: &[
+            (
+                "rgb:muAGMF3g-_jZC~RV-vn6bSzV-yHQhq_T-FAoMKhG-I3~EVcw",
+                "TESTUSD",
+                "Mosaik Demo Dollar",
+            ),
+            (
+                "rgb:9giqbeZi-Cs6oZhu-V9SoNP~-c90osSp-1Ebv0G5-Mv~4CY0",
+                "TESTXAU",
+                "Mosaik Demo Gold",
+            ),
+        ],
+    },
+    // the default public signet: a different chain from Mutinynet, indexed by our own esplora
+    Network {
+        key: "Signet",
+        label: "Signet",
+        daemon_network: "signet",
+        relays: &[
+            "wss://relay.kaleidoswap.com",
+            "wss://nos.lol",
+            "wss://relay.primal.net",
+            "wss://offchain.pub",
+        ],
+        indexer_url: "https://esplora.signet-next.kaleidoswap.com",
+        proxy_url: "https://proxy.iriswallet.com/0.2/json-rpc",
+        fee_address: "tb1qksue05dv7z57mezp3j74cr64lrah57vufhjktw",
+        fee_bps: 100,
+        min_fee_sat: 1_000,
+        listing: &[],
     },
     // the local test stack, for development only
     #[cfg(debug_assertions)]
@@ -66,6 +99,7 @@ const NETWORKS: &[Network] = &[
         fee_address: "bcrt1qw508d6qejxtdg4y5r3zarvary0c5xw7kygt080",
         fee_bps: 100,
         min_fee_sat: 1_000,
+        listing: &[],
     },
 ];
 
@@ -176,6 +210,31 @@ pub fn check_relays(list: &[String], local: bool) -> Result<Vec<String>, String>
         return Err(format!("at most {MAX_RELAYS} relays"));
     }
     Ok(out)
+}
+
+#[derive(Serialize)]
+struct ListedAsset {
+    asset_id: &'static str,
+    ticker: &'static str,
+    name: &'static str,
+}
+
+/// The network's listing in the daemon's `--verified-assets` format, or `None` when it lists nothing.
+pub fn listing_json(key: &str) -> Option<String> {
+    let n = find(key).ok()?;
+    if n.listing.is_empty() {
+        return None;
+    }
+    let list: Vec<ListedAsset> = n
+        .listing
+        .iter()
+        .map(|&(asset_id, ticker, name)| ListedAsset {
+            asset_id,
+            ticker,
+            name,
+        })
+        .collect();
+    serde_json::to_string_pretty(&list).ok()
 }
 
 /// The relays of a network: the app's defaults, and the user's own list if there is one.
@@ -310,6 +369,31 @@ mod tests {
         assert_eq!(check_relays(&cfg.relays, false).unwrap(), cfg.relays);
         assert!(cfg.fee_address.starts_with("tb1q"));
         assert_eq!((cfg.fee_bps, cfg.min_fee_sat), (100, 1_000));
+    }
+
+    #[test]
+    fn signet_and_mutinynet_are_two_networks() {
+        let signet = resolve(request("Signet"), None).unwrap();
+        let mutiny = resolve(request("SignetCustom"), None).unwrap();
+        assert_eq!(signet.network, "signet");
+        assert_eq!(mutiny.network, "signetcustom");
+        assert_ne!(signet.indexer_url, mutiny.indexer_url);
+        assert!(list()
+            .iter()
+            .any(|n| n.key == "Signet" && n.label == "Signet"));
+    }
+
+    #[test]
+    fn mutinynet_lists_the_demo_assets_and_signet_nothing_yet() {
+        let json = listing_json("SignetCustom").unwrap();
+        let list: Vec<serde_json::Value> = serde_json::from_str(&json).unwrap();
+        let tickers: Vec<&str> = list.iter().map(|a| a["ticker"].as_str().unwrap()).collect();
+        assert_eq!(tickers, vec!["TESTUSD", "TESTXAU"]);
+        assert!(list
+            .iter()
+            .all(|a| a["asset_id"].as_str().unwrap().starts_with("rgb:")));
+        assert_eq!(listing_json("Signet"), None);
+        assert_eq!(listing_json("Moon"), None);
     }
 
     #[test]
