@@ -155,7 +155,7 @@ pub fn run_args(account: &str, image: &str, port: u16) -> Vec<String> {
 }
 
 /// The daemon's own arguments inside the container. No verified-assets file (a path on the host
-/// means nothing in there), and the key file is sealed with the passphrase from the environment.
+/// means nothing in there; a curator's listing on Nostr does reach it), and the key file is sealed with the passphrase from the environment.
 pub fn daemon_args(cfg: &P2pStartConfig, port: u16) -> Vec<String> {
     let mut a: Vec<String> = vec![
         "--name".into(),
@@ -183,6 +183,9 @@ pub fn daemon_args(cfg: &P2pStartConfig, port: u16) -> Vec<String> {
     ];
     for relay in &cfg.relays {
         a.extend(["--relay".into(), relay.clone()]);
+    }
+    if let Some(npub) = &cfg.listing_curator {
+        a.extend(["--listing-curator".into(), npub.clone()]);
     }
     if cfg.network == "mainnet" {
         a.push("--allow-mainnet".into());
@@ -268,6 +271,7 @@ mod tests {
             fee_bps: 100,
             min_fee_sat: 1_000,
             verified_assets_path: Some("/host/only.json".into()),
+            listing_curator: Some("npub1curator".into()),
             seed_mnemonic: Some(crate::p2p::Secret::new("abandon ability able")),
             rescan: false,
         }
@@ -311,6 +315,7 @@ mod tests {
         assert_eq!(at("--data-dir"), Some("/data"));
         assert_eq!(at("--keystore"), Some("encrypted"));
         assert_eq!(a.iter().filter(|x| *x == "--relay").count(), 2);
+        assert_eq!(at("--listing-curator"), Some("npub1curator"));
         assert!(a.contains(&"--seed-stdin".to_string()));
         assert!(
             !a.iter().any(|x| x.contains("/host/only.json")),

@@ -20,6 +20,7 @@ import {
 } from '../swap'
 
 import { AssetButton, AssetSelect } from './AssetSelect'
+import { MakerList, type MakerShare } from './MakerList'
 import { useTr, usePoll } from './hooks'
 import { TakeSheet } from './TakeSheet'
 
@@ -217,9 +218,14 @@ export function SwapView() {
   }
   const note = message()
 
-  const byMaker = new Map<string, { amount: number; away: boolean }>()
+  const byMaker = new Map<string, MakerShare>()
   for (const o of est.picks) {
-    const m = byMaker.get(o.maker) ?? { amount: 0, away: o.away }
+    const m = byMaker.get(o.maker) ?? {
+      amount: 0,
+      away: o.away,
+      maker: o.maker,
+      npub: o.maker_npub,
+    }
     m.amount += o.amount
     m.away = m.away && o.away
     byMaker.set(o.maker, m)
@@ -375,32 +381,13 @@ export function SwapView() {
                 />
               </button>
             </dd>
-            {showMakers &&
-              [...byMaker.entries()].map(([maker, m]) => (
-                <div
-                  className="col-span-2 flex items-center gap-2 rounded-lg bg-surface-elevated/60 px-3 py-2 text-xs"
-                  key={maker}
-                >
-                  <span
-                    aria-hidden
-                    className={`h-2 w-2 rounded-full ${m.away ? 'bg-content-tertiary' : 'bg-status-success'}`}
-                  />
-                  <span className="font-mono text-content-secondary">
-                    {short(maker, 6)}
-                  </span>
-                  <span className="text-content-tertiary">
-                    {m.away
-                      ? tr(
-                          'swap.makerAway',
-                          'Away: may take a moment to answer'
-                        )
-                      : tr('swap.makerOnline', 'Online now')}
-                  </span>
-                  <span className="ml-auto text-content-primary">
-                    {fmtUnits(m.amount, asset.precision)} {asset.ticker}
-                  </span>
-                </div>
-              ))}
+            {showMakers && (
+              <MakerList
+                makers={[...byMaker.values()]}
+                precision={asset.precision}
+                ticker={asset.ticker}
+              />
+            )}
             <dt className="text-content-tertiary">{tr('swap.fees', 'Fees')}</dt>
             <dd className="text-right text-content-primary">
               {fmtSats(est.fees)} sats

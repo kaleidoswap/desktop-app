@@ -37,6 +37,9 @@ struct Network {
     /// The assets KaleidoSwap lists on this network: (asset id, ticker, name). The daemon marks
     /// their offers as listed, and offers that borrow one of these tickers as imitations.
     listing: &'static [(&'static str, &'static str, &'static str)],
+    /// A curator (npub) whose listing on Nostr the daemon reads on top of `listing`. Unlike the
+    /// built-in list it reaches a daemon in Docker too, and changes without an app release.
+    listing_curator: Option<&'static str>,
 }
 
 const NETWORKS: &[Network] = &[
@@ -68,6 +71,7 @@ const NETWORKS: &[Network] = &[
                 "Mosaik Demo Gold",
             ),
         ],
+        listing_curator: None,
     },
     // the default public signet: a different chain from Mutinynet, indexed by our own esplora
     Network {
@@ -86,6 +90,7 @@ const NETWORKS: &[Network] = &[
         fee_bps: 100,
         min_fee_sat: 1_000,
         listing: &[],
+        listing_curator: None,
     },
     // the local test stack, for development only
     #[cfg(debug_assertions)]
@@ -100,6 +105,7 @@ const NETWORKS: &[Network] = &[
         fee_bps: 100,
         min_fee_sat: 1_000,
         listing: &[],
+        listing_curator: None,
     },
 ];
 
@@ -319,6 +325,7 @@ pub fn resolve(
         fee_bps: n.fee_bps,
         min_fee_sat: n.min_fee_sat,
         verified_assets_path: None,
+        listing_curator: n.listing_curator.map(str::to_string),
         seed_mnemonic: req.seed_mnemonic,
         rescan: req.rescan,
     };

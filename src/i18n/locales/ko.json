@@ -3506,7 +3506,10 @@
         "notEnoughAsset": "{{ticker}} 부족",
         "notEnoughBtc": "비트코인 부족",
         "amountTooSmall": "수량이 너무 작음",
-        "howItWorks": "P2P 스왑은 어떻게 작동하나요?"
+        "howItWorks": "P2P 스왑은 어떻게 작동하나요?",
+        "nip05Verified": "{{domain}}이(가) 이 키를 확인함",
+        "nip05Unconfirmed": "미확인",
+        "makerNamesNote": "이름은 각 메이커가 스스로 붙인 것입니다. 체크 표시는 해당 웹사이트가 메이커의 키를 확인했다는 뜻입니다."
       },
       "take": {
         "copied": "Copied",

@@ -3503,7 +3503,10 @@
         "notEnoughAsset": "{{ticker}} 不足",
         "notEnoughBtc": "比特币不足",
         "amountTooSmall": "数量太小",
-        "howItWorks": "P2P 兑换如何运作？"
+        "howItWorks": "P2P 兑换如何运作？",
+        "nip05Verified": "{{domain}} 确认了这个密钥",
+        "nip05Unconfirmed": "未确认",
+        "makerNamesNote": "名称是每个做市商自己起的。对勾表示所写的网站确认了该做市商的密钥。"
       },
       "take": {
         "copied": "Copied",
