@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Picker } from './Picker'
 import { toast } from 'react-toastify'
 
 import {
@@ -472,24 +473,18 @@ export function TradeTicket({
             value={total ? fmtSats(total) : ''}
           />
           <div className="flex flex-col gap-1.5">
-            <label
-              className="text-caption text-content-secondary"
-              htmlFor="p2p-ttl"
-            >
+            <span className="text-caption text-content-secondary">
               {tr('ticket.keepOpen', 'Keep open for')}
-            </label>
-            <select
-              className="rounded-xl bg-surface-inset px-3 py-2.5 text-body text-content-primary outline-none focus:ring-2 focus:ring-primary/40"
-              id="p2p-ttl"
-              onChange={(e) => setTtl(Number(e.target.value))}
-              value={ttl}
-            >
-              {TTLS.map((t) => (
-                <option key={t.key} value={t.secs}>
-                  {tr(`ticket.ttl.${t.key}`, t.label)}
-                </option>
-              ))}
-            </select>
+            </span>
+            <Picker
+              label={tr('ticket.keepOpen', 'Keep open for')}
+              onChange={(v) => setTtl(Number(v))}
+              options={TTLS.map((t) => ({
+                title: tr(`ticket.ttl.${t.key}`, t.label),
+                value: String(t.secs),
+              }))}
+              value={String(ttl)}
+            />
           </div>
           {crossing && (
             <div className="flex items-center justify-between gap-3 rounded-xl bg-status-info-subtle p-3 text-caption text-content-primary">

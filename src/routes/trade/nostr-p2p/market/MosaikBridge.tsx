@@ -20,8 +20,8 @@ export function MosaikBridge({ network }: { network: string }) {
   }
   return (
     <section
-      className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 to-surface-card p-5"
       aria-label="Desktop and Mosaik"
+      className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 to-surface-card p-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -33,16 +33,16 @@ export function MosaikBridge({ network }: { network: string }) {
           </h2>
         </div>
         <button
-          type="button"
-          onClick={() => void openMarket()}
           className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-text-on-accent"
+          onClick={() => void openMarket()}
+          type="button"
         >
-          Open Mosaik <ArrowUpRight size={16} aria-hidden />
+          Open Mosaik <ArrowUpRight aria-hidden size={16} />
         </button>
       </div>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div className="flex gap-3">
-          <Monitor className="shrink-0 text-primary" size={20} aria-hidden />
+          <Monitor aria-hidden className="shrink-0 text-primary" size={20} />
           <div>
             <h3 className="text-sm font-semibold text-content-primary">
               Make an offer here
@@ -54,7 +54,7 @@ export function MosaikBridge({ network }: { network: string }) {
           </div>
         </div>
         <div className="flex gap-3">
-          <Globe className="shrink-0 text-primary" size={20} aria-hidden />
+          <Globe aria-hidden className="shrink-0 text-primary" size={20} />
           <div>
             <h3 className="text-sm font-semibold text-content-primary">
               Explore in your browser
@@ -78,7 +78,7 @@ export function MosaikBridge({ network }: { network: string }) {
         </p>
       </details>
       {error && (
-        <p role="alert" className="mt-3 text-caption text-status-warning">
+        <p className="mt-3 text-caption text-status-warning" role="alert">
           {error}
         </p>
       )}

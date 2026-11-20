@@ -8,6 +8,7 @@ mod crypto;
 mod db;
 mod dca;
 mod docker_node;
+mod maker;
 mod mind;
 mod mind_hardware;
 mod mind_runtime;
@@ -15,6 +16,7 @@ mod node_backend;
 mod nwc;
 mod p2p;
 mod p2p_docker;
+mod p2p_media;
 mod p2p_networks;
 // kept as it is on main; only the daemon container's passphrase uses it here
 mod rgb_node;
@@ -61,7 +63,17 @@ async fn p2p_start(
     p2p: State<'_, Arc<P2pProcess>>,
     config: P2pStartRequest,
 ) -> Result<P2pStatus, String> {
-    let config = p2p_networks::resolve(config)?;
+    let base = p2p_base(&app)?;
+    let custom = p2p_networks::stored_relays(&base, &config.network_key);
+    let listing = p2p_networks::listing_json(&config.network_key);
+    let mut config = p2p_networks::resolve(config, custom)?;
+    // the app's listing goes to the daemon as a file, rewritten at each start
+    if let Some(json) = listing {
+        std::fs::create_dir_all(&base).map_err(|e| format!("{}: {e}", base.display()))?;
+        let path = base.join(format!("listed-{}.json", config.network));
+        std::fs::write(&path, json).map_err(|e| format!("{}: {e}", path.display()))?;
+        config.verified_assets_path = Some(path.to_string_lossy().into_owned());
+    }
     let p2p = Arc::clone(&*p2p);
     tauri::async_runtime::spawn_blocking(move || p2p.ensure_started(&app, &config))
         .await
@@ -71,6 +83,64 @@ async fn p2p_start(
 #[tauri::command]
 fn p2p_networks() -> Vec<p2p_networks::NetworkInfo> {
     p2p_networks::list()
+}
+
+/// The daemon's data directory, where the user's relay lists are kept too.
+fn p2p_base(app: &AppHandle) -> Result<std::path::PathBuf, String> {
+    Ok(app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("no app data dir: {e}"))?
+        .join("p2pd"))
+}
+
+/// Let the user pick an image for a new asset and copy it where the trading wallet's daemon reads
+/// media from. The page never names a path: the dialog opens here.
+#[tauri::command]
+async fn p2p_pick_media(
+    app: AppHandle,
+    account: String,
+) -> Result<Option<p2p_media::StagedMedia>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    if account.is_empty()
+        || !account
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_'))
+    {
+        return Err("the account name must be letters, digits, - or _".into());
+    }
+    let data_dir = p2p_base(&app)?.join(&account);
+    tauri::async_runtime::spawn_blocking(move || {
+        let picked = app
+            .dialog()
+            .file()
+            .add_filter("Images", &["png", "jpg", "jpeg", "gif", "webp"])
+            .blocking_pick_file();
+        let Some(file) = picked else { return Ok(None) };
+        let path = file.into_path().map_err(|e| e.to_string())?;
+        p2p_media::stage(&path, &data_dir).map(Some)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+fn p2p_relays_get(
+    app: AppHandle,
+    network_key: String,
+) -> Result<p2p_networks::RelaySettings, String> {
+    p2p_networks::relay_settings(&p2p_base(&app)?, &network_key)
+}
+
+/// Save the user's relays for a network (`None` goes back to the app's defaults). They are checked
+/// in `p2p_networks` and used from the daemon's next start.
+#[tauri::command]
+fn p2p_relays_set(
+    app: AppHandle,
+    network_key: String,
+    relays: Option<Vec<String>>,
+) -> Result<p2p_networks::RelaySettings, String> {
+    p2p_networks::set_relays(&p2p_base(&app)?, &network_key, relays)
 }
 
 #[tauri::command]
@@ -195,6 +265,7 @@ fn main() {
         .manage(Arc::clone(&nwc_manager))
         .manage(Arc::clone(&mind_process))
         .manage(Arc::clone(&p2p_process))
+        .manage(Arc::new(maker::MakerSigner::default()))
         .manage(CurrentAccount::default())
         .on_window_event(|window, event| {
             if window.label() == "main" {
@@ -343,6 +414,24 @@ fn main() {
             p2p_profile_set,
             p2p_available,
             p2p_networks,
+            p2p_relays_get,
+            p2p_pick_media,
+            p2p_relays_set,
+            maker::maker_view,
+            maker::maker_set_mode,
+            maker::maker_pair,
+            maker::maker_pairing_request,
+            maker::maker_api,
+            maker::maker_sign_policy,
+            maker::maker_signer_start,
+            maker::maker_signer_stop,
+            maker::maker_journal,
+            maker::maker_btc_usd,
+            maker::maker_wallet,
+            maker::maker_wallet_address,
+            maker::maker_wallet_create_coins,
+            maker::maker_wallet_mint,
+            maker::maker_send_state,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
@@ -1105,24 +1194,33 @@ fn delete_channel_order(
     db::delete_channel_order(account.id, orderId).map_err(|e| e.to_string())
 }
 
+// These ask Docker, which can take seconds or hang: off the main thread, or the whole app waits.
 #[tauri::command]
-fn is_local_node_supported() -> bool {
+async fn is_local_node_supported() -> bool {
     // Local node is supported if native binary OR Docker is available
-    rgb_node::NodeProcess::is_local_node_supported() || DockerNodeManager::is_docker_available()
+    tauri::async_runtime::spawn_blocking(|| {
+        rgb_node::NodeProcess::is_local_node_supported() || DockerNodeManager::is_docker_available()
+    })
+    .await
+    .unwrap_or(false)
 }
 
 #[tauri::command]
-fn get_local_node_capabilities() -> HashMap<String, bool> {
-    let mut caps = HashMap::new();
-    caps.insert(
-        "native".to_string(),
-        rgb_node::NodeProcess::is_local_node_supported(),
-    );
-    caps.insert(
-        "docker".to_string(),
-        DockerNodeManager::is_docker_available(),
-    );
-    caps
+async fn get_local_node_capabilities() -> HashMap<String, bool> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let mut caps = HashMap::new();
+        caps.insert(
+            "native".to_string(),
+            rgb_node::NodeProcess::is_local_node_supported(),
+        );
+        caps.insert(
+            "docker".to_string(),
+            DockerNodeManager::is_docker_available(),
+        );
+        caps
+    })
+    .await
+    .unwrap_or_default()
 }
 
 #[tauri::command]
@@ -1446,8 +1544,10 @@ fn check_docker_environment(account_name: String) -> Option<DockerEnvironment> {
 }
 
 #[tauri::command]
-fn is_docker_available() -> bool {
-    DockerNodeManager::is_docker_available()
+async fn is_docker_available() -> bool {
+    tauri::async_runtime::spawn_blocking(DockerNodeManager::is_docker_available)
+        .await
+        .unwrap_or(false)
 }
 
 #[tauri::command]

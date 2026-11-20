@@ -38,6 +38,8 @@ interface SwapInputFieldProps {
   onSizeClick?: (size: number) => void
   readOnly?: boolean
   useEnhancedSelector?: boolean
+  /** Shown instead of the asset selector, for screens that pick the asset their own way. */
+  assetSlot?: React.ReactNode
 }
 
 export const SwapInputField: React.FC<SwapInputFieldProps> = ({
@@ -66,6 +68,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
   onSizeClick,
   readOnly = false,
   useEnhancedSelector = true,
+  assetSlot,
 }) => {
   const { t } = useTranslation()
   useEffect(() => {
@@ -194,8 +197,10 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
         </div>
 
         {/* Asset selector */}
-        <div className="shrink-0 w-36">
-          {useEnhancedSelector ? (
+        <div className={assetSlot ? 'shrink-0' : 'shrink-0 w-36'}>
+          {assetSlot ? (
+            assetSlot
+          ) : useEnhancedSelector ? (
             <AssetSelectWithModal
               className="w-full h-12"
               disabled={disabled}

@@ -32,6 +32,19 @@ export interface P2pStartRequest {
 /** The networks the app has a market for. */
 export const p2pNetworks = () => invoke<P2pNetworkOption[]>('p2p_networks')
 
+/** A network's relays: the app's defaults, and the user's own list when one is saved. */
+export interface P2pRelaySettings {
+  defaults: string[]
+  custom: string[] | null
+}
+
+export const p2pRelaysGet = (networkKey: string) =>
+  invoke<P2pRelaySettings>('p2p_relays_get', { networkKey })
+
+/** Save the user's relays for a network, or `null` for the app's defaults. Used from the next start. */
+export const p2pRelaysSet = (networkKey: string, relays: string[] | null) =>
+  invoke<P2pRelaySettings>('p2p_relays_set', { networkKey, relays })
+
 export const p2pStatus = () => invoke<P2pStatus>('p2p_status')
 export const p2pStart = (config: P2pStartRequest) =>
   invoke<P2pStatus>('p2p_start', { config })
