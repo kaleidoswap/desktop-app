@@ -58,6 +58,8 @@ jobs:
       - name: Fetch Rust dependencies (private p2pd repository)
         shell: bash
         env:
+          # cargo runs from the repository root, so src-tauri/.cargo/config.toml is not read
+          CARGO_NET_GIT_FETCH_WITH_CLI: 'true'
           GIT_CONFIG_COUNT: '1'
           GIT_CONFIG_KEY_0: url.https://x-access-token:${{ secrets.P2PD_REPO_TOKEN }}@github.com/kaleidoswap/p2pd.insteadOf
           GIT_CONFIG_VALUE_0: https://github.com/kaleidoswap/p2pd
