@@ -131,11 +131,35 @@ fn volume_name(account: &str) -> String {
     format!("kaleido-p2pd-{account}-data")
 }
 
+/// Where the container sees the app's listing file.
+pub const LISTING_IN_CONTAINER: &str = "/listing.json";
+/// Where the container sees the media the user picked: the daemon's own upload folder.
+pub const MEDIA_IN_CONTAINER: &str = "/data/media-upload";
+
+/// Files on the host the container reads, each mounted read-only.
+#[derive(Debug, Default, Clone)]
+pub struct HostFiles {
+    /// The app's listing for the network (`--verified-assets`).
+    pub listing: Option<String>,
+    /// The folder the app copies picked media into.
+    pub media_dir: Option<String>,
+}
+
+fn bind(source: &str, target: &str, readonly: bool) -> [String; 2] {
+    let ro = if readonly { ",readonly" } else { "" };
+    [
+        "--mount".into(),
+        format!("type=bind,source={source},target={target}{ro}"),
+    ]
+}
+
 /// `docker run` up to and including the image. The port is the same inside and out because the
 /// daemon accepts only requests whose `Host` names the port it was started on. Secrets are passed by
 /// name (`-e NAME`): the value comes from this process's environment, not from the arguments.
-pub fn run_args(account: &str, image: &str, port: u16) -> Vec<String> {
-    [
+/// The listing file is mounted read-only. The media folder is the app's own folder for this
+/// wallet, mounted writable because the daemon sets its permissions at start.
+pub fn run_args(account: &str, image: &str, port: u16, files: &HostFiles) -> Vec<String> {
+    let mut a: Vec<String> = [
         "run".to_string(),
         "--rm".into(),
         "-i".into(),
@@ -149,13 +173,26 @@ pub fn run_args(account: &str, image: &str, port: u16) -> Vec<String> {
         "P2PD_API_TOKEN".into(),
         "-e".into(),
         "P2PD_PASSPHRASE".into(),
-        image.into(),
     ]
-    .to_vec()
+    .to_vec();
+    if let Some(f) = &files.listing {
+        a.extend(bind(f, LISTING_IN_CONTAINER, true));
+    }
+    if let Some(d) = &files.media_dir {
+        a.extend(bind(d, MEDIA_IN_CONTAINER, false));
+    }
+    a.push(image.into());
+    a
 }
 
-/// The daemon's own arguments inside the container. No verified-assets file (a path on the host
-/// means nothing in there; a curator's listing on Nostr does reach it), and the key file is sealed with the passphrase from the environment.
+/// The path the daemon in the container is given for a media file the app staged on the host.
+pub fn media_path_in_container(host_path: &str) -> Option<String> {
+    let name = std::path::Path::new(host_path).file_name()?.to_str()?;
+    Some(format!("{MEDIA_IN_CONTAINER}/{name}"))
+}
+
+/// The daemon's own arguments inside the container. The listing file is read where it is mounted
+/// ([`LISTING_IN_CONTAINER`]), and the key file is sealed with the passphrase from the environment.
 pub fn daemon_args(cfg: &P2pStartConfig, port: u16) -> Vec<String> {
     let mut a: Vec<String> = vec![
         "--name".into(),
@@ -183,6 +220,9 @@ pub fn daemon_args(cfg: &P2pStartConfig, port: u16) -> Vec<String> {
     ];
     for relay in &cfg.relays {
         a.extend(["--relay".into(), relay.clone()]);
+    }
+    if cfg.verified_assets_path.is_some() {
+        a.extend(["--verified-assets".into(), LISTING_IN_CONTAINER.into()]);
     }
     if let Some(npub) = &cfg.listing_curator {
         a.extend(["--listing-curator".into(), npub.clone()]);
@@ -283,6 +323,7 @@ mod tests {
             "wallet-signetcustom",
             "kaleidoswap/p2pd:1@sha256:abc",
             51234,
+            &HostFiles::default(),
         );
         assert!(a.contains(&"127.0.0.1:51234:51234".to_string()));
         assert!(a.contains(&"kaleido-p2pd-wallet-signetcustom-data:/data".to_string()));
@@ -292,9 +333,12 @@ mod tests {
 
     #[test]
     fn secrets_go_by_name_never_by_value() {
-        let args = [run_args("a", "img", 1), daemon_args(&cfg(), 1)]
-            .concat()
-            .join(" ");
+        let args = [
+            run_args("a", "img", 1, &HostFiles::default()),
+            daemon_args(&cfg(), 1),
+        ]
+        .concat()
+        .join(" ");
         assert!(args.contains("-e P2PD_API_TOKEN") && args.contains("-e P2PD_PASSPHRASE"));
         assert!(
             !args.contains("abandon"),
@@ -320,6 +364,30 @@ mod tests {
         assert!(
             !a.iter().any(|x| x.contains("/host/only.json")),
             "a path on the host means nothing in the container"
+        );
+        assert_eq!(at("--verified-assets"), Some(LISTING_IN_CONTAINER));
+    }
+
+    #[test]
+    fn the_listing_and_media_are_mounted_before_the_image() {
+        let files = HostFiles {
+            listing: Some(r"C:\Users\a\listed-signetcustom.json".into()),
+            media_dir: Some(r"C:\Users\a\wallet\media-upload".into()),
+        };
+        let a = run_args("a", "img", 1, &files);
+        let mounts: Vec<&String> = a
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| *i > 0 && a[i - 1] == "--mount")
+            .map(|(_, m)| m)
+            .collect();
+        assert_eq!(mounts.len(), 2);
+        assert!(mounts[0].ends_with("target=/listing.json,readonly"));
+        assert!(mounts[1].ends_with("target=/data/media-upload"));
+        assert_eq!(a.last().unwrap(), "img");
+        assert_eq!(
+            media_path_in_container(r"/x/media-upload/ab12.png").as_deref(),
+            Some("/data/media-upload/ab12.png")
         );
     }
 

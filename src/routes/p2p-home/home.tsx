@@ -26,6 +26,8 @@ import {
 import { usePoll } from '../trade/nostr-p2p/market/hooks'
 import { useP2pSession } from '../trade/nostr-p2p/session'
 
+import { FaucetCard } from './FaucetCard'
+
 import {
   bitcoinSummary,
   heldAssets,
@@ -162,6 +164,17 @@ export const Component = () => {
           </span>
         )}
       </header>
+
+      {config?.faucet_url &&
+        balance.data &&
+        btc.ready + btc.pending === 0 &&
+        assets.length === 0 && (
+          <FaucetCard
+            address={info.data?.address}
+            faucetUrl={config.faucet_url}
+            networkLabel={config.label}
+          />
+        )}
 
       <section
         aria-label={t('p2pHome.balance', { defaultValue: 'Balance' })}

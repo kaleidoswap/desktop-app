@@ -3381,7 +3381,20 @@
       "sent": "Transfer started. It shows up once the transaction confirms.",
       "parts": "In how many coins",
       "partsHint": "Each coin lets one swap run, so more coins means more swaps at once. {{each}} sats per coin; each part is its own transaction with its own fee.",
-      "partial": "{{sent}} of {{total}} parts went out and the rest did not. {{reason}}"
+      "partial": "{{sent}} of {{total}} parts went out and the rest did not. {{reason}}",
+      "amountLabel": "Amount",
+      "title2": "Move funds",
+      "nodeLoading": "Reading your node…",
+      "tradingSub": "used for the market",
+      "depositTab": "Deposit to trading wallet",
+      "enterAmount": "Enter an amount",
+      "assetLabel": "What to move",
+      "tradingTitle": "Trading wallet",
+      "nodeTitle": "Node",
+      "withdrawTab": "Withdraw to node",
+      "max": "Max",
+      "share": "Share of the balance",
+      "nodeSub": "your savings"
     },
     "market": {
       "header": {
@@ -3758,7 +3771,11 @@
     "all": "All activity",
     "activity": "Activity",
     "noTrades": "Your swaps show up here.",
-    "listed": "Listed by KaleidoSwap"
+    "listed": "Listed by KaleidoSwap",
+    "faucetTitle": "Get free test coins",
+    "faucetBody": "{{network}} is a test network: its coins have no value. A faucet sends you some to try swaps with.",
+    "faucetCopied": "Your address is copied: paste it on the faucet page. Coins arrive in a minute or two.",
+    "faucetButton": "Copy address and open faucet"
   },
   "p2pSettings": {
     "networkBody": "Each network has wallets of its own. Switching restarts the trading wallet.",
@@ -4185,6 +4202,7 @@
     "back": "Back",
     "skip": "Skip",
     "next": "Next",
-    "done": "Start trading"
+    "done": "Start trading",
+    "faucet": "Get free test coins"
   }
 }

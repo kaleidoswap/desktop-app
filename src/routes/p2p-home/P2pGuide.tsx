@@ -8,9 +8,13 @@ import {
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { openUrl } from '@tauri-apps/plugin-opener'
+
 import { useAppDispatch } from '../../app/store/hooks'
 import { Modal } from '../../components/ui'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
+import { marketApi } from '../trade/nostr-p2p/api'
+import { useOptionalP2pSession } from '../trade/nostr-p2p/session'
 
 const SEEN_KEY = 'p2p-guide.seen.v1'
 const OPEN_EVENT = 'p2p-guide-open'
@@ -45,6 +49,7 @@ const markSeen = () => {
 export function P2pGuide() {
   const { t } = useTranslation()
   const dispatch = useAppDispatch()
+  const faucetUrl = useOptionalP2pSession()?.config?.faucet_url ?? null
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState(0)
 
@@ -70,7 +75,7 @@ export function P2pGuide() {
     icon: LucideIcon
     title: string
     points: string[]
-    action?: { label: string; run: () => void }
+    actions?: { label: string; run: () => void }[]
   }[] = [
     {
       icon: KeyRound,
@@ -93,15 +98,35 @@ export function P2pGuide() {
       }),
     },
     {
-      action: {
-        label: t('p2pGuide.receive', { defaultValue: 'Receive bitcoin' }),
-        run: () => {
-          close()
-          dispatch(
-            uiSliceActions.setModal({ assetId: undefined, type: 'deposit' })
-          )
+      actions: [
+        {
+          label: t('p2pGuide.receive', { defaultValue: 'Receive bitcoin' }),
+          run: () => {
+            close()
+            dispatch(
+              uiSliceActions.setModal({ assetId: undefined, type: 'deposit' })
+            )
+          },
         },
-      },
+        ...(faucetUrl
+          ? [
+              {
+                label: t('p2pGuide.faucet', {
+                  defaultValue: 'Get free test coins',
+                }),
+                run: () => {
+                  close()
+                  // the address goes to the clipboard, for the faucet page
+                  void marketApi
+                    .info()
+                    .then((i) => navigator.clipboard.writeText(i.address))
+                    .catch(() => undefined)
+                    .finally(() => void openUrl(faucetUrl))
+                },
+              },
+            ]
+          : []),
+      ],
       icon: ArrowDownLeft,
       points: [
         t('p2pGuide.fund1', {
@@ -203,14 +228,19 @@ export function P2pGuide() {
             </li>
           ))}
         </ul>
-        {s.action && (
-          <button
-            className="self-start rounded-lg border border-primary/40 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10"
-            onClick={s.action.run}
-            type="button"
-          >
-            {s.action.label}
-          </button>
+        {s.actions && (
+          <div className="flex flex-wrap gap-2">
+            {s.actions.map((a) => (
+              <button
+                className="rounded-lg border border-primary/40 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+                key={a.label}
+                onClick={a.run}
+                type="button"
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
         )}
         <div className="flex items-center justify-between gap-3 pt-2">
           <div aria-hidden className="flex gap-1.5">

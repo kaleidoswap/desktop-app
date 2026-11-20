@@ -204,6 +204,11 @@ impl P2pProcess {
         matches!(child.as_mut().map(Child::try_wait), Some(Ok(None)))
     }
 
+    /// The daemon runs in a Docker container: paths on the host mean nothing to it.
+    pub fn in_docker(&self) -> bool {
+        lock(&self.container).is_some()
+    }
+
     pub fn status(&self) -> P2pStatus {
         let running = Self::alive(&mut lock(&self.child));
         let port = if running { *lock(&self.port) } else { None };
@@ -299,10 +304,18 @@ impl P2pProcess {
             p2p_docker::ensure_image(&image)?;
             p2p_docker::remove_container(&cfg.account);
             let passphrase = p2p_docker::passphrase(&cfg.account)?;
+            // the folder must exist before the mount, or Docker makes it
+            let media_dir = data_dir.join(crate::p2p_media::UPLOAD_DIR);
+            std::fs::create_dir_all(&media_dir)
+                .map_err(|e| format!("{}: {e}", media_dir.display()))?;
+            let files = p2p_docker::HostFiles {
+                listing: cfg.verified_assets_path.clone(),
+                media_dir: Some(media_dir.to_string_lossy().into_owned()),
+            };
             let mut cmd = p2p_docker::docker();
             cmd.env("P2PD_API_TOKEN", &token)
                 .env("P2PD_PASSPHRASE", &passphrase)
-                .args(p2p_docker::run_args(&cfg.account, &image, port))
+                .args(p2p_docker::run_args(&cfg.account, &image, port, &files))
                 .args(p2p_docker::daemon_args(cfg, port));
             log::info!(
                 "[p2p] starting {image} in Docker on 127.0.0.1:{port} for {} ({})",

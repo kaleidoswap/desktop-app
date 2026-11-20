@@ -10,6 +10,8 @@ export interface P2pNetworkOption {
   label: string
   /** The daemon's name for the network (`signetcustom` for Mutinynet). */
   network: string
+  /** A faucet for free test coins, on a test network. Absent from an older app build. */
+  faucet_url?: string | null
 }
 
 /**
