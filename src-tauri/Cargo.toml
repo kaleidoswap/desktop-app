@@ -79,6 +79,8 @@ tauri-plugin-updater = "2.14.1"
 
 # Same narrow LRU dependency backport as p2pd; see vendor/README.md.
 [patch.crates-io]
+# Use the same patched Esplora HTTPS client as the bundled daemon.
+esplora-client = { git = "https://github.com/kaleidoswap/p2pd", rev = "2935f68410747a1ada7b78a9b2a36fbe2da71d7d" }
 nostr-database = { path = "vendor/nostr-database" }
 nostr-relay-pool = { path = "vendor/nostr-relay-pool" }
 
