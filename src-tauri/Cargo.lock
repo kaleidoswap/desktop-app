@@ -6830,7 +6830,7 @@ dependencies = [
 [[package]]
 name = "signer-core"
 version = "0.1.0"
-source = "git+https://github.com/kaleidoswap/p2pd?rev=09fa402d6432777ad21a414eb93e909ad943682a#09fa402d6432777ad21a414eb93e909ad943682a"
+source = "git+https://github.com/kaleidoswap/p2pd?rev=2935f68410747a1ada7b78a9b2a36fbe2da71d7d#2935f68410747a1ada7b78a9b2a36fbe2da71d7d"
 dependencies = [
  "amplify",
  "getrandom 0.3.4",
@@ -6841,6 +6841,7 @@ dependencies = [
  "rgb-psbt-utils",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "tracing",
 ]

@@ -53,8 +53,8 @@ hex = "0.4"
 sysinfo = { version = "0.37", default-features = false, features = ["system"] }
 
 # Maker signer: the client side of a hosted p2pd maker (kaleidoswap/p2pd, branch feat/desktop-next).
-# Pinned to a commit; bump `rev` on both lines together (rgb-lib must match signer-core's).
-signer-core = { git = "https://github.com/kaleidoswap/p2pd", rev = "09fa402d6432777ad21a414eb93e909ad943682a" }
+# Use the same rgb-lib revision as the pinned signer-core.
+signer-core = { git = "https://github.com/kaleidoswap/p2pd", rev = "2935f68410747a1ada7b78a9b2a36fbe2da71d7d" }
 rgb-lib = { git = "https://github.com/kaleidoswap/rgb-lib", rev = "90668f51da32f72a302deba2c90bdf24ef678af2", features = ["esplora", "camel_case"] }
 base64 = "0.22"
 
