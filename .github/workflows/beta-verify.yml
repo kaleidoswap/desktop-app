@@ -44,9 +44,17 @@ jobs:
             gh release view "$GITHUB_REF_NAME" --json isDraft,isPrerelease,body |
               jq -e --arg sha "$GITHUB_SHA" '.isDraft and .isPrerelease and (.body | contains($sha))'
           else
+            version="${GITHUB_REF_NAME#v}"
+            notes="$RUNNER_TEMP/beta-notes.md"
+            awk -v heading="## [Version ${version%-beta.*}]" '
+              index($0, heading) == 1 { found = 1; next }
+              found && /^## / { exit }
+              found { print }
+            ' CHANGELOG.md > "$notes"
+            test -s "$notes"
+            printf '\nWindows installers are unsigned. [Windows verification](https://github.com/%s/blob/%s/docs/WINDOWS-BETA-VERIFICATION.md)\n\nBuild commit `%s`.\n' "$GITHUB_REPOSITORY" "$GITHUB_SHA" "$GITHUB_SHA" >> "$notes"
             gh release create "$GITHUB_REF_NAME" --verify-tag --draft --prerelease --latest=false \
-              --title "KaleidoSwap Desktop ${GITHUB_REF_NAME#v}" \
-              --notes "Beta packages for commit $GITHUB_SHA. Windows installers are unsigned. See docs/WINDOWS-BETA-VERIFICATION.md before distribution."
+              --title "KaleidoSwap Desktop $version" --notes-file "$notes"
           fi
 
   desktop:

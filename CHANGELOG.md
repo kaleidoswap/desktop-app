@@ -3,8 +3,8 @@
 ### Wallet and navigation
 
 - New installations open the mainnet wallet preview. Sending and receiving mainnet funds require a future native wallet integration.
-- Wallet, Market, Activity and Lightning share one navigation. Existing trading wallets and node profiles remain available.
-- Connect to a remote RGB Lightning node or run a local node on a supported test network.
+- Wallet, Market, Activity and Lightning share one navigation. KaleidoSwap Beta uses its own profiles, credentials and node data alongside the stable app. Create a disposable test wallet in the beta.
+- Connect to a remote RGB Lightning node or run a local node on a supported test network. The bundled node and Docker image use RLN 0.10.3.
 
 ### P2P trading on test networks
 
