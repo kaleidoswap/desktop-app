@@ -16,15 +16,9 @@ import {
 import { usePoll } from '../trade/nostr-p2p/market/hooks'
 import { useP2pSession } from '../trade/nostr-p2p/session'
 import { WalletSwitch } from '../trade/nostr-p2p/WalletSwitch'
-import { Component as AssetsHistory } from '../wallet-history/assets'
-import { Component as DepositsHistory } from '../wallet-history/deposits'
-import { Component as WithdrawalsHistory } from '../wallet-history/withdrawals'
 
 import { IssueDialog } from './IssueDialog'
 import { bitcoinSummary } from './summary'
-import { SwapsHistory } from './SwapsHistory'
-
-type Tab = 'swaps' | 'assets' | 'deposits' | 'withdrawals'
 
 const ActionButton = ({
   icon,
@@ -56,7 +50,6 @@ export const Component = () => {
   const session = useP2pSession()
   const balance = usePoll(marketApi.balance, 5_000)
   const info = usePoll(marketApi.info, 60_000)
-  const [tab, setTab] = useState<Tab>('swaps')
   const [coins, setCoins] = useState(false)
   const [issue, setIssue] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -66,19 +59,6 @@ export const Component = () => {
   const assets = [...(balance.data?.assets ?? [])].sort(
     (a, b) => b.total - a.total
   )
-
-  const tabs: [Tab, string][] = [
-    ['swaps', t('p2pSwaps.tab', { defaultValue: 'Swaps' })],
-    ['deposits', t('p2pMarket.tabDeposits', { defaultValue: 'Deposits' })],
-    [
-      'withdrawals',
-      t('p2pMarket.tabWithdrawals', { defaultValue: 'Withdrawals' }),
-    ],
-    [
-      'assets',
-      t('p2pWallet.assetTransfers', { defaultValue: 'Asset transfers' }),
-    ],
-  ]
 
   const copyNpub = async () => {
     if (!info.data) return
@@ -303,39 +283,6 @@ export const Component = () => {
           )}
         </section>
       </div>
-
-      <section className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <h2 className="text-lg font-medium text-content-primary">
-            {t('p2pWallet.history', { defaultValue: 'History' })}
-          </h2>
-          <div
-            className="flex gap-1 rounded-xl bg-surface-inset p-1"
-            role="tablist"
-          >
-            {tabs.map(([id, label]) => (
-              <button
-                aria-selected={tab === id}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                  tab === id
-                    ? 'bg-surface-raised text-content-primary'
-                    : 'text-content-tertiary hover:text-content-secondary'
-                }`}
-                key={id}
-                onClick={() => setTab(id)}
-                role="tab"
-                type="button"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-        {tab === 'swaps' && <SwapsHistory />}
-        {tab === 'assets' && <AssetsHistory />}
-        {tab === 'deposits' && <DepositsHistory />}
-        {tab === 'withdrawals' && <WithdrawalsHistory />}
-      </section>
 
       {coins && (
         <UTXOManagementModal

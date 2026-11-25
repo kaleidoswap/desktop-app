@@ -23,10 +23,10 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { toast, ToastContainer } from 'react-toastify'
 
 import {
-  ROOT_PATH,
   WALLET_SETUP_PATH,
   KALEIDO_MIND_PATH,
   P2P_WALLET_PATH,
+  MAINNET_PATH,
 } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import logoFull from '../../assets/logo-full.svg'
@@ -74,6 +74,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const DEFAULT_TOAST_AUTO_CLOSE_MS = 5000
 
 interface Props {
+  walletActions?: boolean
   className?: string
   children: React.ReactNode
 }
@@ -460,7 +461,7 @@ const UserProfile = ({
                           transition-all duration-200 group"
                 onClick={() => {
                   setIsOpen(false)
-                  navigate(ROOT_PATH)
+                  navigate(WALLET_SETUP_PATH)
                 }}
               >
                 <div className="text-primary transition-transform duration-200 group-hover:scale-110">
@@ -569,10 +570,16 @@ export const Layout = (props: Props) => {
   const location = useLocation()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  // the P2P app draws its own menu on every page under it
+  useEffect(() => {
+    if (props.walletActions === false) {
+      dispatch(uiSliceActions.setModal({ type: 'none' }))
+    }
+  }, [dispatch, props.walletActions])
+  // Wallet profiles share a shell independently of the node menu.
   const shouldHideNavbar =
     HIDE_NAVBAR_PATHS.includes(location.pathname) ||
-    location.pathname.startsWith(`${P2P_WALLET_PATH}/`)
+    location.pathname.startsWith(`${P2P_WALLET_PATH}/`) ||
+    location.pathname.startsWith(`${MAINNET_PATH}/`)
   // KaleidoMind does not depend on the node, so the node-offline overlay must
   // never block it — a node-less or "KaleidoMind only" user can keep using it.
   const isMindRoute = location.pathname.startsWith(KALEIDO_MIND_PATH)
@@ -1040,7 +1047,7 @@ export const Layout = (props: Props) => {
                   alt="KaleidoSwap"
                   className="h-8 w-auto cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
                   onClick={() => {
-                    navigate(ROOT_PATH)
+                    navigate(WALLET_SETUP_PATH)
                   }}
                   src={logoFull}
                 />
@@ -1079,7 +1086,7 @@ export const Layout = (props: Props) => {
                     navigate(KALEIDO_MIND_PATH)
                   } else {
                     // Node needs onboarding — send the user to the welcome.
-                    navigate(ROOT_PATH)
+                    navigate(WALLET_SETUP_PATH)
                   }
                 }
                 const ActivateIcon = section.key === 'node' ? Server : Brain
@@ -1368,8 +1375,7 @@ export const Layout = (props: Props) => {
         theme="dark"
       />
 
-      {/* Add LayoutModal for deposit/withdraw functionality */}
-      <LayoutModal />
+      {props.walletActions !== false && <LayoutModal />}
     </div>
   )
 }

@@ -3410,7 +3410,8 @@
         "regSame": "其他同名代号：{{n}}",
         "regListed": "已在登记处",
         "regNot": "不在登记处",
-        "search": "代号或资产 ID"
+        "search": "代号或资产 ID",
+        "yourWallet": "你的钱包"
       },
       "depth": {
         "empty": "深度图会随着订单到来逐渐形成。",
@@ -3583,7 +3584,10 @@
         "noBuyers": "暂无买家",
         "emptyTitle": "还没有人交易 {{ticker}}",
         "emptyBody": "发布第一个订单，网络上的所有人都能在这里看到。",
-        "foot": "订单只能整笔成交。点击一个订单即可交易。"
+        "foot": "订单只能整笔成交。点击一个订单即可交易。",
+        "loading": "正在加载订单簿…",
+        "makerOnline": "挂单方在线",
+        "makerAway": "挂单方离开"
       },
       "market": {
         "unreachable": "无法连接市场守护进程",
@@ -3702,6 +3706,50 @@
       },
       "walletSwitch": {
         "original": "这台电脑上的第一个钱包"
+      },
+      "offers": {
+        "marketTitle": "P2P 市场",
+        "simpleSwap": "快捷兑换",
+        "publish": "发布报价",
+        "onchainMarket": "链上市场",
+        "sharedWith": "共享市场",
+        "available": "报价",
+        "mine": "我的报价",
+        "pricePerUnit": "单价",
+        "quantity": "数量",
+        "expires": "剩余时间",
+        "summary": "报价摘要",
+        "pay": "你支付",
+        "receive": "你收到",
+        "onchain": "链上",
+        "retained": "随 RGB 资产保留的聪",
+        "reserve": "需预留的比特币",
+        "review": "核对兑换",
+        "chooseHint": "选择有效报价以查看价格和费用。",
+        "new": "新报价",
+        "close": "关闭报价表单",
+        "yourPrice": "你的价格",
+        "makeHint": "设置价格并保持桌面应用在线，以便响应其他交易者。",
+        "advanced": "市场深度和交易工具",
+        "webMarket": "Mosaik 网页市场",
+        "nostrDiscovery": "通过 Nostr 发布的报价",
+        "nostrRelays": "Nostr 中继（{{n}}）",
+        "configuredRelays": "已配置的中继",
+        "manageRelays": "管理中继",
+        "nostrMaker": "Nostr 上的挂单方",
+        "nostrProfile": "查看 Nostr 个人资料",
+        "hideProfile": "收起个人资料"
+      },
+      "cost": {
+        "platform": "平台费用",
+        "network": "网络费用",
+        "unavailable": "不可用"
+      },
+      "guide": {
+        "s1": "存入",
+        "s2": "买入或卖出",
+        "s3": "结算和提取",
+        "s2Body": "选择报价或通过 Nostr 发布自己的价格。报价有效或兑换进行期间，请保持应用在线。"
       }
     },
     "tabDeposits": "入账",
@@ -3792,7 +3840,9 @@
   },
   "p2pTrade": {
     "swap": "兑换",
-    "book": "订单簿"
+    "book": "订单簿",
+    "market": "P2P 市场",
+    "simpleSwap": "快捷兑换"
   },
   "p2pWallet": {
     "assetTransfers": "资产转账",
@@ -4201,5 +4251,30 @@
     "next": "下一步",
     "done": "开始交易",
     "faucet": "领取免费测试币"
+  },
+  "mainnetWallet": {
+    "assets": "比特币和 RGB 资产",
+    "checkFailed": "无法检查钱包是否可用",
+    "unavailable": "主网钱包预览",
+    "walletHint": "此版本尚未包含主网钱包。你可以在测试网络上创建或打开链上钱包。",
+    "historyHint": "主网钱包推出后即可查看主网交易记录。",
+    "openTest": "打开测试钱包",
+    "testHint": "切换网络以使用测试资金。",
+    "retry": "重试"
+  },
+  "unified": {
+    "testNetworks": "测试网络",
+    "test": "测试",
+    "market": "P2P 市场",
+    "node": "闪电网络节点",
+    "activity": "活动",
+    "accounts": "账户和 KaleidoMind",
+    "marketTestOnly": "通过 Nostr 查找和发布报价。测试网络上的交易由独立的交易钱包在链上结算。",
+    "nodeTestOnly": "在测试网络上运行本地 RGB 闪电网络节点或连接到远程节点。",
+    "switchTest": "切换到测试网络",
+    "openNode": "打开 {{name}} · {{network}}",
+    "manageNodes": "管理节点账户",
+    "mainnetWallet": "主网钱包",
+    "testMarketLabel": "Nostr P2P 市场 · 测试网络"
   }
 }

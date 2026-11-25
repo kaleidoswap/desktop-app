@@ -3413,7 +3413,8 @@
         "regSame": "Gleicher Ticker anderswo: {{n}}",
         "regListed": "In der Registry",
         "regNot": "Nicht in der Registry",
-        "search": "Ticker oder Asset-ID"
+        "search": "Ticker oder Asset-ID",
+        "yourWallet": "Deine Wallet"
       },
       "depth": {
         "empty": "Das Tiefendiagramm füllt sich, sobald Angebote eintreffen.",
@@ -3586,7 +3587,10 @@
         "noBuyers": "Noch keine Käufer",
         "emptyTitle": "Noch handelt niemand {{ticker}}",
         "emptyBody": "Stelle das erste Angebot ein, dann erscheint es hier für alle im Netzwerk.",
-        "foot": "Angebote werden ganz ausgeführt. Klicke eins an, um es zu handeln."
+        "foot": "Angebote werden ganz ausgeführt. Klicke eins an, um es zu handeln.",
+        "loading": "Orderbuch wird geladen …",
+        "makerOnline": "Maker online",
+        "makerAway": "Maker abwesend"
       },
       "market": {
         "unreachable": "Der Markt-Daemon ist nicht erreichbar",
@@ -3705,6 +3709,50 @@
       },
       "walletSwitch": {
         "original": "Das erste Wallet auf diesem Computer"
+      },
+      "offers": {
+        "marketTitle": "P2P-Markt",
+        "simpleSwap": "Einfacher Swap",
+        "publish": "Angebot veröffentlichen",
+        "onchainMarket": "On-Chain-Markt",
+        "sharedWith": "Gemeinsamer Markt mit",
+        "available": "Angebote",
+        "mine": "Meine Angebote",
+        "pricePerUnit": "Preis / Einheit",
+        "quantity": "Menge",
+        "expires": "Läuft ab in",
+        "summary": "Angebotsübersicht",
+        "pay": "Du zahlst",
+        "receive": "Du erhältst",
+        "onchain": "On-Chain",
+        "retained": "Sats, die beim RGB-Asset verbleiben",
+        "reserve": "Zu reservierende Bitcoin",
+        "review": "Swap überprüfen",
+        "chooseHint": "Wähle ein verfügbares Angebot, um Preis und Gebühren zu prüfen.",
+        "new": "Neues Angebot",
+        "close": "Angebotsformular schließen",
+        "yourPrice": "Dein Preis",
+        "makeHint": "Lege deinen Preis fest und lass die Desktop-App online, um auf Anfragen zu antworten.",
+        "advanced": "Markttiefe und Handelswerkzeuge",
+        "webMarket": "Mosaik-Webmarkt",
+        "nostrDiscovery": "Angebote über Nostr",
+        "nostrRelays": "Nostr-Relays ({{n}})",
+        "configuredRelays": "Konfigurierte Relays",
+        "manageRelays": "Relays verwalten",
+        "nostrMaker": "Maker auf Nostr",
+        "nostrProfile": "Nostr-Profil ansehen",
+        "hideProfile": "Profil ausblenden"
+      },
+      "cost": {
+        "platform": "Plattformgebühr",
+        "network": "Netzwerkgebühr",
+        "unavailable": "Nicht verfügbar"
+      },
+      "guide": {
+        "s1": "Einzahlen",
+        "s2": "Kaufen oder verkaufen",
+        "s3": "Abwickeln und auszahlen",
+        "s2Body": "Wähle ein Angebot oder veröffentliche deinen Preis über Nostr. Lass die App online, solange dein Angebot oder Swap aktiv ist."
       }
     },
     "tabDeposits": "Einzahlungen",
@@ -3795,7 +3843,9 @@
   },
   "p2pTrade": {
     "swap": "Swap",
-    "book": "Orderbuch"
+    "book": "Orderbuch",
+    "market": "P2P-Markt",
+    "simpleSwap": "Einfacher Swap"
   },
   "p2pWallet": {
     "assetTransfers": "Asset-Transfers",
@@ -4204,5 +4254,30 @@
     "next": "Weiter",
     "done": "Mit dem Handel beginnen",
     "faucet": "Kostenlose Testmünzen holen"
+  },
+  "mainnetWallet": {
+    "assets": "Bitcoin und RGB-Assets",
+    "checkFailed": "Die Verfügbarkeit der Wallet konnte nicht geprüft werden",
+    "unavailable": "Vorschau der Mainnet-Wallet",
+    "walletHint": "Diese Version enthält die Mainnet-Wallet noch nicht. Du kannst eine On-Chain-Wallet in einem Testnetz erstellen oder öffnen.",
+    "historyHint": "Der Verlauf der Mainnet-Transaktionen wird zusammen mit der Mainnet-Wallet verfügbar sein.",
+    "openTest": "Test-Wallet öffnen",
+    "testHint": "Zum Verwenden von Testguthaben das Netzwerk wechseln.",
+    "retry": "Erneut versuchen"
+  },
+  "unified": {
+    "testNetworks": "Testnetze",
+    "test": "Test",
+    "market": "P2P-Markt",
+    "node": "Lightning-Node",
+    "activity": "Aktivität",
+    "accounts": "Konten und KaleidoMind",
+    "marketTestOnly": "Finde und veröffentliche Angebote über Nostr. Auf Testnetzen werden Geschäfte mit deiner separaten Handelswallet on-chain abgewickelt.",
+    "nodeTestOnly": "Starte einen lokalen RGB-Lightning-Node oder verbinde dich in einem Testnetz mit einem entfernten Node.",
+    "switchTest": "Zu Testnetzen wechseln",
+    "openNode": "{{name}} öffnen · {{network}}",
+    "manageNodes": "Node-Konten verwalten",
+    "mainnetWallet": "Mainnet-Wallet",
+    "testMarketLabel": "Nostr-P2P-Markt · Testnetze"
   }
 }

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 
 import { useNotification } from '../../components/NotificationSystem'
@@ -27,8 +27,10 @@ import {
   WALLET_RESTORE_PATH,
   KALEIDO_MIND_PATH,
   P2P_WALLET_PATH,
+  MAINNET_WALLET_PATH,
 } from '../../app/router/paths'
 import logoFull from '../../assets/logo-full.svg'
+import { findTradingWallet, rememberProfile } from '../p2p-home/navigation'
 import { AppVersion } from '../../components/AppVersion'
 import { Layout } from '../../components/Layout'
 import { SupportModal } from '../../components/SupportModal'
@@ -38,15 +40,19 @@ import { setAppMode } from '../../slices/settings/settings.slice'
 import { logger } from '../../utils/logger'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
-import { walletAccountFor } from '../../constants/p2p'
-import { p2pNetworks, p2pProfileGet } from '../trade/nostr-p2p/p2p'
-import { readSelectedWalletId } from '../trade/nostr-p2p/wallets'
+import { saveNetwork, writeSelectedWalletId } from '../trade/nostr-p2p/wallets'
 
 export const Component = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const [nodeType, setNodeType] = useState<'local' | 'remote' | null>(null)
+  const [search] = useSearchParams()
+  const [nodeType, setNodeType] = useState<'local' | 'remote' | null>(() =>
+    search.get('node') === 'local' ? 'local' : null
+  )
+  useEffect(() => {
+    rememberProfile('node')
+  }, [])
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
   const { toggleNotificationPanel, notifications } = useNotification()
@@ -135,22 +141,28 @@ export const Component = () => {
           : null
 
   // someone who already made a trading wallet here goes straight back to it
-  const [hasTradingWallet, setHasTradingWallet] = useState(false)
+  const [tradingWallet, setTradingWallet] =
+    useState<Awaited<ReturnType<typeof findTradingWallet>>>(null)
   useEffect(() => {
-    let cancelled = false
-    p2pNetworks()
-      .then(async (nets) => {
-        const net = nets[0]
-        if (!net) return
-        const account = walletAccountFor(net, readSelectedWalletId(net.network))
-        const profile = await p2pProfileGet(account)
-        if (!cancelled) setHasTradingWallet(!!profile)
+    let active = true
+    findTradingWallet()
+      .then((found) => {
+        if (active) setTradingWallet(found)
       })
       .catch(() => undefined)
     return () => {
-      cancelled = true
+      active = false
     }
   }, [])
+
+  const openTradingWallet = () => {
+    if (tradingWallet) {
+      const { network, wallet } = tradingWallet
+      saveNetwork(network.key)
+      writeSelectedWalletId(network.network, wallet.id)
+    }
+    navigate(P2P_WALLET_PATH)
+  }
 
   // the node list only earns its column when there are nodes in it
   const [hasNodes, setHasNodes] = useState(false)
@@ -255,6 +267,13 @@ export const Component = () => {
                 <AppVersion className="relative mr-2" />
               </>
             )}
+            <Link
+              className="flex items-center gap-2 rounded-lg border border-divider/30 px-3 py-2 text-sm font-medium text-content-primary hover:bg-surface-overlay/50"
+              to={MAINNET_WALLET_PATH}
+            >
+              <Wallet className="h-4 w-4" />
+              {t('unified.mainnetWallet', { defaultValue: 'Mainnet wallet' })}
+            </Link>
             <button
               aria-label="Support"
               className="p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
@@ -301,9 +320,8 @@ export const Component = () => {
                     <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
                       <section className="flex flex-col gap-5">
                         <span className="text-xs font-medium tracking-[0.12em] text-primary">
-                          {t('launcher.eyebrow', {
-                            defaultValue:
-                              'PEER TO PEER · ON BITCOIN · OVER NOSTR',
+                          {t('unified.testMarketLabel', {
+                            defaultValue: 'Nostr P2P market · Test networks',
                           })}
                         </span>
                         <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-white md:text-5xl">
@@ -319,11 +337,11 @@ export const Component = () => {
                           })}
                         </p>
                         <div className="flex flex-wrap gap-3 pt-1">
-                          {hasTradingWallet ? (
+                          {tradingWallet ? (
                             <button
                               className="flex min-h-12 items-center gap-2 rounded-lg bg-primary px-6 text-base font-bold text-surface-base transition-opacity hover:opacity-90 disabled:opacity-50"
                               disabled={p2pBlocked}
-                              onClick={() => navigate(P2P_WALLET_PATH)}
+                              onClick={openTradingWallet}
                               type="button"
                             >
                               {t('launcher.openWallet', {
@@ -365,7 +383,7 @@ export const Component = () => {
                           </p>
                         ) : (
                           <p className="text-sm text-content-tertiary">
-                            {hasTradingWallet
+                            {tradingWallet
                               ? t('launcher.walletReady', {
                                   defaultValue:
                                     'Your trading wallet is on this computer. Touch ID unlocks it.',

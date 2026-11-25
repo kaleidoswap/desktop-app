@@ -1,3 +1,5 @@
+import i18n from 'i18next'
+
 import type { Order } from './api'
 import { takerSettlement } from './costs'
 
@@ -5,10 +7,13 @@ export const units = (amount: number, precision: number) =>
   amount / 10 ** precision
 
 export function fmtUnits(amount: number, precision: number): string {
-  return units(amount, precision).toLocaleString('en-US', {
-    maximumFractionDigits: precision,
-    minimumFractionDigits: 0,
-  })
+  return units(amount, precision).toLocaleString(
+    i18n.resolvedLanguage ?? 'en-US',
+    {
+      maximumFractionDigits: precision,
+      minimumFractionDigits: 0,
+    }
+  )
 }
 
 /** A precision the daemon or an on-screen asset can actually mean. */
@@ -43,7 +48,8 @@ export function fmtTradeAmount(
   amount: number,
   precision: number | null
 ): string {
-  if (precision === null) return Math.trunc(amount).toLocaleString('en-US')
+  if (precision === null)
+    return Math.trunc(amount).toLocaleString(i18n.resolvedLanguage ?? 'en-US')
   return fmtUnits(amount, precision)
 }
 
@@ -65,20 +71,20 @@ export function tradeUnitPrice(
 }
 
 export const fmtSats = (n: number): string =>
-  Math.round(n).toLocaleString('en-US')
+  Math.round(n).toLocaleString(i18n.resolvedLanguage ?? 'en-US')
 
 /** Sats per unit: more decimals when the price is small, so cheap assets stay readable. */
 export function fmtPrice(p: number): string {
   if (!isFinite(p) || p === 0) return '–'
   const d = p >= 1000 ? 0 : p >= 100 ? 1 : p >= 1 ? 2 : 4
-  return p.toLocaleString('en-US', {
+  return p.toLocaleString(i18n.resolvedLanguage ?? 'en-US', {
     maximumFractionDigits: d,
     minimumFractionDigits: d,
   })
 }
 
 export const fmtBtc = (sats: number): string =>
-  (sats / 1e8).toLocaleString('en-US', {
+  (sats / 1e8).toLocaleString(i18n.resolvedLanguage ?? 'en-US', {
     maximumFractionDigits: 8,
     minimumFractionDigits: 8,
   })

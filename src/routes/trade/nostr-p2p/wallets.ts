@@ -5,6 +5,24 @@
  * account by `walletAccountFor`.
  */
 
+const NETWORK_KEY = 'p2p-market.network'
+
+export const savedNetwork = (): string | null => {
+  try {
+    return localStorage.getItem(NETWORK_KEY)
+  } catch {
+    return null
+  }
+}
+
+export const saveNetwork = (key: string) => {
+  try {
+    localStorage.setItem(NETWORK_KEY, key)
+  } catch {
+    // the choice is just not remembered
+  }
+}
+
 export interface TradingWallet {
   /** Empty for the original wallet on this network. */
   id: string

@@ -227,9 +227,6 @@ pub fn daemon_args(cfg: &P2pStartConfig, port: u16) -> Vec<String> {
     if let Some(npub) = &cfg.listing_curator {
         a.extend(["--listing-curator".into(), npub.clone()]);
     }
-    if cfg.network == "mainnet" {
-        a.push("--allow-mainnet".into());
-    }
     if cfg.seed_mnemonic.is_some() {
         a.push("--seed-stdin".into());
     }

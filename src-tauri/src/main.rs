@@ -85,6 +85,13 @@ fn p2p_networks() -> Vec<p2p_networks::NetworkInfo> {
     p2p_networks::list()
 }
 
+/// This build contains a test-network market daemon and a maker signer. Neither is
+/// the standalone BTC/RGB wallet for Mainnet.
+#[tauri::command]
+fn mainnet_wallet_status() -> &'static str {
+    "not_bundled"
+}
+
 /// The daemon's data directory, where the user's relay lists are kept too.
 fn p2p_base(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     Ok(app
@@ -422,6 +429,7 @@ fn main() {
             p2p_profile_set,
             p2p_available,
             p2p_networks,
+            mainnet_wallet_status,
             p2p_relays_get,
             p2p_pick_media,
             p2p_relays_set,

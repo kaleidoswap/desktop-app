@@ -14,6 +14,8 @@ import {
   TRADE_MARKET_MAKER_PATH,
   TRADE_MANUAL_PATH,
   P2P_WALLET_PATH,
+  MAINNET_PATH,
+  MAINNET_WALLET_PATH,
   TRADE_NOSTR_P2P_PATH,
   TRADE_DCA_PATH,
   TRADE_LIMIT_PATH,
@@ -44,9 +46,49 @@ export const router = createBrowserRouter([
   },
   {
     children: [
+      { element: <Navigate replace to={MAINNET_WALLET_PATH} />, index: true },
+      {
+        lazy: async () => ({
+          Component: (await import('../../routes/mainnet-wallet')).Component,
+        }),
+        path: 'wallet',
+      },
+      {
+        lazy: async () => ({
+          Component: (await import('../../routes/mainnet-wallet')).Activity,
+        }),
+        path: 'activity',
+      },
+      {
+        lazy: async () => ({
+          Component: (await import('../../routes/p2p-home/node'))
+            .TestNetworkGate,
+        }),
+        path: 'market',
+      },
+      {
+        lazy: async () => ({
+          Component: (await import('../../routes/p2p-home/node'))
+            .TestNetworkGate,
+        }),
+        path: 'node',
+      },
+    ],
+    lazy: async () => ({
+      Component: (await import('../../routes/p2p-home')).MainnetShell,
+    }),
+    path: MAINNET_PATH,
+  },
+  {
+    children: [
       { index: true, lazy: () => import('../../routes/p2p-home/home') },
       { lazy: () => import('../../routes/p2p-home/trade'), path: 'trade' },
       { lazy: () => import('../../routes/p2p-home/wallet'), path: 'wallet' },
+      {
+        lazy: () => import('../../routes/p2p-home/activity'),
+        path: 'activity',
+      },
+      { lazy: () => import('../../routes/p2p-home/node'), path: 'node' },
       {
         lazy: () => import('../../routes/p2p-home/settings'),
         path: 'settings',

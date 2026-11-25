@@ -3413,7 +3413,8 @@
         "regSame": "Same ticker elsewhere: {{n}}",
         "regListed": "In the registry",
         "regNot": "Not in the registry",
-        "search": "Ticker or asset ID"
+        "search": "Ticker or asset ID",
+        "yourWallet": "Your wallet"
       },
       "depth": {
         "empty": "The depth chart fills in as orders arrive.",
@@ -3586,7 +3587,10 @@
         "noBuyers": "No buyers yet",
         "emptyTitle": "Nobody is trading {{ticker}} yet",
         "emptyBody": "Post the first order and it shows up here for everyone on the network.",
-        "foot": "Orders fill whole. Click one to trade it."
+        "foot": "Orders fill whole. Click one to trade it.",
+        "loading": "Loading the order book…",
+        "makerOnline": "Maker online",
+        "makerAway": "Maker away"
       },
       "market": {
         "unreachable": "Can’t reach the market daemon",
@@ -3705,6 +3709,50 @@
       },
       "walletSwitch": {
         "original": "The first wallet on this computer"
+      },
+      "offers": {
+        "marketTitle": "P2P market",
+        "simpleSwap": "Simple swap",
+        "publish": "Publish offer",
+        "onchainMarket": "On-chain market",
+        "sharedWith": "Market shared with",
+        "available": "Offers",
+        "mine": "My offers",
+        "pricePerUnit": "Price / unit",
+        "quantity": "Quantity",
+        "expires": "Expires in",
+        "summary": "Offer summary",
+        "pay": "You pay",
+        "receive": "You receive",
+        "onchain": "On-chain",
+        "retained": "Sats kept with the RGB asset",
+        "reserve": "Bitcoin to reserve",
+        "review": "Review swap",
+        "chooseHint": "Choose an available offer to review its price and fees.",
+        "new": "New offer",
+        "close": "Close offer form",
+        "yourPrice": "Your price",
+        "makeHint": "Choose your price and keep your desktop online to answer other traders.",
+        "advanced": "Market depth and trading tools",
+        "webMarket": "Mosaik web market",
+        "nostrDiscovery": "Offers via Nostr",
+        "nostrRelays": "Nostr relays ({{n}})",
+        "configuredRelays": "Configured relays",
+        "manageRelays": "Manage relays",
+        "nostrMaker": "Maker on Nostr",
+        "nostrProfile": "View Nostr profile",
+        "hideProfile": "Hide profile"
+      },
+      "cost": {
+        "platform": "Platform fee",
+        "network": "Network fee",
+        "unavailable": "Unavailable"
+      },
+      "guide": {
+        "s1": "Deposit",
+        "s2": "Buy or sell",
+        "s3": "Settle and withdraw",
+        "s2Body": "Select an offer or publish your own price via Nostr. Keep the app online while your offer or swap is active."
       }
     },
     "tabDeposits": "Deposits",
@@ -3795,7 +3843,9 @@
   },
   "p2pTrade": {
     "swap": "Swap",
-    "book": "Order book"
+    "book": "Order book",
+    "market": "P2P market",
+    "simpleSwap": "Simple swap"
   },
   "p2pWallet": {
     "assetTransfers": "Asset transfers",
@@ -4204,5 +4254,30 @@
     "next": "Next",
     "done": "Start trading",
     "faucet": "Get free test coins"
+  },
+  "mainnetWallet": {
+    "assets": "Bitcoin and RGB assets",
+    "checkFailed": "Could not check wallet availability",
+    "unavailable": "Mainnet wallet preview",
+    "walletHint": "This build doesn’t include the mainnet wallet yet. You can create or open an on-chain wallet on a test network.",
+    "historyHint": "Mainnet transaction history will be available with the mainnet wallet.",
+    "openTest": "Open test wallet",
+    "testHint": "Switch network to use test funds.",
+    "retry": "Try again"
+  },
+  "unified": {
+    "testNetworks": "Test networks",
+    "test": "test",
+    "market": "P2P market",
+    "node": "Lightning node",
+    "activity": "Activity",
+    "accounts": "Accounts & KaleidoMind",
+    "marketTestOnly": "Find and publish offers via Nostr. On test networks, trades settle on-chain using your separate trading wallet.",
+    "nodeTestOnly": "Run a local RGB Lightning node or connect to a remote node on a test network.",
+    "switchTest": "Switch to test networks",
+    "openNode": "Open {{name}} · {{network}}",
+    "manageNodes": "Manage node accounts",
+    "mainnetWallet": "Mainnet wallet",
+    "testMarketLabel": "Nostr P2P market · Test networks"
   }
 }

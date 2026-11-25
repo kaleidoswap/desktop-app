@@ -79,7 +79,7 @@ export function HowItWorks({
     {
       body: tr(
         'guide.s2Body',
-        'Choose Market to accept an offer, or Limit to publish your price. Keep desktop online while your offer or swap is active.'
+        'Select an offer or publish your own price via Nostr. Keep the app online while your offer or swap is active.'
       ),
       done: active,
       title: tr('guide.s2', 'Buy or sell'),

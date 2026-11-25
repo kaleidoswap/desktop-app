@@ -38,6 +38,7 @@ interface Props {
   initialAmount?: string
   initialSide?: Side
   initialMode?: Mode
+  limitOnly?: boolean
 }
 
 const TTLS = [
@@ -60,10 +61,11 @@ export function TradeTicket({
   initialAmount = '',
   initialSide = 'buy',
   initialMode = 'market',
+  limitOnly = false,
 }: Props) {
   const tr = useTr()
   const [side, setSide] = useState<Side>(initialSide)
-  const [mode, setMode] = useState<Mode>(initialMode)
+  const [mode, setMode] = useState<Mode>(limitOnly ? 'limit' : initialMode)
   const [amount, setAmount] = useState(initialAmount)
   const [price, setPrice] = useState('')
   const [slippage, setSlippage] = useState(0.01)
@@ -255,27 +257,29 @@ export function TradeTicket({
         ))}
       </div>
 
-      <div className="flex gap-4 text-body" role="tablist">
-        {(['market', 'limit'] as const).map((m) => (
-          <button
-            aria-selected={mode === m}
-            className={cx(
-              'border-b-2 pb-1 transition-colors',
-              mode === m
-                ? 'border-primary text-content-primary'
-                : 'border-transparent text-content-tertiary hover:text-content-secondary'
-            )}
-            key={m}
-            onClick={() => setMode(m)}
-            role="tab"
-            type="button"
-          >
-            {m === 'market'
-              ? tr('ticket.market', 'Market')
-              : tr('ticket.limit', 'Limit')}
-          </button>
-        ))}
-      </div>
+      {!limitOnly && (
+        <div className="flex gap-4 text-body" role="tablist">
+          {(['market', 'limit'] as const).map((m) => (
+            <button
+              aria-selected={mode === m}
+              className={cx(
+                'border-b-2 pb-1 transition-colors',
+                mode === m
+                  ? 'border-primary text-content-primary'
+                  : 'border-transparent text-content-tertiary hover:text-content-secondary'
+              )}
+              key={m}
+              onClick={() => setMode(m)}
+              role="tab"
+              type="button"
+            >
+              {m === 'market'
+                ? tr('ticket.market', 'Market')
+                : tr('ticket.limit', 'Limit')}
+            </button>
+          ))}
+        </div>
+      )}
 
       <p className="-mt-1 text-caption text-content-tertiary">
         {mode === 'market'
@@ -288,10 +292,15 @@ export function TradeTicket({
                 'ticket.marketHelpSell',
                 'Sell now to the highest open buy orders. You see exactly what you receive before anything is signed.'
               )
-          : tr(
-              'ticket.limitHelp',
-              'Post an order at your own price. It waits in the book until someone takes it.'
-            )}
+          : limitOnly
+            ? tr(
+                'offers.makeHint',
+                'Choose your price and keep your desktop online to answer other traders.'
+              )
+            : tr(
+                'ticket.limitHelp',
+                'Post an order at your own price. It waits in the book until someone takes it.'
+              )}
       </p>
 
       <div className="flex items-center justify-between text-caption text-content-tertiary">

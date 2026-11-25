@@ -1,14 +1,27 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, Navigate, useLocation } from 'react-router-dom'
 
 import { webSocketService } from '../../app/hubs/websocketService'
-import {
-  ROOT_PATH,
-  WALLET_SETUP_PATH,
-  TRADE_MARKET_MAKER_PATH,
-} from '../../app/router/paths'
+import { ROOT_PATH, TRADE_MARKET_MAKER_PATH } from '../../app/router/paths'
+import { useAppSelector } from '../../app/store/hooks'
+import { startupPath } from '../p2p-home/navigation'
 import { Layout } from '../../components/Layout'
 import { logger } from '../../utils/logger'
+
+function Startup() {
+  const mindOnly = useAppSelector((state) => state.settings.appMode === 'mind')
+  const [path, setPath] = useState<string | null>(null)
+  useEffect(() => {
+    let active = true
+    void startupPath(mindOnly).then((target) => {
+      if (active) setPath(target)
+    })
+    return () => {
+      active = false
+    }
+  }, [mindOnly])
+  return path ? <Navigate replace to={path} /> : null
+}
 
 export const RootRoute = () => {
   const location = useLocation()
@@ -35,10 +48,8 @@ export const RootRoute = () => {
     }
   }, [])
 
-  // The welcome (account picker + mode + connect) lives on the wallet-setup
-  // screen, which is always the entry point. "/" simply forwards there.
   if (isIndexRoute) {
-    return <Navigate replace to={WALLET_SETUP_PATH} />
+    return <Startup />
   }
 
   return (

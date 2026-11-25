@@ -35,7 +35,7 @@ interface Props {
   /** Shown under the list, such as an action that adds an entry. */
   footer?: (close: () => void) => ReactNode
   /** How the closed picker looks: `field` inside a form, `pill` in a toolbar or menu. */
-  variant?: 'field' | 'pill'
+  variant?: 'field' | 'pill' | 'market'
   className?: string
 }
 
@@ -128,9 +128,11 @@ export function Picker({
   }
 
   const trigger =
-    variant === 'pill'
-      ? 'min-h-10 rounded-full border border-divider/30 bg-surface-elevated px-3 text-sm'
-      : 'min-h-11 w-full rounded-xl border border-divider/30 bg-surface-elevated px-3 text-sm'
+    variant === 'market'
+      ? 'min-h-9 max-w-full rounded-lg text-xl font-semibold tracking-tight text-[#faf7ff] hover:bg-white/10 sm:text-2xl'
+      : variant === 'pill'
+        ? 'min-h-10 rounded-full border border-divider/30 bg-surface-elevated px-3 text-sm'
+        : 'min-h-11 w-full rounded-xl border border-divider/30 bg-surface-elevated px-3 text-sm'
 
   return (
     <div className={`relative ${className}`} onKeyDown={onKey} ref={root}>
@@ -139,11 +141,11 @@ export function Picker({
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={label}
-        className={`flex items-center gap-2 text-left text-content-primary transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${trigger}`}
+        className={`flex items-center gap-2 text-left ${variant === 'market' ? '' : 'text-content-primary'} transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${trigger}`}
         onClick={() => (open ? close() : openList())}
         type="button"
       >
-        {selected?.leading}
+        {variant !== 'market' && selected?.leading}
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
           <span className="truncate font-medium">
             {selected?.title ?? label}
@@ -151,12 +153,14 @@ export function Picker({
           {selected?.badge}
         </span>
         <ChevronDown
-          className={`h-4 w-4 flex-none text-content-tertiary transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 flex-none ${variant === 'market' ? 'text-[#ded2ef]' : 'text-content-tertiary'} transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-1.5 flex max-h-96 w-max min-w-full max-w-[22rem] flex-col overflow-hidden rounded-xl border border-divider/20 bg-surface-elevated shadow-2xl shadow-black/40">
+        <div
+          className={`absolute z-50 mt-1.5 flex max-h-96 w-max min-w-full flex-col overflow-hidden rounded-xl border border-divider/20 bg-surface-elevated shadow-2xl shadow-black/40 ${variant === 'market' ? 'left-0 max-w-[min(22rem,65vw)]' : 'right-0 max-w-[22rem]'}`}
+        >
           {searchable && (
             <div className="flex items-center gap-2 border-b border-divider/10 px-3 py-2">
               <Search className="h-4 w-4 text-content-tertiary" />

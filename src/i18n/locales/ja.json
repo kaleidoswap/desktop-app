@@ -3419,7 +3419,8 @@
         "regSame": "他に同じティッカー: {{n}}",
         "regListed": "レジストリに掲載あり",
         "regNot": "レジストリに未掲載",
-        "search": "ティッカーまたは資産 ID"
+        "search": "ティッカーまたは資産 ID",
+        "yourWallet": "自分のウォレット"
       },
       "depth": {
         "empty": "注文が入るとデプスチャートが表示されます。",
@@ -3592,7 +3593,10 @@
         "noBuyers": "買い手はまだいません",
         "emptyTitle": "まだ誰も {{ticker}} を取引していません",
         "emptyBody": "最初の注文を出すと、ネットワーク上のみんなに表示されます。",
-        "foot": "注文は全量で約定します。クリックして取引してください。"
+        "foot": "注文は全量で約定します。クリックして取引してください。",
+        "loading": "オーダーブックを読み込み中…",
+        "makerOnline": "メイカーはオンライン",
+        "makerAway": "メイカーは離席中"
       },
       "market": {
         "unreachable": "マーケットデーモンに接続できません",
@@ -3711,6 +3715,50 @@
       },
       "walletSwitch": {
         "original": "このコンピューターの最初のウォレット"
+      },
+      "offers": {
+        "marketTitle": "P2P市場",
+        "simpleSwap": "シンプルスワップ",
+        "publish": "オファーを公開",
+        "onchainMarket": "オンチェーン市場",
+        "sharedWith": "市場の共有先",
+        "available": "オファー",
+        "mine": "自分のオファー",
+        "pricePerUnit": "単価",
+        "quantity": "数量",
+        "expires": "有効期限",
+        "summary": "オファーの概要",
+        "pay": "支払額",
+        "receive": "受取額",
+        "onchain": "オンチェーン",
+        "retained": "RGB資産とともに保持するsat",
+        "reserve": "確保するビットコイン",
+        "review": "スワップを確認",
+        "chooseHint": "オファーを選ぶと価格と手数料を確認できます。",
+        "new": "新しいオファー",
+        "close": "オファーフォームを閉じる",
+        "yourPrice": "希望価格",
+        "makeHint": "価格を設定し、他の参加者に応答できるようデスクトップアプリをオンラインにしておきます。",
+        "advanced": "板の厚みと取引ツール",
+        "webMarket": "Mosaikウェブ市場",
+        "nostrDiscovery": "Nostr経由のオファー",
+        "nostrRelays": "Nostrリレー ({{n}})",
+        "configuredRelays": "設定済みリレー",
+        "manageRelays": "リレーを管理",
+        "nostrMaker": "Nostrのメイカー",
+        "nostrProfile": "Nostrプロフィールを表示",
+        "hideProfile": "プロフィールを隠す"
+      },
+      "cost": {
+        "platform": "プラットフォーム手数料",
+        "network": "ネットワーク手数料",
+        "unavailable": "利用できません"
+      },
+      "guide": {
+        "s1": "入金",
+        "s2": "購入または売却",
+        "s3": "決済と出金",
+        "s2Body": "オファーを選ぶか、Nostrで希望価格を公開します。オファーやスワップが有効な間はアプリをオンラインにしてください。"
       }
     },
     "tabDeposits": "入金",
@@ -3801,7 +3849,9 @@
   },
   "p2pTrade": {
     "swap": "スワップ",
-    "book": "板"
+    "book": "板",
+    "market": "P2P市場",
+    "simpleSwap": "シンプルスワップ"
   },
   "p2pWallet": {
     "assetTransfers": "資産の移動",
@@ -4210,5 +4260,30 @@
     "next": "次へ",
     "done": "取引を始める",
     "faucet": "無料のテスト用コインを入手"
+  },
+  "mainnetWallet": {
+    "assets": "ビットコインとRGB資産",
+    "checkFailed": "ウォレットの利用可否を確認できませんでした",
+    "unavailable": "メインネットウォレットのプレビュー",
+    "walletHint": "このバージョンにはまだメインネットウォレットが含まれていません。テストネットではオンチェーンウォレットを作成または開くことができます。",
+    "historyHint": "メインネットの取引履歴はメインネットウォレットの提供開始後に利用できます。",
+    "openTest": "テストウォレットを開く",
+    "testHint": "ネットワークを切り替えてテスト資金を使用します。",
+    "retry": "再試行"
+  },
+  "unified": {
+    "testNetworks": "テストネットワーク",
+    "test": "テスト",
+    "market": "P2P市場",
+    "node": "Lightningノード",
+    "activity": "アクティビティ",
+    "accounts": "アカウントとKaleidoMind",
+    "marketTestOnly": "Nostrでオファーを検索、公開できます。テストネットの取引は専用の取引ウォレットでオンチェーン決済されます。",
+    "nodeTestOnly": "テストネット上でローカルのRGB Lightningノードを起動するか、リモートノードに接続します。",
+    "switchTest": "テストネットに切り替える",
+    "openNode": "{{name}} を開く · {{network}}",
+    "manageNodes": "ノードアカウントを管理",
+    "mainnetWallet": "メインネットウォレット",
+    "testMarketLabel": "Nostr P2P市場 · テストネット"
   }
 }

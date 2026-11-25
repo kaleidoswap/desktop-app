@@ -3419,7 +3419,8 @@
         "regSame": "Même ticker ailleurs : {{n}}",
         "regListed": "Dans le registre",
         "regNot": "Absent du registre",
-        "search": "Ticker ou ID d’actif"
+        "search": "Ticker ou ID d’actif",
+        "yourWallet": "Votre portefeuille"
       },
       "depth": {
         "empty": "Le graphique de profondeur se remplit à mesure que les ordres arrivent.",
@@ -3592,7 +3593,10 @@
         "noBuyers": "Aucun acheteur pour l’instant",
         "emptyTitle": "Personne n’échange encore {{ticker}}",
         "emptyBody": "Publiez le premier ordre : il apparaît ici pour tout le réseau.",
-        "foot": "Les ordres sont exécutés en entier. Cliquez sur l’un d’eux pour l’échanger."
+        "foot": "Les ordres sont exécutés en entier. Cliquez sur l’un d’eux pour l’échanger.",
+        "loading": "Chargement du carnet d’ordres…",
+        "makerOnline": "Maker en ligne",
+        "makerAway": "Maker absent"
       },
       "market": {
         "unreachable": "Impossible de joindre le démon du marché",
@@ -3711,6 +3715,50 @@
       },
       "walletSwitch": {
         "original": "Le premier portefeuille de cet ordinateur"
+      },
+      "offers": {
+        "marketTitle": "Marché P2P",
+        "simpleSwap": "Échange simple",
+        "publish": "Publier une offre",
+        "onchainMarket": "Marché on-chain",
+        "sharedWith": "Marché partagé avec",
+        "available": "Offres",
+        "mine": "Mes offres",
+        "pricePerUnit": "Prix unitaire",
+        "quantity": "Quantité",
+        "expires": "Expire dans",
+        "summary": "Détail de l’offre",
+        "pay": "Vous payez",
+        "receive": "Vous recevez",
+        "onchain": "On-chain",
+        "retained": "Sats conservés avec l’actif RGB",
+        "reserve": "Bitcoin à réserver",
+        "review": "Vérifier l’échange",
+        "chooseHint": "Sélectionnez une offre pour consulter son prix et ses frais.",
+        "new": "Nouvelle offre",
+        "close": "Fermer le formulaire d’offre",
+        "yourPrice": "Votre prix",
+        "makeHint": "Fixez votre prix et gardez l’application connectée pour répondre aux autres participants.",
+        "advanced": "Profondeur du marché et outils de trading",
+        "webMarket": "Marché web Mosaik",
+        "nostrDiscovery": "Offres via Nostr",
+        "nostrRelays": "Relais Nostr ({{n}})",
+        "configuredRelays": "Relais configurés",
+        "manageRelays": "Gérer les relais",
+        "nostrMaker": "Maker sur Nostr",
+        "nostrProfile": "Voir le profil Nostr",
+        "hideProfile": "Masquer le profil"
+      },
+      "cost": {
+        "platform": "Frais de plateforme",
+        "network": "Frais de réseau",
+        "unavailable": "Indisponible"
+      },
+      "guide": {
+        "s1": "Déposer",
+        "s2": "Acheter ou vendre",
+        "s3": "Régler et retirer",
+        "s2Body": "Choisissez une offre ou publiez votre prix via Nostr. Gardez l’application en ligne tant que votre offre ou votre échange est actif."
       }
     },
     "tabDeposits": "Dépôts",
@@ -3801,7 +3849,9 @@
   },
   "p2pTrade": {
     "swap": "Swap",
-    "book": "Carnet d’ordres"
+    "book": "Carnet d’ordres",
+    "market": "Marché P2P",
+    "simpleSwap": "Échange simple"
   },
   "p2pWallet": {
     "assetTransfers": "Transferts d’actifs",
@@ -4210,5 +4260,30 @@
     "next": "Suivant",
     "done": "Commencer à échanger",
     "faucet": "Obtenez des pièces de test gratuites"
+  },
+  "mainnetWallet": {
+    "assets": "Bitcoin et actifs RGB",
+    "checkFailed": "Impossible de vérifier la disponibilité du portefeuille",
+    "unavailable": "Aperçu du portefeuille mainnet",
+    "walletHint": "Cette version ne comprend pas encore le portefeuille mainnet. Vous pouvez créer ou ouvrir un portefeuille on-chain sur un réseau de test.",
+    "historyHint": "L’historique des transactions mainnet sera disponible avec le portefeuille mainnet.",
+    "openTest": "Ouvrir le portefeuille de test",
+    "testHint": "Changez de réseau pour utiliser des fonds de test.",
+    "retry": "Réessayer"
+  },
+  "unified": {
+    "testNetworks": "Réseaux de test",
+    "test": "test",
+    "market": "Marché P2P",
+    "node": "Nœud Lightning",
+    "activity": "Activité",
+    "accounts": "Comptes et KaleidoMind",
+    "marketTestOnly": "Consultez et publiez des offres via Nostr. Sur les réseaux de test, les échanges sont réglés on-chain avec votre portefeuille de trading dédié.",
+    "nodeTestOnly": "Lancez un nœud RGB Lightning local ou connectez-vous à un nœud distant sur un réseau de test.",
+    "switchTest": "Passer aux réseaux de test",
+    "openNode": "Ouvrir {{name}} · {{network}}",
+    "manageNodes": "Gérer les comptes de nœuds",
+    "mainnetWallet": "Portefeuille mainnet",
+    "testMarketLabel": "Marché P2P sur Nostr · Réseaux de test"
   }
 }
