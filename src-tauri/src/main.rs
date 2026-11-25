@@ -18,9 +18,7 @@ mod p2p;
 mod p2p_docker;
 mod p2p_media;
 mod p2p_networks;
-// kept as it is on main; only the daemon container's passphrase uses it here
 mod rgb_node;
-#[allow(dead_code)]
 mod secret_store;
 mod tray;
 
@@ -83,6 +81,13 @@ async fn p2p_start(
 #[tauri::command]
 fn p2p_networks() -> Vec<p2p_networks::NetworkInfo> {
     p2p_networks::list()
+}
+
+/// This build contains a test-network market daemon and a maker signer. Neither is
+/// the standalone BTC/RGB wallet for Mainnet.
+#[tauri::command]
+fn mainnet_wallet_status() -> &'static str {
+    "not_bundled"
 }
 
 /// The daemon's data directory, where the user's relay lists are kept too.
@@ -422,6 +427,7 @@ fn main() {
             p2p_profile_set,
             p2p_available,
             p2p_networks,
+            mainnet_wallet_status,
             p2p_relays_get,
             p2p_pick_media,
             p2p_relays_set,
@@ -962,8 +968,8 @@ fn get_node_state(node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>) -> rg
 }
 
 #[tauri::command]
-fn probe_node_http(daemon_port: u16) -> Result<u16, String> {
-    let client = reqwest::blocking::Client::builder()
+async fn probe_node_http(daemon_port: u16) -> Result<u16, String> {
+    let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(2))
         .build()
         .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
@@ -971,6 +977,7 @@ fn probe_node_http(daemon_port: u16) -> Result<u16, String> {
     let response = client
         .get(format!("http://127.0.0.1:{}/nodeinfo", daemon_port))
         .send()
+        .await
         .map_err(|e| format!("Failed to reach node on port {}: {}", daemon_port, e))?;
 
     Ok(response.status().as_u16())
@@ -1214,7 +1221,7 @@ async fn is_local_node_supported() -> bool {
 }
 
 #[tauri::command]
-async fn get_local_node_capabilities() -> HashMap<String, bool> {
+async fn get_local_node_capabilities() -> Result<HashMap<String, bool>, String> {
     tauri::async_runtime::spawn_blocking(|| {
         let mut caps = HashMap::new();
         caps.insert(
@@ -1228,7 +1235,7 @@ async fn get_local_node_capabilities() -> HashMap<String, bool> {
         caps
     })
     .await
-    .unwrap_or_default()
+    .map_err(|error| error.to_string())
 }
 
 #[tauri::command]

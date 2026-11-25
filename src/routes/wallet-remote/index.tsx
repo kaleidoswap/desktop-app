@@ -531,30 +531,7 @@ export const Component = () => {
       const networkDefaults = NETWORK_DEFAULTS[networkKey]
       const defaultMakerUrl = networkDefaults.default_maker_url
 
-      // Save node settings with bearer token if auth is enabled
-      await dispatch(
-        setSettingsAsync({
-          bearer_token: data.authToken,
-          daemon_listening_port: data.daemon_listening_port,
-          datapath: '',
-          default_lsp_url: networkDefaults.default_lsp_url,
-          default_maker_url: defaultMakerUrl,
-          indexer_url: data.indexer_url,
-          ldk_peer_listening_port: data.ldk_peer_listening_port,
-          maker_urls: getDefaultMakerUrls(networkKey),
-          name: data.name,
-          network: data.network,
-          node_url: data.node_url,
-          proxy_endpoint: data.proxy_endpoint,
-          rpc_connection_url: data.rpc_connection_url,
-        })
-      )
-
       setConnectionStep('finalizing')
-
-      // A locked node must be unlocked first; an already-unlocked node goes
-      // straight to the dashboard.
-      navigate(lockedNode ? WALLET_UNLOCK_PATH : WALLET_DASHBOARD_PATH)
 
       // Insert account
       await invoke('insert_account', {
@@ -579,10 +556,28 @@ export const Component = () => {
       // Set as current account
       await invoke('set_current_account', { accountName: data.name })
 
+      await dispatch(
+        setSettingsAsync({
+          bearer_token: data.useAuth ? data.authToken : '',
+          daemon_listening_port: data.daemon_listening_port,
+          datapath: '',
+          default_lsp_url: networkDefaults.default_lsp_url,
+          default_maker_url: defaultMakerUrl,
+          indexer_url: data.indexer_url,
+          ldk_peer_listening_port: data.ldk_peer_listening_port,
+          maker_urls: getDefaultMakerUrls(networkKey),
+          name: data.name,
+          network: data.network,
+          node_url: data.node_url,
+          proxy_endpoint: data.proxy_endpoint,
+          rpc_connection_url: data.rpc_connection_url,
+        })
+      )
+
       toast.success(t('walletRemote.accountCreatedSuccess'))
       setIsConnecting(false)
       setConnectionStep('idle')
-      navigate(WALLET_DASHBOARD_PATH)
+      navigate(lockedNode ? WALLET_UNLOCK_PATH : WALLET_DASHBOARD_PATH)
     } catch (error: any) {
       setIsConnecting(false)
       setConnectionStep('idle')

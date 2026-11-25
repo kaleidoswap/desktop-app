@@ -82,7 +82,7 @@ export const useNodeReachabilityMonitor = ({
   // initial 'unknown' state) so reconnection happens automatically and quickly.
   const pollingInterval = skip
     ? 0
-    : reachability === 'reachable'
+    : reachability === 'reachable' || reachability === 'slow'
       ? HEALTHY_POLLING_INTERVAL_MS
       : RECONNECT_POLLING_INTERVAL_MS
 
@@ -159,6 +159,19 @@ export const useNodeReachabilityMonitor = ({
     if (!nodeInfo.isError) return
 
     const error = nodeInfo.error as FetchBaseQueryError | undefined
+
+    // A busy wallet can hold nodeinfo behind on-chain work. A deadline is
+    // not evidence that the process or transport is offline.
+    if (
+      error?.status === 'TIMEOUT_ERROR' ||
+      /timeout|timed out/i.test(getErrorMessage(error))
+    ) {
+      consecutiveFailuresRef.current = 0
+      dispatch(
+        setNodeReachability({ error: getErrorMessage(error), status: 'slow' })
+      )
+      return
+    }
 
     if (!isReachabilityError(error)) {
       consecutiveFailuresRef.current = 0

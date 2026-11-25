@@ -504,6 +504,10 @@
     "localNodeNotSupported": "Windows 不支持本地节点。请使用远程节点连接。",
     "backendNative": "原生二进制",
     "backendNativeDescription": "以本地进程运行节点。无需 Docker。",
+    "recheckDocker": "重新检查 Docker",
+    "checkingBackends": "检查中…",
+    "dockerReady": "Docker 已就绪。",
+    "startDockerHint": "启动 Docker，然后在此重新检查。",
     "backendDocker": "Docker 容器",
     "backendDockerDescription": "在 Docker 容器中运行节点。适用于所有平台。",
     "backendUnavailable": "不可用",
@@ -2001,6 +2005,10 @@
       "numberPlaceholder": "输入数量",
       "sizeLabel": "UTXO 大小（以聪为单位）",
       "sizePlaceholder": "输入大小",
+      "availableBalance": "可用余额",
+      "insufficientBalance": "余额不足。创建 {{num}} 个至少 {{min}} sats 的 UTXO 需要超过 {{required}} sats 外加手续费。请先链上充值 BTC。",
+      "receiveBtc": "接收 BTC",
+      "sizeOutOfRange": "UTXO 大小必须在 {{min}} 到 {{max}} sats 之间。",
       "feeRate": "费率"
     },
     "feeOptions": {
@@ -2529,6 +2537,7 @@
       "insufficientBalance": "余额不足。您没有可用于发送的 {{asset}}。",
       "enterAmount": "请输入要发送的金额。",
       "minimumOrderSize": "最小订单量为 {{amount}} {{asset}}。",
+      "minimumReceiveAmount": "每次兑换至少需要收到 {{amount}} {{asset}}。",
       "maxSendAmount": "您最多只能发送 {{amount}} {{asset}}。",
       "unableToReceive": "无法接收 {{asset}}。没有可用的通道容量。",
       "maxReceiveAmount": "您最多只能接收 {{amount}} {{asset}}。",
@@ -2892,6 +2901,7 @@
         "status": {
           "completed": "已完成",
           "failed": "失败",
+          "funded": "已注资",
           "created": "已创建",
           "unknown": "未知"
         },
@@ -2965,6 +2975,9 @@
       "statusCreateNewOrder": "创建新订单",
       "statusErrorHelp": "如果已付款，资金并未被扣除。请重试；若问题持续，请联系支持。",
       "statusErrorMessage": "处理你的通道订单时出现问题。",
+      "statusFundedTitle": "通道已注资，等待服务商",
+      "statusFundedMessage": "已收到你的付款，服务商已在链上为通道注资，但在通道开通完成前离线了。",
+      "statusFundedHelp": "请勿重复付款。服务商恢复在线后通道会自动可用。如果一直处于待定状态，请携带订单 ID 联系支持。",
       "statusErrorTitle": "订单失败",
       "statusExpiredMessage": "支付窗口已过期，未收到付款。",
       "statusExpiredTitle": "支付已过期",
@@ -3394,6 +3407,16 @@
       "nodeSub": "你的积蓄"
     },
     "market": {
+      "reputation": {
+        "open": "Nostr 资料与信誉",
+        "title": "Mosaik 信誉",
+        "verified": "已通过 Mosaik 验证",
+        "issuer": "目录中列出的该资产发行方",
+        "settled": "近 30 天已结算的兑换",
+        "peers": "不同交易对手数",
+        "volume": "交易量（聪）",
+        "unavailable": "该做市商目前没有有效的签名报告。"
+      },
       "header": {
         "imitation": "可能是对 {{name}} 的仿冒",
         "verified": "已验证资产",
@@ -3410,7 +3433,8 @@
         "regSame": "其他同名代号：{{n}}",
         "regListed": "已在登记处",
         "regNot": "不在登记处",
-        "search": "代号或资产 ID"
+        "search": "代号或资产 ID",
+        "yourWallet": "你的钱包"
       },
       "depth": {
         "empty": "深度图会随着订单到来逐渐形成。",
@@ -3583,7 +3607,10 @@
         "noBuyers": "暂无买家",
         "emptyTitle": "还没有人交易 {{ticker}}",
         "emptyBody": "发布第一个订单，网络上的所有人都能在这里看到。",
-        "foot": "订单只能整笔成交。点击一个订单即可交易。"
+        "foot": "订单只能整笔成交。点击一个订单即可交易。",
+        "loading": "正在加载订单簿…",
+        "makerOnline": "挂单方在线",
+        "makerAway": "挂单方离开"
       },
       "market": {
         "unreachable": "无法连接市场守护进程",
@@ -3702,6 +3729,57 @@
       },
       "walletSwitch": {
         "original": "这台电脑上的第一个钱包"
+      },
+      "offers": {
+        "marketTitle": "P2P 市场",
+        "simpleSwap": "快捷兑换",
+        "publish": "发布报价",
+        "onchainMarket": "链上市场",
+        "sharedWith": "共享市场",
+        "available": "报价",
+        "mine": "我的报价",
+        "pricePerUnit": "单价",
+        "quantity": "数量",
+        "expires": "剩余时间",
+        "summary": "报价摘要",
+        "pay": "你支付",
+        "receive": "你收到",
+        "onchain": "链上",
+        "retained": "随 RGB 资产保留的聪",
+        "reserve": "需预留的比特币",
+        "review": "核对兑换",
+        "chooseHint": "选择有效报价以查看价格和费用。",
+        "new": "新报价",
+        "close": "关闭报价表单",
+        "yourPrice": "你的价格",
+        "makeHint": "设置价格并保持桌面应用在线，以便响应其他交易者。",
+        "advanced": "市场深度和交易工具",
+        "webMarket": "Mosaik 网页市场",
+        "nostrDiscovery": "通过 Nostr 发布的报价",
+        "nostrRelays": "Nostr 中继（{{n}}）",
+        "configuredRelays": "已配置的中继",
+        "manageRelays": "管理中继",
+        "nostrMaker": "Nostr 上的挂单方",
+        "nostrProfile": "查看 Nostr 个人资料",
+        "hideProfile": "收起个人资料"
+      },
+      "cost": {
+        "platform": "平台费用",
+        "network": "网络费用",
+        "unavailable": "不可用"
+      },
+      "guide": {
+        "s1": "存入",
+        "s2": "买入或卖出",
+        "s3": "结算和提取",
+        "s2Body": "选择报价或通过 Nostr 发布自己的价格。报价有效或兑换进行期间，请保持应用在线。",
+        "title": "使用说明",
+        "show": "如何进行兑换？",
+        "hide": "隐藏此指南",
+        "s1Body": "通过所选网络将 BTC 存入此交易钱包。若要出售资产，也请先将该资产存入此钱包。",
+        "s1Cta": "立即存入",
+        "s3Body": "在“活动”中跟踪兑换进度。达到所需确认次数（{{n}} 次）后，即可提取已结算的资金。",
+        "s3BodyNow": "在“活动”中跟踪兑换进度。已结算且未被预留的资金可以提取。"
       }
     },
     "tabDeposits": "入账",
@@ -3792,7 +3870,9 @@
   },
   "p2pTrade": {
     "swap": "兑换",
-    "book": "订单簿"
+    "book": "订单簿",
+    "market": "P2P 市场",
+    "simpleSwap": "快捷兑换"
   },
   "p2pWallet": {
     "assetTransfers": "资产转账",
@@ -4201,5 +4281,36 @@
     "next": "下一步",
     "done": "开始交易",
     "faucet": "领取免费测试币"
+  },
+  "mainnetWallet": {
+    "assets": "比特币和 RGB 资产",
+    "checkFailed": "无法检查钱包是否可用",
+    "unavailable": "主网钱包预览",
+    "walletHint": "此版本尚未包含主网钱包。你可以在测试网络上创建或打开链上钱包。",
+    "historyHint": "主网钱包推出后即可查看主网交易记录。",
+    "openTest": "打开测试钱包",
+    "testHint": "切换网络以使用测试资金。",
+    "retry": "重试"
+  },
+  "unified": {
+    "testNetworks": "测试网络",
+    "test": "测试",
+    "market": "P2P 市场",
+    "node": "闪电网络节点",
+    "activity": "活动",
+    "accounts": "账户和 KaleidoMind",
+    "marketTestOnly": "通过 Nostr 查找和发布报价。测试网络上的交易由独立的交易钱包在链上结算。",
+    "nodeTestOnly": "在测试网络上运行本地 RGB 闪电网络节点或连接到远程节点。",
+    "switchTest": "切换到测试网络",
+    "openNode": "打开 {{name}} · {{network}}",
+    "manageNodes": "管理节点账户",
+    "mainnetWallet": "主网钱包",
+    "testMarketLabel": "Nostr P2P 市场 · 测试网络"
+  },
+  "nodeReachability": {
+    "unresponsiveTitle": "节点无响应",
+    "unresponsiveMessage": "节点可能正忙于处理钱包操作，或已断开连接。你可以继续浏览，但余额可能不是最新的。在重复付款或资产操作之前，请先查看操作历史。",
+    "checking": "正在检查连接…",
+    "retryIncomplete": "检查结束但未收到响应。节点可能仍在忙碌，自动检查将继续进行。"
   }
 }

@@ -10,7 +10,7 @@ $log = Join-Path $root 'msi-extract.log'
 # Administrative extraction validates the real MSI payload without installing a wallet.
 $p = Start-Process msiexec.exe -ArgumentList @('/a', "`"$($msi[0].FullName)`"", '/qn', "TARGETDIR=`"$extract`"", '/l*v', "`"$log`"") -Wait -PassThru
 if ($p.ExitCode -notin @(0,3010)) { throw "MSI extraction failed: $($p.ExitCode)" }
-$exe = @(Get-ChildItem $extract -Recurse -Filter 'kaleidoswap.exe')
+$exe = @(Get-ChildItem $extract -Recurse -Filter 'KaleidoSwapBeta.exe')
 if ($exe.Count -ne 1) { throw "Expected one extracted app executable; found $($exe.Count)" }
 $env:WEBVIEW2_USER_DATA_FOLDER = Join-Path $root 'webview'
 $app = $null

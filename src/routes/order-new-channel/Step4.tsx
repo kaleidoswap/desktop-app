@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import { PaymentSection } from '../../components/BuyChannelModal/components'
 import { useSettings } from '../../hooks/useSettings'
 import { formatBitcoinAmount } from '../../helpers/number'
+import type { ChannelOrderTerminalStatus } from '../../utils/channelOrderUtils'
 import { Lsps1CreateOrderResponse } from '../../slices/makerApi/makerApi.slice'
 import {
   nodeApi,
@@ -27,7 +28,7 @@ interface StepProps {
   onBack: () => void
   onRestart?: () => void
   order: Lsps1CreateOrderResponse | null
-  paymentStatus: 'success' | 'error' | 'expired' | null
+  paymentStatus: ChannelOrderTerminalStatus | null
   orderPayload?: any
   paymentReceived?: boolean
   isProcessingPayment?: boolean
@@ -58,7 +59,7 @@ export const Step4: React.FC<StepProps> = ({
   const { bitcoinUnit } = useSettings()
 
   type PaymentStateType =
-    'waiting' | 'processing' | 'success' | 'error' | 'expired' | null
+    'waiting' | 'processing' | ChannelOrderTerminalStatus | null
   const [localPaymentState, setLocalPaymentState] =
     useState<PaymentStateType>(null)
   const [isOrderExpired, setIsOrderExpired] = useState(false)

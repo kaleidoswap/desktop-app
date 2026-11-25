@@ -37,6 +37,17 @@ fn main() {
         build_config::merge_config(&mut config.config, overlay);
     }
 
+    // Native storage and Tauri must agree on the package identity, including CLI overlays.
+    println!("cargo:rerun-if-env-changed=TAURI_CONFIG");
+    let identifier = config.config["identifier"]
+        .as_str()
+        .expect("bundle identifier");
+    println!("cargo:rustc-env=KALEIDOSWAP_BUNDLE_ID={identifier}");
+    println!("cargo:rustc-check-cfg=cfg(kaleidoswap_beta)");
+    if identifier == "com.kaleidoswap.beta" {
+        println!("cargo:rustc-cfg=kaleidoswap_beta");
+    }
+
     // If we need to build rgb-lightning-node
     if build_rgb_lightning_node {
         let build_manager = BuildManager::new();

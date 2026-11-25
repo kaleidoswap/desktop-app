@@ -1,3 +1,4 @@
+import { ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -10,13 +11,12 @@ const VIEW_KEY = 'p2p-trade.view'
 
 const savedView = (): View => {
   try {
-    return localStorage.getItem(VIEW_KEY) === 'book' ? 'book' : 'swap'
+    return localStorage.getItem(VIEW_KEY) === 'swap' ? 'swap' : 'book'
   } catch {
-    return 'swap'
+    return 'book'
   }
 }
 
-/** Trading in the P2P app: a simple swap by default, the full order book for those who want it. */
 export const Component = () => {
   const { t } = useTranslation()
   const [view, setView] = useState<View>(savedView)
@@ -25,42 +25,29 @@ export const Component = () => {
     try {
       localStorage.setItem(VIEW_KEY, v)
     } catch {
-      // the choice is just not remembered
+      // The view preference is optional.
     }
   }
-  const views: [View, string][] = [
-    ['swap', t('p2pTrade.swap', { defaultValue: 'Swap' })],
-    ['book', t('p2pTrade.book', { defaultValue: 'Order book' })],
-  ]
+
+  if (view === 'book') {
+    return <P2pMarketPage onSimpleSwap={() => choose('swap')} showNav={false} />
+  }
   return (
     <div className="flex flex-col gap-5">
-      <header className="flex flex-wrap items-center gap-4">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold tracking-tight text-content-primary">
-          {t('p2pShell.trade', { defaultValue: 'Trade' })}
+          {t('p2pTrade.simpleSwap', { defaultValue: 'Simple swap' })}
         </h1>
-        <div
-          className="flex gap-1 rounded-xl bg-surface-inset p-1"
-          role="tablist"
+        <button
+          className="flex items-center gap-2 rounded-lg border border-divider/25 px-3 py-2 text-sm font-medium text-content-primary hover:bg-surface-raised"
+          onClick={() => choose('book')}
+          type="button"
         >
-          {views.map(([id, label]) => (
-            <button
-              aria-selected={view === id}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                view === id
-                  ? 'bg-surface-raised text-content-primary'
-                  : 'text-content-tertiary hover:text-content-secondary'
-              }`}
-              key={id}
-              onClick={() => choose(id)}
-              role="tab"
-              type="button"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+          <ArrowLeft aria-hidden size={16} />
+          {t('p2pTrade.market', { defaultValue: 'P2P market' })}
+        </button>
       </header>
-      {view === 'swap' ? <SwapView /> : <P2pMarketPage showNav={false} />}
+      <SwapView />
     </div>
   )
 }

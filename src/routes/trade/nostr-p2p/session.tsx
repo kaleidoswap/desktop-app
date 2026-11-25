@@ -1,8 +1,9 @@
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -14,6 +15,7 @@ import {
   type P2pNetworkOption,
   walletAccountFor,
 } from '../../../constants/p2p'
+import { uiSliceActions } from '../../../slices/ui/ui.slice'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 
 import {
@@ -34,6 +36,8 @@ import {
   readWalletList,
   removeWallet,
   saveWallet,
+  saveNetwork,
+  savedNetwork,
   writeSelectedWalletId,
   type TradingWallet,
 } from './wallets'
@@ -41,26 +45,22 @@ import {
 export const isTauri = () =>
   typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
-const NETWORK_KEY = 'p2p-market.network'
-
-const savedNetwork = (): string | null => {
-  try {
-    return localStorage.getItem(NETWORK_KEY)
-  } catch {
-    return null
-  }
-}
-
-const saveNetwork = (key: string) => {
-  try {
-    localStorage.setItem(NETWORK_KEY, key)
-  } catch {
-    // the choice is just not remembered
-  }
-}
-
 /** Which wallet the running daemon belongs to, so coming back to a page does not restart it. */
 let runningAccount: string | null = null
+
+// All wallets share one native daemon. Finish any already-issued lifecycle mutation before another
+// account can stop, start or configure it, including across unmounts of the trading wallet shell.
+let lifecycle: Promise<void> = Promise.resolve()
+function withDaemon(operation: () => Promise<void>) {
+  const result = lifecycle.then(operation)
+  lifecycle = result.catch(() => undefined)
+  return result
+}
+
+async function stopDaemon() {
+  await p2pStop()
+  runningAccount = null
+}
 
 export type Phase =
   'loading' | 'unavailable' | 'setup' | 'starting' | 'running' | 'error'
@@ -114,86 +114,111 @@ export function useP2pWalletSession(standalone: boolean) {
     wallets.find((w) => w.id === walletId)?.label ??
     (draft?.network === network ? draft.label : undefined)
 
-  const [phase, setPhase] = useState<Phase>('loading')
-  const [error, setError] = useState<string | null>(null)
+  const [state, setState] = useState<{
+    account: string
+    phase: Phase
+    error?: string
+    hint?: P2pAvailability['hint']
+  }>({ account: '', phase: 'loading' })
+  const phase: Phase = state.account === account ? state.phase : 'loading'
+  const error = state.account === account ? (state.error ?? null) : null
+  const hint = state.account === account ? (state.hint ?? null) : null
   const [attempt, setAttempt] = useState(0)
-  const [hint, setHint] = useState<P2pAvailability['hint']>(null)
-
+  const active = useRef<symbol | null>(null)
   const dispatch = useAppDispatch()
-  useEffect(() => {
+
+  useLayoutEffect(() => {
     if (!standalone || phase !== 'running') return
     setWalletOverride(createP2pWalletWrapper())
     dispatch(nodeApi.util.resetApiState())
     return () => {
       setWalletOverride(null)
+      dispatch(uiSliceActions.setModal({ type: 'none' }))
       dispatch(nodeApi.util.resetApiState())
     }
-  }, [standalone, phase, dispatch])
+  }, [standalone, account, phase, dispatch])
 
-  const begin = useCallback(async () => {
-    if (!config) return
-    const where = await p2pAvailability().catch(() => null)
-    if (!where?.backend) {
-      setHint(where?.hint ?? null)
-      setPhase('unavailable')
-      return
-    }
-    const status = await p2pStatus().catch(() => null)
-    if (status?.running && runningAccount === account) {
-      setPhase('running')
-      return
-    }
-    await p2pStop()
-    runningAccount = null
-    const profile = await p2pProfileGet(account)
-    if (!profile) {
-      setPhase('setup')
-      return
-    }
-    setPhase('starting')
-    await p2pStart(startConfigFor(account, config))
-    runningAccount = account
-    setPhase('running')
-  }, [account, config])
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isTauri() || !config) return
-    let cancelled = false
+    const token = Symbol()
+    active.current = token
+    const current = () => active.current === token
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPhase('loading')
-    setError(null)
-    void begin().catch((e) => {
-      if (cancelled) return
-      setError(e instanceof Error ? e.message : String(e))
-      setPhase('error')
+    setState({ account, phase: 'loading' })
+    void withDaemon(async () => {
+      if (!current()) return
+      const where = await p2pAvailability().catch(() => null)
+      if (!current()) return
+      if (!where?.backend) {
+        setState({ account, hint: where?.hint, phase: 'unavailable' })
+        return
+      }
+      const status = await p2pStatus().catch(() => null)
+      if (!current()) return
+      if (status?.running && runningAccount === account) {
+        // Native reuse checks account and network. Forget this hint if native identity validation
+        // fails, so a user retry can reopen the selected wallet through the normal startup path.
+        runningAccount = null
+        await p2pStart(startConfigFor(account, config))
+        runningAccount = account
+        if (!current()) return
+        setState({ account, phase: 'running' })
+        return
+      }
+      await stopDaemon()
+      if (!current()) return
+      const profile = await p2pProfileGet(account)
+      if (!current()) return
+      if (!profile) {
+        setState({ account, phase: 'setup' })
+        return
+      }
+      setState({ account, phase: 'starting' })
+      await p2pStart(startConfigFor(account, config))
+      runningAccount = account
+      if (current()) setState({ account, phase: 'running' })
+    }).catch((e) => {
+      if (current())
+        setState({
+          account,
+          error: e instanceof Error ? e.message : String(e),
+          phase: 'error',
+        })
     })
     return () => {
-      cancelled = true
+      active.current = null
     }
-  }, [begin, config, attempt])
+  }, [account, config, attempt])
 
   const createWallet = async (phrase: string) => {
-    if (!config) return
-    await p2pStop()
-    runningAccount = null
-    setPhase('starting')
-    try {
-      await p2pStart({
-        ...startConfigFor(account, config),
-        seed_mnemonic: phrase,
-      })
-    } catch (e) {
-      setPhase('setup')
-      throw e
-    }
-    await p2pProfileSet(account, {
-      backed_up: true,
-      created_at: Date.now(),
-      version: 1,
+    const token = active.current
+    if (!config || !token || phase !== 'setup') return
+    await withDaemon(async () => {
+      if (active.current !== token || runningAccount === account) return
+      setState({ account, phase: 'starting' })
+      try {
+        await stopDaemon()
+        if (active.current !== token) return
+        await p2pStart({
+          ...startConfigFor(account, config),
+          seed_mnemonic: phrase,
+        })
+        // Even if navigation changed during startup, finish recording the wallet just created.
+        await p2pProfileSet(account, {
+          backed_up: true,
+          created_at: Date.now(),
+          version: 1,
+        })
+        runningAccount = account
+        if (active.current === token) {
+          setDraft(null)
+          setState({ account, phase: 'running' })
+        }
+      } catch (err) {
+        if (active.current === token) setState({ account, phase: 'setup' })
+        throw err
+      }
     })
-    setDraft(null)
-    runningAccount = account
-    setPhase('running')
   }
 
   const chooseWallet = (id: string) => {
@@ -232,21 +257,30 @@ export function useP2pWalletSession(standalone: boolean) {
     setNetworkKeyState(key)
   }
 
-  const rescan = async () => {
-    if (!config) return
-    await p2pStop()
-    runningAccount = null
-    await p2pStart({ ...startConfigFor(account, config), rescan: true })
-    runningAccount = account
+  const resetDaemon = async (rescan: boolean) => {
+    const token = active.current
+    if (!config || !token) return
+    await withDaemon(async () => {
+      if (active.current !== token) return
+      setState({ account, phase: 'starting' })
+      try {
+        await stopDaemon()
+        if (active.current !== token) return
+        await p2pStart({ ...startConfigFor(account, config), rescan })
+        runningAccount = account
+        if (active.current === token) setState({ account, phase: 'running' })
+      } catch (e) {
+        if (active.current === token)
+          setState({
+            account,
+            error: e instanceof Error ? e.message : String(e),
+            phase: 'error',
+          })
+      }
+    })
   }
-
-  /** Stop the daemon and start it again (with new settings, or after an error). */
-  const restart = async () => {
-    await p2pStop()
-    runningAccount = null
-    setAttempt((n) => n + 1)
-  }
-
+  const rescan = () => resetDaemon(true)
+  const restart = () => resetDaemon(false)
   const retry = () => setAttempt((n) => n + 1)
 
   return {

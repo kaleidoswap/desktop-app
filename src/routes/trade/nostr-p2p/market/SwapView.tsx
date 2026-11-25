@@ -383,7 +383,9 @@ export function SwapView() {
             </dd>
             {showMakers && (
               <MakerList
+                assetId={asset.assetId}
                 makers={[...byMaker.values()]}
+                network={info.data?.network}
                 precision={asset.precision}
                 ticker={asset.ticker}
               />

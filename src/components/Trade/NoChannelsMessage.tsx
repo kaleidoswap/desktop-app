@@ -1,11 +1,9 @@
-import { openUrl } from '@tauri-apps/plugin-opener'
 import {
   Link,
   Plus,
   ShoppingCart,
   HelpCircle,
   Wallet,
-  ExternalLink,
   RefreshCcw,
   Globe,
   Clock,
@@ -110,7 +108,6 @@ export const NoChannelsMessage: React.FC<NoChannelsMessageProps> = ({
 
 interface MakerAssetInfo {
   supportedAssets: string[]
-  registryUrl: string
   tradingPairs: TradingPair[]
 }
 
@@ -134,7 +131,7 @@ interface NoTradingChannelsMessageProps {
 export const NoTradingChannelsMessage: React.FC<
   NoTradingChannelsMessageProps
 > = ({ makerInfo, userInfo, actions }) => {
-  const { supportedAssets, registryUrl, tradingPairs } = makerInfo
+  const { supportedAssets, tradingPairs } = makerInfo
   const { ownedAssets, hasEnoughBalance } = userInfo
   const { recommendedAction, onNavigate, onMakerChange } = actions
 
@@ -331,13 +328,9 @@ export const NoTradingChannelsMessage: React.FC<
                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/25 to-blue-500/30 text-blue-300 flex items-center justify-center mx-auto mb-4 text-xl font-bold border border-blue-500/40 shadow-lg">
                               1
                             </div>
-                            <button
-                              className="text-blue-400 hover:text-blue-300 inline-flex items-center gap-2 font-semibold text-lg group-hover:scale-105 transition-all duration-300 mb-2"
-                              onClick={() => openUrl(registryUrl)}
-                            >
+                            <h4 className="font-semibold text-lg text-white mb-2">
                               {t('trade.noChannels.checkSupportedAssets')}
-                              <ExternalLink className="w-4 h-4" />
-                            </button>
+                            </h4>
                             <p className="text-content-secondary text-sm">
                               {t(
                                 'trade.noChannels.checkSupportedAssetsMessage'
@@ -405,8 +398,6 @@ export const createTradingChannelsMessageProps = (
     supportedAssets.includes(asset)
   )
 
-  const registryUrl = 'https://registry.kaleidoswap.com'
-
   return {
     actions: {
       onMakerChange,
@@ -414,7 +405,6 @@ export const createTradingChannelsMessageProps = (
       recommendedAction: hasCompatibleAssets ? 'open' : 'buy',
     },
     makerInfo: {
-      registryUrl,
       supportedAssets,
       tradingPairs: tradablePairs,
     },

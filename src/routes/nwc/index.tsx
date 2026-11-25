@@ -40,7 +40,6 @@ interface NwcConnection {
   account_id: number
   name: string
   client_pubkey: string
-  client_secret: string
   relays_json: string
   methods_json: string
   budget_msat: number | null
@@ -699,9 +698,9 @@ export const Component = () => {
             </label>
             <input
               autoFocus
-              onFocus={(e) => e.target.select()}
               className="w-full rounded-lg border border-border-default bg-surface-base/60 px-3.5 py-2.5 text-sm text-white placeholder:text-content-tertiary focus:border-primary focus:outline-none"
               onChange={(e) => setName(e.target.value)}
+              onFocus={(e) => e.target.select()}
               placeholder={t(
                 'nwc.new.namePlaceholder',
                 'e.g. Rate mobile, Browser extension'

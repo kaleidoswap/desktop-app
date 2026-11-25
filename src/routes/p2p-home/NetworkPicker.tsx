@@ -1,44 +1,48 @@
 import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate } from 'react-router-dom'
 
+import { MAINNET_PATH } from '../../app/router/paths'
 import { Picker } from '../trade/nostr-p2p/market/Picker'
-import { useP2pSession } from '../trade/nostr-p2p/session'
+import { useOptionalP2pSession } from '../trade/nostr-p2p/session'
+import { switchNetworkPath } from './navigation'
 
-const dot = (network: string) => (
-  <span
-    aria-hidden
-    className={`h-2.5 w-2.5 flex-none rounded-full ${network === 'mainnet' ? 'bg-status-success' : 'bg-status-warning'}`}
-  />
-)
-
-/**
- * Which network the P2P app trades on. Each network has its own wallets and market, so switching
- * restarts the trading wallet on the other one. Hidden when the app knows only one network.
- */
 export function NetworkPicker({ className = '' }: { className?: string }) {
   const { t } = useTranslation()
-  const { config, networks, setNetworkKey } = useP2pSession()
-  if (!config || networks.length < 2) return null
-  const about: Record<string, string> = {
-    regtest: t('p2pNetwork.regtest', { defaultValue: 'Local test chain' }),
-    signet: t('p2pNetwork.signet', {
-      defaultValue: 'Public signet · test coins',
-    }),
-    signetcustom: t('p2pNetwork.signetcustom', {
-      defaultValue: 'Custom signet · fast blocks, test coins',
-    }),
-  }
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const session = useOptionalP2pSession()
+  const mainnet = pathname.startsWith(`${MAINNET_PATH}/`)
+  const testLabel = t('unified.testNetworks', { defaultValue: 'Test networks' })
+  const testOptions = session?.networks.map((network) => ({
+    title: `${network.label} · ${t('unified.test', { defaultValue: 'test' })}`,
+    value: network.key,
+  }))
+  const options = [
+    { title: 'Bitcoin Mainnet', value: 'mainnet' },
+    ...(testOptions?.length
+      ? testOptions
+      : [{ title: testLabel, value: 'test' }]),
+  ]
   return (
     <Picker
-      className={className}
+      className={`${className} ${mainnet ? '[&>button]:bg-[#254635] [&>button]:text-[#b1f2ca]' : '[&>button]:bg-[#393049] [&>button]:text-[#d5baff]'}`}
       label={t('p2pSettings.network', { defaultValue: 'Network' })}
-      onChange={setNetworkKey}
-      options={networks.map((n) => ({
-        leading: dot(n.network),
-        subtitle: about[n.network],
-        title: n.label,
-        value: n.key,
+      onChange={(key) => {
+        const nextMainnet = key === 'mainnet'
+        if (session && !nextMainnet) session.setNetworkKey(key)
+        if (nextMainnet !== mainnet)
+          navigate(switchNetworkPath(pathname, nextMainnet))
+      }}
+      options={options.map((option) => ({
+        ...option,
+        leading: (
+          <span
+            aria-hidden
+            className={`h-2.5 w-2.5 flex-none rounded-full ${option.value === 'mainnet' ? 'bg-status-success' : 'bg-violet-400'}`}
+          />
+        ),
       }))}
-      value={config.key}
+      value={mainnet ? 'mainnet' : (session?.config?.key ?? 'test')}
       variant="pill"
     />
   )

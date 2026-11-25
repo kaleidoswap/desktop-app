@@ -144,6 +144,15 @@ fn find(key: &str) -> Result<&'static Network, String> {
         .ok_or_else(|| format!("unknown network {key:?}"))
 }
 
+/// The seed command takes the daemon's spelling; starting a wallet uses the app key.
+pub(crate) fn require_daemon_network(name: &str) -> Result<(), String> {
+    if NETWORKS.iter().any(|n| n.daemon_network == name) {
+        Ok(())
+    } else {
+        Err(format!("unsupported P2P wallet network {name:?}"))
+    }
+}
+
 /// The most relays a list may hold: each is a connection kept open, and a few are enough.
 pub const MAX_RELAYS: usize = 8;
 
@@ -414,6 +423,18 @@ mod tests {
     #[test]
     fn an_unknown_network_is_refused() {
         assert!(resolve(request("Moon"), None).is_err());
+    }
+
+    #[test]
+    fn the_market_and_seed_generator_only_accept_configured_test_networks() {
+        for name in ["Mainnet", "mainnet", "bitcoin", "Bitcoin"] {
+            assert!(resolve(request(name), None).is_err());
+            assert!(require_daemon_network(name).is_err());
+        }
+        for net in list() {
+            assert!(matches!(net.network, "signet" | "signetcustom" | "regtest"));
+            assert!(require_daemon_network(net.network).is_ok());
+        }
     }
 
     #[test]

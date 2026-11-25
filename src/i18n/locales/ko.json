@@ -504,6 +504,10 @@
     "localNodeNotSupported": "Windows에서는 로컬 노드가 지원되지 않습니다. 대신 원격 노드 연결을 사용하세요.",
     "backendNative": "네이티브 바이너리",
     "backendNativeDescription": "노드를 로컬 프로세스로 실행합니다. Docker가 필요하지 않습니다.",
+    "recheckDocker": "Docker 다시 확인",
+    "checkingBackends": "확인 중…",
+    "dockerReady": "Docker가 준비되었습니다.",
+    "startDockerHint": "Docker를 시작한 후 여기서 다시 확인하세요.",
     "backendDocker": "Docker 컨테이너",
     "backendDockerDescription": "노드를 Docker 컨테이너에서 실행합니다. 모든 플랫폼에서 작동합니다.",
     "backendUnavailable": "사용할 수 없음",
@@ -2001,6 +2005,10 @@
       "numberPlaceholder": "수량 입력",
       "sizeLabel": "UTXO 크기 (사토시 단위)",
       "sizePlaceholder": "크기 입력",
+      "availableBalance": "사용 가능 잔액",
+      "insufficientBalance": "잔액이 부족합니다. {{min}} sats 이상의 UTXO {{num}}개를 만들려면 수수료 외에 {{required}} sats를 초과하는 잔액이 필요합니다. 계속하려면 온체인으로 BTC를 입금하세요.",
+      "receiveBtc": "BTC 받기",
+      "sizeOutOfRange": "UTXO 크기는 {{min}}~{{max}} sats 사이여야 합니다.",
       "feeRate": "수수료율"
     },
     "feeOptions": {
@@ -2532,6 +2540,7 @@
       "insufficientBalance": "잔액 부족. 보낼 수 있는 {{asset}}이(가) 없습니다.",
       "enterAmount": "보낼 금액을 입력해 주세요.",
       "minimumOrderSize": "최소 주문 규모는 {{amount}} {{asset}}입니다.",
+      "minimumReceiveAmount": "스왑당 최소 {{amount}} {{asset}}를 받아야 합니다.",
       "maxSendAmount": "최대 {{amount}} {{asset}}까지만 보낼 수 있습니다.",
       "unableToReceive": "{{asset}}을(를) 받을 수 없습니다. 사용 가능한 채널 용량이 없습니다.",
       "maxReceiveAmount": "최대 {{amount}} {{asset}}까지만 받을 수 있습니다.",
@@ -2895,6 +2904,7 @@
         "status": {
           "completed": "완료됨",
           "failed": "실패",
+          "funded": "자금 완료",
           "created": "생성됨",
           "unknown": "알 수 없음"
         },
@@ -2968,6 +2978,9 @@
       "statusCreateNewOrder": "새 주문 생성",
       "statusErrorHelp": "결제가 이루어졌더라도 차감된 자금은 없습니다. 다시 시도하시거나 문제가 계속되면 지원팀에 문의하세요.",
       "statusErrorMessage": "채널 주문을 처리하는 중 문제가 발생했습니다.",
+      "statusFundedTitle": "채널 자금 완료, 제공자 대기 중",
+      "statusFundedMessage": "결제가 접수되었고 제공자가 온체인으로 채널에 자금을 넣었지만, 개설이 끝나기 전에 오프라인이 되었습니다.",
+      "statusFundedHelp": "다시 결제하지 마세요. 제공자가 다시 온라인이 되면 채널은 자동으로 사용 가능해집니다. 계속 대기 중이면 주문 ID와 함께 지원팀에 문의하세요.",
       "statusErrorTitle": "주문 실패",
       "statusExpiredMessage": "결제를 받지 못한 채 결제 시간이 만료되었습니다.",
       "statusExpiredTitle": "결제 만료",
@@ -3397,6 +3410,16 @@
       "nodeSub": "내 저축"
     },
     "market": {
+      "reputation": {
+        "open": "Nostr 프로필 및 평판",
+        "title": "Mosaik 평판",
+        "verified": "Mosaik 인증됨",
+        "issuer": "카탈로그에 등록된 이 자산의 발행자",
+        "settled": "최근 30일간 정산된 스왑",
+        "peers": "고유 거래 상대방 수",
+        "volume": "거래량(sat)",
+        "unavailable": "이 메이커에 대해 현재 유효한 서명된 보고서가 없습니다."
+      },
       "header": {
         "imitation": "{{name}}을(를) 모방했을 수 있습니다",
         "verified": "검증된 자산",
@@ -3413,7 +3436,8 @@
         "regSame": "다른 곳의 동일한 티커: {{n}}",
         "regListed": "레지스트리에 등록됨",
         "regNot": "레지스트리에 없음",
-        "search": "티커 또는 자산 ID"
+        "search": "티커 또는 자산 ID",
+        "yourWallet": "내 지갑"
       },
       "depth": {
         "empty": "주문이 들어오면 뎁스 차트가 채워집니다.",
@@ -3586,7 +3610,10 @@
         "noBuyers": "아직 매수자가 없습니다",
         "emptyTitle": "아직 {{ticker}}을(를) 거래하는 사람이 없습니다",
         "emptyBody": "첫 주문을 올리면 네트워크의 모든 사람에게 여기에 표시됩니다.",
-        "foot": "주문은 통째로 체결됩니다. 클릭해서 거래하세요."
+        "foot": "주문은 통째로 체결됩니다. 클릭해서 거래하세요.",
+        "loading": "주문장 불러오는 중…",
+        "makerOnline": "메이커 온라인",
+        "makerAway": "메이커 자리 비움"
       },
       "market": {
         "unreachable": "마켓 데몬에 연결할 수 없습니다",
@@ -3705,6 +3732,57 @@
       },
       "walletSwitch": {
         "original": "이 컴퓨터의 첫 번째 지갑"
+      },
+      "offers": {
+        "marketTitle": "P2P 시장",
+        "simpleSwap": "간편 스왑",
+        "publish": "주문 게시",
+        "onchainMarket": "온체인 시장",
+        "sharedWith": "시장 공유 대상",
+        "available": "주문",
+        "mine": "내 주문",
+        "pricePerUnit": "단가",
+        "quantity": "수량",
+        "expires": "만료까지",
+        "summary": "주문 요약",
+        "pay": "지불 금액",
+        "receive": "받을 금액",
+        "onchain": "온체인",
+        "retained": "RGB 자산과 함께 보유하는 sat",
+        "reserve": "확보할 비트코인",
+        "review": "스왑 검토",
+        "chooseHint": "주문을 선택하여 가격과 수수료를 확인하세요.",
+        "new": "새 주문",
+        "close": "주문 양식 닫기",
+        "yourPrice": "내 가격",
+        "makeHint": "가격을 정하고 다른 거래자에게 응답할 수 있도록 데스크톱 앱을 온라인 상태로 유지하세요.",
+        "advanced": "시장 깊이 및 거래 도구",
+        "webMarket": "Mosaik 웹 시장",
+        "nostrDiscovery": "Nostr를 통한 주문",
+        "nostrRelays": "Nostr 릴레이 ({{n}})",
+        "configuredRelays": "설정된 릴레이",
+        "manageRelays": "릴레이 관리",
+        "nostrMaker": "Nostr 메이커",
+        "nostrProfile": "Nostr 프로필 보기",
+        "hideProfile": "프로필 숨기기"
+      },
+      "cost": {
+        "platform": "플랫폼 수수료",
+        "network": "네트워크 수수료",
+        "unavailable": "확인할 수 없음"
+      },
+      "guide": {
+        "s1": "입금",
+        "s2": "구매 또는 판매",
+        "s3": "정산 및 출금",
+        "s2Body": "주문을 선택하거나 Nostr를 통해 희망 가격을 게시하세요. 주문 또는 스왑이 진행되는 동안 앱을 온라인 상태로 유지하세요.",
+        "title": "이용 방법",
+        "show": "교환은 어떻게 진행되나요?",
+        "hide": "안내 숨기기",
+        "s1Body": "선택한 네트워크에서 이 거래 지갑으로 BTC를 입금하세요. 판매할 자산도 여기에 입금하세요.",
+        "s1Cta": "지금 입금",
+        "s3Body": "활동에서 교환 진행 상황을 확인하세요. 필요한 승인 횟수({{n}}회)에 도달하면 정산된 자금을 출금할 수 있습니다.",
+        "s3BodyNow": "활동에서 교환 진행 상황을 확인하세요. 정산된 자금 중 예약되지 않은 금액을 출금할 수 있습니다."
       }
     },
     "tabDeposits": "입금",
@@ -3795,7 +3873,9 @@
   },
   "p2pTrade": {
     "swap": "스왑",
-    "book": "호가창"
+    "book": "호가창",
+    "market": "P2P 시장",
+    "simpleSwap": "간편 스왑"
   },
   "p2pWallet": {
     "assetTransfers": "자산 이동",
@@ -4204,5 +4284,36 @@
     "next": "다음",
     "done": "거래 시작",
     "faucet": "무료 테스트 코인 받기"
+  },
+  "mainnetWallet": {
+    "assets": "비트코인 및 RGB 자산",
+    "checkFailed": "지갑 사용 가능 여부를 확인할 수 없습니다",
+    "unavailable": "메인넷 지갑 미리보기",
+    "walletHint": "이 버전에는 아직 메인넷 지갑이 포함되어 있지 않습니다. 테스트 네트워크에서 온체인 지갑을 만들거나 열 수 있습니다.",
+    "historyHint": "메인넷 지갑이 제공되면 메인넷 거래 내역을 확인할 수 있습니다.",
+    "openTest": "테스트 지갑 열기",
+    "testHint": "네트워크를 전환하여 테스트 자금을 사용합니다.",
+    "retry": "다시 시도"
+  },
+  "unified": {
+    "testNetworks": "테스트 네트워크",
+    "test": "테스트",
+    "market": "P2P 시장",
+    "node": "라이트닝 노드",
+    "activity": "활동",
+    "accounts": "계정 및 KaleidoMind",
+    "marketTestOnly": "Nostr에서 주문을 찾고 게시하세요. 테스트 네트워크에서는 별도의 거래 지갑으로 온체인 결제됩니다.",
+    "nodeTestOnly": "테스트 네트워크에서 로컬 RGB 라이트닝 노드를 실행하거나 원격 노드에 연결하세요.",
+    "switchTest": "테스트 네트워크로 전환",
+    "openNode": "{{name}} 열기 · {{network}}",
+    "manageNodes": "노드 계정 관리",
+    "mainnetWallet": "메인넷 지갑",
+    "testMarketLabel": "Nostr P2P 시장 · 테스트 네트워크"
+  },
+  "nodeReachability": {
+    "unresponsiveTitle": "노드 응답 없음",
+    "unresponsiveMessage": "노드가 지갑 작업을 처리 중이거나 연결이 끊어졌을 수 있습니다. 계속 탐색할 수 있지만 잔액이 최신이 아닐 수 있습니다. 결제나 자산 작업을 반복하기 전에 내역을 확인하세요.",
+    "checking": "연결 확인 중…",
+    "retryIncomplete": "응답 없이 확인이 끝났습니다. 노드가 아직 작업 중일 수 있으며, 자동 확인은 계속됩니다."
   }
 }

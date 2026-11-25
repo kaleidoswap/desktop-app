@@ -1,21 +1,39 @@
 ## [Version 0.7.0] - Unreleased
 
-### P2P trading (beta, Mutinynet)
+### Wallet and navigation
 
-- New **P2P Wallet** on the start screen: trade RGB assets directly with other people, with no node and no account. It has a wallet of its own, kept with a 12-word recovery phrase that is shown and checked when you create it, and can be restored from. The phrase restores bitcoin; RGB assets also depend on this computer's data.
-- Market with an order book, depth chart, market and limit orders, and a trade sheet that shows exactly what you pay before anything is signed. Swaps are on-chain and settle after three confirmations.
-- Deposit by address or RGB invoice from any wallet, and withdraw to any address or invoice. A deposit shows as waiting as soon as it is seen, with a button to update the balance.
-- The order book shows which makers are online. If a maker does not answer, the app offers the next one.
-- Assets, Deposits and Withdrawals use the same history screens as the node wallet.
-- Available on macOS and Linux. Not on Windows yet.
+- New installations open the mainnet wallet preview. Sending and receiving mainnet funds require a future native wallet integration.
+- Wallet, Market, Activity and Lightning share one navigation. KaleidoSwap Beta uses its own profiles, credentials and node data alongside the stable app. Create a disposable test wallet in the beta.
+- Connect to a remote RGB Lightning node or run a local node on a supported test network. The bundled node and Docker image use RLN 0.10.3.
 
-### Start screen
+### P2P trading on test networks
 
-- Four ways in instead of a mode picker: P2P Wallet and KaleidoMind (no node needed), and Connect a node or Run a node here.
+- Create a separate trading wallet on Mutinynet or Signet. The 12-word recovery phrase restores bitcoin. Restoring RGB assets also requires the wallet data.
+- Browse offers from each Nostr relay, including older active offers on quieter relays. Inspect maker profiles and manage the relays used for discovery.
+- On Mutinynet, maker profiles show settled swaps over 30 days, distinct counterparties and volume when Mosaik supplies a current signed report. A signed catalog also identifies issuers for individual assets.
+- Submit market and limit orders, review the amounts and fees, and follow settlement in the activity view.
+- Deposit and withdraw bitcoin and RGB assets. An empty test wallet can request funds from the faucet where available.
+- The P2P daemon is bundled on macOS and Linux. Windows runs the daemon with Docker Desktop.
 
-## [Version 0.6.0] - 2026-10-13
+## [Version 0.6.1] - 2026-10-22
+
+### Wallet and node
+
+- A node that is slow to respond no longer shows the "Node response unavailable" panel. The app keeps checking in the background, and the panel only appears when the node cannot be reached.
+
+## [Version 0.6.0] - 2026-10-14
 
 A clearer desktop experience for managing an RGB Lightning node, trading assets and using KaleidoMind. These notes cover the complete upgrade from 0.5.0, including the changes previously listed under 0.5.1.
+
+### Security
+
+- The local node's API now accepts connections only from this computer instead of the whole local network.
+- Each release runs one exact node version. If a wallet uses a different node image, the app switches it to the pinned version on start.
+- Nostr Wallet Connect keys are no longer stored in plaintext. The service key is kept in the system keychain (macOS Keychain, Windows Credential Manager, Secret Service on Linux), and app connection keys are only shown once, in the connection link.
+- The Nostr Wallet Connect service can no longer start twice, so the same request cannot be paid twice.
+- Apply the upstream GLib iterator safety fix to the Linux GTK dependency.
+- Update XML parsers and event-listener to patched versions.
+- Remove unused browser crypto polyfills and React Native dependencies from the desktop build.
 
 ### Upgrade compatibility
 
@@ -25,6 +43,15 @@ A clearer desktop experience for managing an RGB Lightning node, trading assets 
 
 ### Wallet and node
 
+- Slow node responses show a non-blocking notice instead of freezing navigation; connection retries show progress and their outcome. Local HTTP probes run asynchronously.
+- Completed payments show Done without the previous Cancel and Send actions.
+- Settings is available directly in the sidebar; Help and Support lives in the profile menu. Remove the support and notification buttons from the top bar.
+- Docker node startup pulls the pinned node image when it is missing, preserving existing data volumes. A failed pull is reported instead of silently using a stale image.
+- Swaps below the smallest Lightning payment an RGB channel accepts (3,000 sats) are blocked before a quote is requested, instead of expiring without executing.
+- A channel order that the provider marks as failed after it already funded the channel now shows "Channel funded, waiting for the provider" and no longer offers to pay again.
+- Creating colored UTXOs with too little BTC shows a clear message with a shortcut to receive BTC, and never sends an invalid size to the node.
+- Peer addresses are checked for the `pubkey@host:port` format before connecting.
+- Recheck Docker availability from local setup without restarting the app; returning to the window also refreshes availability. Docker checks time out instead of blocking indefinitely.
 - Clearer typography, spacing, navigation, dashboard balances and channel liquidity displays.
 - Redesigned receive and payment-confirmation screens, with larger QR codes, copyable addresses, pinned BTC/USDT choices and transaction explorer links.
 - Incoming on-chain payments appear while awaiting confirmation; Lightning deposits show a completion state.
@@ -35,6 +62,7 @@ A clearer desktop experience for managing an RGB Lightning node, trading assets 
 
 ### Trading, channels and app connections
 
+- Unavailable maker quotes disable the trade action, including the missing-channel shortcut and keyboard submission.
 - Correct BTC/satoshi and RGB display units in balances, channel orders, swap quotes and confirmation screens.
 - Quote refresh no longer depends on window animation frames; Lightning settlement layers and complete fees are included in requests and reviews.
 - Maker and LSP settings follow the selected account. Missing endpoints produce clear setup guidance instead of calls to an unrelated default service.
@@ -43,6 +71,8 @@ A clearer desktop experience for managing an RGB Lightning node, trading assets 
 
 ### KaleidoMind — beta
 
+- Starting a new chat saves the previous conversation in a read-only local archive. Previously deleted conversations are not recovered.
+- Preserve streamed Markdown when the final response contains the same text, while allowing corrected final answers to replace it.
 - Stable **Mind core/provider 0.11.1** and **runtime assets 0.11.1**, downloaded on demand for macOS Apple Silicon, macOS Intel, Linux x64 and Windows x64.
 - Local model recommendations based on device memory, a clearer chat composer, model controls and visible start/stop feedback.
 - Optional Thinking with a bounded reasoning phase and a direct-answer fallback. Thinking can be slow or reach the timeout on busy or lower-powered devices; reduce its budget or turn it off for faster replies.

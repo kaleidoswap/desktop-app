@@ -7,6 +7,7 @@ import {
   getChannelOrderAccessToken,
   getChannelOrderFailureStatus,
   getChannelOrderPaymentSnapshot,
+  getChannelOrderDisplayState,
   getChannelOrderTerminalStatus,
 } from '../channelOrderUtils'
 import type {
@@ -542,6 +543,19 @@ describe('getChannelOrderTerminalStatus', () => {
     )
     expect(getChannelOrderTerminalStatus({ state: 'succeeded' }, NOW)).toBe(
       'success'
+    )
+  })
+
+  it('reports a failed order with a funded channel as funded', () => {
+    const order = {
+      channel: { funding_outpoint: 'ab'.repeat(32) + ':0' },
+      order_state: 'FAILED',
+      payment: { onchain: { state: 'PAID' } },
+    }
+    expect(getChannelOrderTerminalStatus(order, NOW)).toBe('funded')
+    expect(getChannelOrderDisplayState(order)).toBe('FUNDED')
+    expect(getChannelOrderDisplayState({ order_state: 'FAILED' })).toBe(
+      'FAILED'
     )
   })
 

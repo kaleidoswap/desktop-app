@@ -150,10 +150,12 @@ export function P2pGate({
 function MarketView({
   session,
   showNav,
+  onSimpleSwap,
   inShell,
 }: {
   session: P2pWalletSession
   showNav: boolean
+  onSimpleSwap?: () => void
   inShell: boolean
 }) {
   const { t } = useTranslation()
@@ -297,6 +299,7 @@ function MarketView({
           }
           onIssueAsset={standalone ? () => setIssue(true) : undefined}
           onManageCoins={standalone ? () => setCoins(true) : undefined}
+          onManageRelays={() => setRelays(true)}
           onOpenFunds={(d) =>
             d === 'toNode'
               ? setWithdraw(true)
@@ -311,6 +314,7 @@ function MarketView({
                 : setDeposit(true)
           }
           onRescan={rescan}
+          onSimpleSwap={onSimpleSwap}
           walletLabel={walletLabel}
         />
       )}
@@ -394,10 +398,21 @@ function OwnSession({ showNav }: { showNav: boolean }) {
  * needs no node: a node only adds a way to move funds in and out. Inside the P2P app it uses the
  * app's session; elsewhere it holds its own.
  */
-export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
+export const P2pMarketPage = ({
+  showNav = true,
+  onSimpleSwap,
+}: {
+  showNav?: boolean
+  onSimpleSwap?: () => void
+}) => {
   const shared = useOptionalP2pSession()
   return shared ? (
-    <MarketView inShell session={shared} showNav={false} />
+    <MarketView
+      inShell
+      onSimpleSwap={onSimpleSwap}
+      session={shared}
+      showNav={false}
+    />
   ) : (
     <OwnSession showNav={showNav} />
   )

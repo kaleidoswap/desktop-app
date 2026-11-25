@@ -504,6 +504,10 @@
     "localNodeNotSupported": "Lokale Nodes werden unter Windows nicht unterstützt. Verwende stattdessen eine Remote-Verbindung.",
     "backendNative": "Native Binary",
     "backendNativeDescription": "Node als lokalen Prozess ausführen. Kein Docker erforderlich.",
+    "recheckDocker": "Docker erneut prüfen",
+    "checkingBackends": "Wird geprüft…",
+    "dockerReady": "Docker ist bereit.",
+    "startDockerHint": "Starte Docker und prüfe hier erneut.",
     "backendDocker": "Docker Container",
     "backendDockerDescription": "Node in einem Docker-Container ausführen. Funktioniert auf allen Plattformen.",
     "backendUnavailable": "Nicht verfügbar",
@@ -2001,6 +2005,10 @@
       "numberPlaceholder": "Anzahl eingeben",
       "sizeLabel": "UTXO-Größe (in Satoshis)",
       "sizePlaceholder": "Größe eingeben",
+      "availableBalance": "Verfügbares Guthaben",
+      "insufficientBalance": "Unzureichendes Guthaben. Für {{num}} UTXOs von mindestens {{min}} sats werden mehr als {{required}} sats plus Gebühren benötigt. Zahle BTC on-chain ein, um fortzufahren.",
+      "receiveBtc": "BTC empfangen",
+      "sizeOutOfRange": "Die UTXO-Größe muss zwischen {{min}} und {{max}} sats liegen.",
       "feeRate": "Gebührensatz"
     },
     "feeOptions": {
@@ -2532,6 +2540,7 @@
       "insufficientBalance": "Unzureichendes Guthaben. Sie haben keine {{asset}} zum Senden verfügbar.",
       "enterAmount": "Bitte geben Sie einen zu sendenden Betrag ein.",
       "minimumOrderSize": "Die Mindestbestellmenge beträgt {{amount}} {{asset}}.",
+      "minimumReceiveAmount": "Du musst pro Swap mindestens {{amount}} {{asset}} erhalten.",
       "maxSendAmount": "Sie können nur bis zu {{amount}} {{asset}} senden.",
       "unableToReceive": "{{asset}} kann nicht empfangen werden. Keine Channel-Kapazität verfügbar.",
       "maxReceiveAmount": "Sie können nur bis zu {{amount}} {{asset}} empfangen.",
@@ -2895,6 +2904,7 @@
         "status": {
           "completed": "Abgeschlossen",
           "failed": "Fehlgeschlagen",
+          "funded": "Kanal finanziert",
           "created": "Erstellt",
           "unknown": "Unbekannt"
         },
@@ -2968,6 +2978,9 @@
       "statusCreateNewOrder": "Neue Bestellung erstellen",
       "statusErrorHelp": "Wenn eine Zahlung erfolgt ist, wurden keine Mittel abgezogen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support, wenn das Problem bestehen bleibt.",
       "statusErrorMessage": "Bei der Verarbeitung Ihrer Kanalbestellung ist ein Problem aufgetreten.",
+      "statusFundedTitle": "Kanal finanziert, warte auf den Anbieter",
+      "statusFundedMessage": "Deine Zahlung ist eingegangen und der Anbieter hat den Kanal on-chain finanziert, ist aber offline gegangen, bevor die Eröffnung abgeschlossen war.",
+      "statusFundedHelp": "Bitte nicht erneut bezahlen. Der Kanal wird automatisch nutzbar, sobald der Anbieter wieder online ist. Bleibt er ausstehend, kontaktiere den Support mit der Bestell-ID.",
       "statusErrorTitle": "Bestellung fehlgeschlagen",
       "statusExpiredMessage": "Das Zahlungsfenster ist abgelaufen, ohne dass eine Zahlung eingegangen ist.",
       "statusExpiredTitle": "Zahlung abgelaufen",
@@ -3397,6 +3410,16 @@
       "nodeSub": "deine Ersparnisse"
     },
     "market": {
+      "reputation": {
+        "open": "Nostr-Profil und Reputation",
+        "title": "Mosaik-Reputation",
+        "verified": "Von Mosaik bestätigt",
+        "issuer": "Im Katalog als Emittent dieses Assets geführt",
+        "settled": "Abgewickelte Swaps · 30 Tage",
+        "peers": "Verschiedene Handelspartner",
+        "volume": "Volumen in Sats",
+        "unavailable": "Für diesen Maker liegt kein gültiger signierter Bericht vor."
+      },
       "header": {
         "imitation": "Mögliche Imitation von {{name}}",
         "verified": "Verifiziertes Asset",
@@ -3413,7 +3436,8 @@
         "regSame": "Gleicher Ticker anderswo: {{n}}",
         "regListed": "In der Registry",
         "regNot": "Nicht in der Registry",
-        "search": "Ticker oder Asset-ID"
+        "search": "Ticker oder Asset-ID",
+        "yourWallet": "Deine Wallet"
       },
       "depth": {
         "empty": "Das Tiefendiagramm füllt sich, sobald Angebote eintreffen.",
@@ -3586,7 +3610,10 @@
         "noBuyers": "Noch keine Käufer",
         "emptyTitle": "Noch handelt niemand {{ticker}}",
         "emptyBody": "Stelle das erste Angebot ein, dann erscheint es hier für alle im Netzwerk.",
-        "foot": "Angebote werden ganz ausgeführt. Klicke eins an, um es zu handeln."
+        "foot": "Angebote werden ganz ausgeführt. Klicke eins an, um es zu handeln.",
+        "loading": "Orderbuch wird geladen …",
+        "makerOnline": "Maker online",
+        "makerAway": "Maker abwesend"
       },
       "market": {
         "unreachable": "Der Markt-Daemon ist nicht erreichbar",
@@ -3705,6 +3732,57 @@
       },
       "walletSwitch": {
         "original": "Das erste Wallet auf diesem Computer"
+      },
+      "offers": {
+        "marketTitle": "P2P-Markt",
+        "simpleSwap": "Einfacher Swap",
+        "publish": "Angebot veröffentlichen",
+        "onchainMarket": "On-Chain-Markt",
+        "sharedWith": "Gemeinsamer Markt mit",
+        "available": "Angebote",
+        "mine": "Meine Angebote",
+        "pricePerUnit": "Preis / Einheit",
+        "quantity": "Menge",
+        "expires": "Läuft ab in",
+        "summary": "Angebotsübersicht",
+        "pay": "Du zahlst",
+        "receive": "Du erhältst",
+        "onchain": "On-Chain",
+        "retained": "Sats, die beim RGB-Asset verbleiben",
+        "reserve": "Zu reservierende Bitcoin",
+        "review": "Swap überprüfen",
+        "chooseHint": "Wähle ein verfügbares Angebot, um Preis und Gebühren zu prüfen.",
+        "new": "Neues Angebot",
+        "close": "Angebotsformular schließen",
+        "yourPrice": "Dein Preis",
+        "makeHint": "Lege deinen Preis fest und lass die Desktop-App online, um auf Anfragen zu antworten.",
+        "advanced": "Markttiefe und Handelswerkzeuge",
+        "webMarket": "Mosaik-Webmarkt",
+        "nostrDiscovery": "Angebote über Nostr",
+        "nostrRelays": "Nostr-Relays ({{n}})",
+        "configuredRelays": "Konfigurierte Relays",
+        "manageRelays": "Relays verwalten",
+        "nostrMaker": "Maker auf Nostr",
+        "nostrProfile": "Nostr-Profil ansehen",
+        "hideProfile": "Profil ausblenden"
+      },
+      "cost": {
+        "platform": "Plattformgebühr",
+        "network": "Netzwerkgebühr",
+        "unavailable": "Nicht verfügbar"
+      },
+      "guide": {
+        "s1": "Einzahlen",
+        "s2": "Kaufen oder verkaufen",
+        "s3": "Abwickeln und auszahlen",
+        "s2Body": "Wähle ein Angebot oder veröffentliche deinen Preis über Nostr. Lass die App online, solange dein Angebot oder Swap aktiv ist.",
+        "title": "So funktioniert es",
+        "show": "Wie funktioniert der Tausch?",
+        "hide": "Anleitung ausblenden",
+        "s1Body": "Zahle BTC über das ausgewählte Netzwerk in diese Handelswallet ein. Wenn du einen Vermögenswert verkaufen möchtest, zahle ihn ebenfalls hier ein.",
+        "s1Cta": "Jetzt einzahlen",
+        "s3Body": "Verfolge den Tausch unter Aktivitäten. Sobald die erforderlichen Bestätigungen vorliegen ({{n}}), kannst du das abgerechnete Guthaben auszahlen.",
+        "s3BodyNow": "Verfolge den Tausch unter Aktivitäten. Abgerechnetes Guthaben kannst du auszahlen, soweit es nicht reserviert ist."
       }
     },
     "tabDeposits": "Einzahlungen",
@@ -3795,7 +3873,9 @@
   },
   "p2pTrade": {
     "swap": "Swap",
-    "book": "Orderbuch"
+    "book": "Orderbuch",
+    "market": "P2P-Markt",
+    "simpleSwap": "Einfacher Swap"
   },
   "p2pWallet": {
     "assetTransfers": "Asset-Transfers",
@@ -4204,5 +4284,36 @@
     "next": "Weiter",
     "done": "Mit dem Handel beginnen",
     "faucet": "Kostenlose Testmünzen holen"
+  },
+  "mainnetWallet": {
+    "assets": "Bitcoin und RGB-Assets",
+    "checkFailed": "Die Verfügbarkeit der Wallet konnte nicht geprüft werden",
+    "unavailable": "Vorschau der Mainnet-Wallet",
+    "walletHint": "Diese Version enthält die Mainnet-Wallet noch nicht. Du kannst eine On-Chain-Wallet in einem Testnetz erstellen oder öffnen.",
+    "historyHint": "Der Verlauf der Mainnet-Transaktionen wird zusammen mit der Mainnet-Wallet verfügbar sein.",
+    "openTest": "Test-Wallet öffnen",
+    "testHint": "Zum Verwenden von Testguthaben das Netzwerk wechseln.",
+    "retry": "Erneut versuchen"
+  },
+  "unified": {
+    "testNetworks": "Testnetze",
+    "test": "Test",
+    "market": "P2P-Markt",
+    "node": "Lightning-Node",
+    "activity": "Aktivität",
+    "accounts": "Konten und KaleidoMind",
+    "marketTestOnly": "Finde und veröffentliche Angebote über Nostr. Auf Testnetzen werden Geschäfte mit deiner separaten Handelswallet on-chain abgewickelt.",
+    "nodeTestOnly": "Starte einen lokalen RGB-Lightning-Node oder verbinde dich in einem Testnetz mit einem entfernten Node.",
+    "switchTest": "Zu Testnetzen wechseln",
+    "openNode": "{{name}} öffnen · {{network}}",
+    "manageNodes": "Node-Konten verwalten",
+    "mainnetWallet": "Mainnet-Wallet",
+    "testMarketLabel": "Nostr-P2P-Markt · Testnetze"
+  },
+  "nodeReachability": {
+    "unresponsiveTitle": "Keine Antwort vom Node",
+    "unresponsiveMessage": "Der Node ist möglicherweise mit Wallet-Vorgängen beschäftigt oder getrennt. Du kannst weiter navigieren; Guthaben sind eventuell nicht aktuell. Prüfe den Verlauf, bevor du eine Zahlung oder einen Asset-Vorgang wiederholst.",
+    "checking": "Verbindung wird geprüft…",
+    "retryIncomplete": "Prüfung ohne Antwort beendet. Der Node ist möglicherweise noch beschäftigt; automatische Prüfungen laufen weiter."
   }
 }

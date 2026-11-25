@@ -2,7 +2,11 @@
 //! credential store (macOS Keychain, Windows Credential Manager, Secret
 //! Service on Linux) instead of the SQLite database.
 
-const SERVICE: &str = "com.kaleidoswap.desktop";
+const SERVICE: &str = if cfg!(kaleidoswap_beta) {
+    "com.kaleidoswap.beta"
+} else {
+    "com.kaleidoswap.desktop"
+};
 
 fn entry(name: &str) -> Result<keyring::Entry, String> {
     keyring::Entry::new(SERVICE, name).map_err(|e| e.to_string())

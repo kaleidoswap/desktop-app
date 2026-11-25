@@ -27,8 +27,16 @@ export const TRADE_NOSTR_P2P_PATH = makePath(['nostr-p2p'])
 export const P2P_WALLET_PATH = makePath(['p2p'])
 /** The P2P app's own pages, under its shell. */
 export const P2P_TRADE_PATH = `${P2P_WALLET_PATH}/trade`
-export const P2P_ACTIVITY_PATH = `${P2P_WALLET_PATH}/wallet`
+export const P2P_BALANCE_PATH = `${P2P_WALLET_PATH}/wallet`
+export const P2P_ACTIVITY_PATH = `${P2P_WALLET_PATH}/activity`
+export const P2P_NODE_PATH = `${P2P_WALLET_PATH}/node`
 export const P2P_SETTINGS_PATH = `${P2P_WALLET_PATH}/settings`
+export const MAINNET_PATH = makePath(['mainnet'])
+export const MAINNET_WALLET_PATH = `${MAINNET_PATH}/wallet`
+export const MAINNET_ACTIVITY_PATH = `${MAINNET_PATH}/activity`
+export const MAINNET_MARKET_PATH = `${MAINNET_PATH}/market`
+export const MAINNET_NODE_PATH = `${MAINNET_PATH}/node`
+
 export const TRADE_DCA_PATH = makePath(['dca'])
 export const TRADE_LIMIT_PATH = makePath(['limit-orders'])
 

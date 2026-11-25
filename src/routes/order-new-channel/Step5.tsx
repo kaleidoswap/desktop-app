@@ -37,7 +37,7 @@ export const Step5 = ({
   onRestart,
   returnTo,
 }: {
-  paymentStatus: 'success' | 'error' | 'expired' | null | string
+  paymentStatus: 'success' | 'error' | 'expired' | 'funded' | null | string
   orderId?: string
   onRestart?: () => void
   returnTo?: string
@@ -183,6 +183,43 @@ export const Step5 = ({
               {t('orderChannel.step4.errorButtonText')}
             </Button>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (paymentStatus === 'funded') {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 max-w-lg mx-auto">
+        <div className="text-center mt-6 bg-surface-overlay/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-border-default w-full">
+          <div className="w-14 h-14 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mx-auto mb-5">
+            <Clock className="w-7 h-7 text-yellow-400" />
+          </div>
+
+          <h3 className="text-2xl font-bold text-white mb-4">
+            {t('components.buyChannelModal.statusFundedTitle')}
+          </h3>
+          <p className="text-content-secondary mb-4 text-sm">
+            {t('components.buyChannelModal.statusFundedMessage')}
+          </p>
+          <p className="text-content-secondary mb-8 text-sm">
+            {t('components.buyChannelModal.statusFundedHelp')}
+          </p>
+          {orderId && (
+            <p className="text-xs text-content-secondary font-mono break-all mb-6">
+              {orderId}
+            </p>
+          )}
+
+          <Button
+            fullWidth
+            icon={<SlidersHorizontal className="w-4 h-4" />}
+            onClick={() => navigate(CHANNELS_PATH)}
+            size="md"
+            variant="primary"
+          >
+            {t('orderChannel.step4.returnToChannels')}
+          </Button>
         </div>
       </div>
     )

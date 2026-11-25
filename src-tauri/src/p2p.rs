@@ -77,7 +77,7 @@ pub struct P2pStartRequest {
 #[derive(Debug, Clone)]
 pub struct P2pStartConfig {
     pub account: String,
-    /// `regtest`, `signet`, `signetcustom` (Mutinynet), `testnet` or `mainnet`.
+    /// The daemon's network name from the app's P2P network table.
     pub network: String,
     pub indexer_url: String,
     pub proxy_url: String,
@@ -169,17 +169,45 @@ pub fn route_allowed(method: &str, path: &str) -> bool {
 
 #[derive(Default)]
 pub struct P2pProcess {
-    child: Arc<Mutex<Option<Child>>>,
-    port: Arc<Mutex<Option<u16>>>,
-    /// Fresh for every start and known only to this process and the daemon it started: the daemon
-    /// answers nothing that does not carry it, so another process that finds the port gets nothing.
-    token: Arc<Mutex<Option<String>>>,
-    /// The last lines the daemon printed, so a start that fails can say why instead of "see the log".
+    run: Mutex<Option<DaemonRun>>,
+}
+
+struct DaemonRun {
+    child: Child,
+    account: String,
+    network: String,
+    port: u16,
+    /// Fresh for each launch, including restarts of the same wallet.
+    token: String,
+    ready: bool,
+    deadline: Instant,
     tail: Arc<Mutex<VecDeque<String>>>,
-    /// Where this run's pid is kept, so the next start can remove a daemon that outlived the app.
-    pid_file: Arc<Mutex<Option<PathBuf>>>,
-    /// The container's name when the daemon runs under Docker.
-    container: Arc<Mutex<Option<String>>>,
+    pid_file: Option<PathBuf>,
+    container: Option<String>,
+}
+
+impl DaemonRun {
+    fn alive(&mut self) -> bool {
+        matches!(self.child.try_wait(), Ok(None))
+    }
+
+    fn require_wallet(&self, cfg: &P2pStartConfig) -> Result<(), String> {
+        if self.account == cfg.account && self.network == cfg.network {
+            Ok(())
+        } else {
+            Err("A different P2P wallet is open. Close it before switching wallets.".into())
+        }
+    }
+}
+
+impl P2pStatus {
+    fn from_port(port: Option<u16>) -> Self {
+        Self {
+            running: port.is_some(),
+            port,
+            url: port.map(|p| format!("http://127.0.0.1:{p}")),
+        }
+    }
 }
 
 /// 32 random bytes as hex.
@@ -200,23 +228,20 @@ impl P2pProcess {
         Self::default()
     }
 
-    fn alive(child: &mut Option<Child>) -> bool {
-        matches!(child.as_mut().map(Child::try_wait), Some(Ok(None)))
-    }
-
     /// The daemon runs in a Docker container: paths on the host mean nothing to it.
     pub fn in_docker(&self) -> bool {
-        lock(&self.container).is_some()
+        lock(&self.run)
+            .as_ref()
+            .is_some_and(|r| r.container.is_some())
     }
 
     pub fn status(&self) -> P2pStatus {
-        let running = Self::alive(&mut lock(&self.child));
-        let port = if running { *lock(&self.port) } else { None };
-        P2pStatus {
-            running,
-            port,
-            url: port.map(|p| format!("http://127.0.0.1:{p}")),
-        }
+        let mut current = lock(&self.run);
+        P2pStatus::from_port(
+            current
+                .as_mut()
+                .and_then(|r| (r.alive() && r.ready).then_some(r.port)),
+        )
     }
 
     /// Start the daemon if it is not running and wait until it answers. Idempotent.
@@ -225,12 +250,23 @@ impl P2pProcess {
         app: &AppHandle,
         cfg: &P2pStartConfig,
     ) -> Result<P2pStatus, String> {
-        let mut child_guard = lock(&self.child);
-        if Self::alive(&mut child_guard) {
-            drop(child_guard);
-            return Ok(self.status());
-        }
         validate(cfg)?;
+        let mut current = lock(&self.run);
+        if let Some(run) = current.as_mut() {
+            if run.alive() {
+                run.require_wallet(cfg)?;
+                let port = run.port;
+                if run.ready {
+                    return Ok(P2pStatus::from_port(Some(port)));
+                }
+                let token = run.token.clone();
+                drop(current);
+                return self.wait_for_wallet(port, &token);
+            }
+        }
+        if let Some(old) = current.take() {
+            old.stop();
+        }
         let data_dir = app
             .path()
             .app_data_dir()
@@ -238,7 +274,6 @@ impl P2pProcess {
             .join("p2pd")
             .join(&cfg.account);
         std::fs::create_dir_all(&data_dir).map_err(|e| format!("{}: {e}", data_dir.display()))?;
-        lock(&self.tail).clear();
         let port = free_port()?;
         let token = new_token();
 
@@ -249,8 +284,14 @@ impl P2pProcess {
             reap_orphan(&data_dir.join("p2pd.pid"));
             let mut cmd = Command::new(&program);
             cmd.env("P2PD_API_TOKEN", &token);
+            // p2pd uses --name as its keychain account. A dot cannot occur in a desktop profile name.
+            let keychain_account = if cfg!(kaleidoswap_beta) {
+                format!("{}.beta", cfg.account)
+            } else {
+                cfg.account.clone()
+            };
             cmd.arg("--name")
-                .arg(&cfg.account)
+                .arg(keychain_account)
                 .args(["--port", &port.to_string()])
                 .args(["--network", &cfg.network])
                 .args(["--indexer", &cfg.indexer_url])
@@ -276,9 +317,6 @@ impl P2pProcess {
             }
             if let Some(npub) = &cfg.listing_curator {
                 cmd.args(["--listing-curator", npub]);
-            }
-            if cfg.network == "mainnet" {
-                cmd.arg("--allow-mainnet");
             }
             if cfg.seed_mnemonic.is_some() {
                 cmd.arg("--seed-stdin");
@@ -331,50 +369,72 @@ impl P2pProcess {
         })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-        let mut child = cmd
+        let child = cmd
             .spawn()
             .map_err(|e| format!("could not start the P2P daemon: {e}"))?;
+        let mut run = DaemonRun {
+            child,
+            account: cfg.account.clone(),
+            network: cfg.network.clone(),
+            port,
+            token: token.clone(),
+            ready: false,
+            deadline: Instant::now()
+                + if cfg.rescan {
+                    STARTUP_TIMEOUT * 6
+                } else {
+                    STARTUP_TIMEOUT
+                },
+            tail: Arc::default(),
+            pid_file: None,
+            container,
+        };
         if let Some(Secret(phrase)) = &cfg.seed_mnemonic {
             use std::io::Write;
-            let mut stdin = child
+            let body = serde_json::json!({ "mnemonic": phrase }).to_string();
+            let sent = run
+                .child
                 .stdin
                 .take()
-                .ok_or("could not reach the daemon's stdin")?;
-            let body = serde_json::json!({ "mnemonic": phrase }).to_string();
-            stdin
-                .write_all(body.as_bytes())
-                .map_err(|e| format!("could not hand the recovery phrase to the daemon: {e}"))?;
-            // closing stdin is what tells the daemon the phrase is complete
-        }
-        if container.is_none() {
-            let pid_file = data_dir.join("p2pd.pid");
-            let _ = std::fs::write(&pid_file, child.id().to_string());
-            *lock(&self.pid_file) = Some(pid_file);
-        }
-        *lock(&self.container) = container;
-        pipe_to_log(child.stdout.take(), "out", Arc::clone(&self.tail));
-        pipe_to_log(child.stderr.take(), "err", Arc::clone(&self.tail));
-        *child_guard = Some(child);
-        *lock(&self.port) = Some(port);
-        *lock(&self.token) = Some(token.clone());
-        drop(child_guard);
-
-        // the daemon answers once its wallet is up and it is connected to the relays
-        // a full scan of the addresses takes much longer than a normal start
-        let deadline = Instant::now()
-            + if cfg.rescan {
-                STARTUP_TIMEOUT * 6
-            } else {
-                STARTUP_TIMEOUT
-            };
-        loop {
-            if daemon_answers(port, &token) {
-                return Ok(self.status());
+                .ok_or_else(|| "could not reach the daemon's stdin".to_string())
+                .and_then(|mut stdin| {
+                    stdin.write_all(body.as_bytes()).map_err(|e| {
+                        format!("could not hand the recovery phrase to the daemon: {e}")
+                    })
+                });
+            if let Err(error) = sent {
+                run.stop();
+                return Err(error);
             }
-            if !Self::alive(&mut lock(&self.child)) {
+        }
+        if run.container.is_none() {
+            let pid_file = data_dir.join("p2pd.pid");
+            let _ = std::fs::write(&pid_file, run.child.id().to_string());
+            run.pid_file = Some(pid_file);
+        }
+        pipe_to_log(run.child.stdout.take(), "out", Arc::clone(&run.tail));
+        pipe_to_log(run.child.stderr.take(), "err", Arc::clone(&run.tail));
+        *current = Some(run);
+        drop(current);
+        self.wait_for_wallet(port, &token)
+    }
+
+    fn wait_for_wallet(&self, port: u16, token: &str) -> Result<P2pStatus, String> {
+        let mut answered = false;
+        loop {
+            let mut current = lock(&self.run);
+            // A late probe or timeout from an old run must never affect its replacement.
+            let run = current
+                .as_mut()
+                .filter(|r| r.token == token)
+                .ok_or("The P2P wallet was closed while starting.")?;
+            if !run.alive() {
+                let tail = Arc::clone(&run.tail);
+                current.take().unwrap().stop();
+                drop(current);
                 // give the output threads a moment to hand over the last lines
                 thread::sleep(Duration::from_millis(200));
-                let why = lock(&self.tail)
+                let why = lock(&tail)
                     .iter()
                     .rev()
                     .take(4)
@@ -388,11 +448,19 @@ impl P2pProcess {
                     format!("the P2P daemon exited while starting: {why}")
                 });
             }
-            if Instant::now() > deadline {
-                self.stop();
+            if answered || run.ready {
+                run.ready = true;
+                return Ok(P2pStatus::from_port(Some(port)));
+            }
+            if Instant::now() > run.deadline {
+                current.take().unwrap().stop();
                 return Err("the P2P daemon did not come up in time".into());
             }
-            thread::sleep(Duration::from_millis(250));
+            drop(current);
+            answered = daemon_answers(port, token);
+            if !answered {
+                thread::sleep(Duration::from_millis(250));
+            }
         }
     }
 
@@ -407,10 +475,14 @@ impl P2pProcess {
         if !route_allowed(method, path) {
             return Err(format!("{method} {path} is not available from the app"));
         }
-        let port = self.status().port.ok_or("the P2P daemon is not running")?;
-        let token = lock(&self.token)
-            .clone()
-            .ok_or("the P2P daemon is not running")?;
+        let (port, token) = {
+            let mut current = lock(&self.run);
+            let run = current.as_mut().ok_or("the P2P daemon is not running")?;
+            if !run.ready || !run.alive() {
+                return Err("the P2P daemon is not running".into());
+            }
+            (run.port, run.token.clone())
+        };
         let client = reqwest::blocking::Client::builder()
             .timeout(Duration::from_secs(120))
             .build()
@@ -450,17 +522,25 @@ impl P2pProcess {
     /// Stop the daemon. It is asked to leave (SIGTERM) so that it withdraws its open offers from
     /// the relays first; if it has not gone after a few seconds it is killed.
     pub fn stop(&self) {
-        let Some(mut child) = lock(&self.child).take() else {
-            return;
-        };
-        *lock(&self.port) = None;
-        *lock(&self.token) = None;
-        if let Some(name) = lock(&self.container).take() {
+        let mut current = lock(&self.run);
+        if let Some(run) = current.take() {
+            run.stop();
+        }
+    }
+}
+
+impl DaemonRun {
+    fn stop(mut self) {
+        if let Some(name) = self.container.take() {
             p2p_docker::stop_container(&name);
         }
-        if let Some(f) = lock(&self.pid_file).take() {
+        if let Some(f) = self.pid_file.take() {
             let _ = std::fs::remove_file(f);
         }
+        if !self.alive() {
+            return;
+        }
+        let mut child = self.child;
         #[cfg(unix)]
         // SAFETY: `kill` only sends a signal to the child pid we spawned.
         unsafe {
@@ -487,20 +567,11 @@ fn account_ok(account: &str) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_'))
 }
 
-fn networks_ok(network: &str) -> bool {
-    matches!(
-        network,
-        "regtest" | "signet" | "signetcustom" | "testnet" | "testnet4" | "mainnet"
-    )
-}
-
 /// A new recovery phrase from the daemon's own generator, so the app and the daemon agree on what a
 /// valid phrase is. Nothing is created: the phrase exists only until the user has written it down and
 /// the wallet is started from it.
 pub fn generate_seed(app: &AppHandle, network: &str) -> Result<String, String> {
-    if !networks_ok(network) {
-        return Err(format!("unknown network {network:?}"));
-    }
+    crate::p2p_networks::require_daemon_network(network)?;
     let program = resolve_binary(app);
     let mut cmd = Command::new(&program);
     cmd.args([
@@ -579,9 +650,7 @@ fn validate(cfg: &P2pStartConfig) -> Result<(), String> {
     if !account_ok(&cfg.account) {
         return Err("the account name must be letters, digits, - or _".into());
     }
-    if !networks_ok(&cfg.network) {
-        return Err(format!("unknown network {:?}", cfg.network));
-    }
+    crate::p2p_networks::require_daemon_network(&cfg.network)?;
     if cfg.relays.is_empty()
         || cfg.fee_address.is_empty()
         || cfg.indexer_url.is_empty()
@@ -760,6 +829,52 @@ mod tests {
     #[test]
     fn a_complete_config_is_accepted() {
         assert!(validate(&cfg()).is_ok());
+    }
+
+    #[test]
+    fn an_open_wallet_is_reused_only_for_its_own_account_and_network() {
+        // sort reads from its pipe until EOF on Windows, Linux and macOS.
+        let mut child = Command::new("sort").stdin(Stdio::piped()).spawn().unwrap();
+        let stdin = child.stdin.take().unwrap();
+        let cfg = cfg();
+        let run = DaemonRun {
+            child,
+            account: cfg.account.clone(),
+            network: cfg.network.clone(),
+            port: 1,
+            token: "current-session".into(),
+            ready: true,
+            deadline: Instant::now(),
+            tail: Arc::default(),
+            pid_file: None,
+            container: None,
+        };
+        assert!(run.require_wallet(&cfg).is_ok());
+        assert!(run
+            .require_wallet(&P2pStartConfig {
+                network: "signetcustom".into(),
+                ..cfg.clone()
+            })
+            .is_err());
+        assert!(run
+            .require_wallet(&P2pStartConfig {
+                account: "bob".into(),
+                ..cfg
+            })
+            .is_err());
+        let process = P2pProcess {
+            run: Mutex::new(Some(run)),
+        };
+        assert!(process.wait_for_wallet(1, "previous-session").is_err());
+        assert!(
+            process
+                .wait_for_wallet(1, "current-session")
+                .unwrap()
+                .running
+        );
+        drop(stdin);
+        process.stop();
+        assert!(!process.status().running);
     }
 
     #[test]

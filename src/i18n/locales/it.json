@@ -504,6 +504,10 @@
     "localNodeNotSupported": "Il nodo locale non è supportato su Windows. Utilizza invece una connessione a nodo remoto.",
     "backendNative": "Binario nativo",
     "backendNativeDescription": "Esegui il nodo come processo locale. Docker non richiesto.",
+    "recheckDocker": "Ricontrolla Docker",
+    "checkingBackends": "Verifica in corso…",
+    "dockerReady": "Docker è pronto.",
+    "startDockerHint": "Avvia Docker, poi ricontrolla qui.",
     "backendDocker": "Container Docker",
     "backendDockerDescription": "Esegui il nodo in un container Docker. Funziona su tutte le piattaforme.",
     "backendUnavailable": "Non disponibile",
@@ -2001,6 +2005,10 @@
       "numberPlaceholder": "Inserisci quantità",
       "sizeLabel": "Dimensione UTXO (in satoshi)",
       "sizePlaceholder": "Inserisci dimensione",
+      "availableBalance": "Saldo disponibile",
+      "insufficientBalance": "Saldo insufficiente. Per creare {{num}} UTXO da almeno {{min}} sats servono più di {{required}} sats, commissioni escluse. Deposita BTC on-chain per continuare.",
+      "receiveBtc": "Ricevi BTC",
+      "sizeOutOfRange": "La dimensione degli UTXO deve essere tra {{min}} e {{max}} sats.",
       "feeRate": "Tariffa Commissioni"
     },
     "feeOptions": {
@@ -2532,6 +2540,7 @@
       "insufficientBalance": "Saldo insufficiente. Non hai {{asset}} disponibile da inviare.",
       "enterAmount": "Inserisci un importo da inviare.",
       "minimumOrderSize": "La dimensione minima dell'ordine è {{amount}} {{asset}}.",
+      "minimumReceiveAmount": "Devi ricevere almeno {{amount}} {{asset}} per swap.",
       "maxSendAmount": "Puoi inviare solo fino a {{amount}} {{asset}}.",
       "unableToReceive": "Impossibile ricevere {{asset}}. Nessuna capacità di canale disponibile.",
       "maxReceiveAmount": "Puoi ricevere solo fino a {{amount}} {{asset}}.",
@@ -2895,6 +2904,7 @@
         "status": {
           "completed": "Completato",
           "failed": "Fallito",
+          "funded": "Canale finanziato",
           "created": "Creato",
           "unknown": "Sconosciuto"
         },
@@ -2968,6 +2978,9 @@
       "statusCreateNewOrder": "Crea nuovo ordine",
       "statusErrorHelp": "Se il pagamento è stato effettuato, nessun fondo è stato detratto. Riprova o contatta il supporto se il problema persiste.",
       "statusErrorMessage": "Si è verificato un problema nell'elaborazione del tuo ordine di canale.",
+      "statusFundedTitle": "Canale finanziato, in attesa del provider",
+      "statusFundedMessage": "Il pagamento è stato ricevuto e il provider ha finanziato il canale on-chain, ma è andato offline prima che l'apertura fosse completata.",
+      "statusFundedHelp": "Non pagare di nuovo. Il canale diventa utilizzabile da solo quando il provider torna online. Se resta in sospeso, contatta il supporto con l'ID dell'ordine.",
       "statusErrorTitle": "Ordine fallito",
       "statusExpiredMessage": "La finestra di pagamento è scaduta senza ricevere il pagamento.",
       "statusExpiredTitle": "Pagamento scaduto",
@@ -3397,6 +3410,16 @@
       "nodeSub": "i tuoi risparmi"
     },
     "market": {
+      "reputation": {
+        "open": "Profilo Nostr e reputazione",
+        "title": "Reputazione Mosaik",
+        "verified": "Verificato da Mosaik",
+        "issuer": "Emittente di questo asset nel catalogo",
+        "settled": "Scambi regolati · 30 giorni",
+        "peers": "Controparti distinte",
+        "volume": "Volume in sat",
+        "unavailable": "Nessun rapporto firmato in corso di validità per questo maker."
+      },
       "header": {
         "imitation": "Possibile imitazione di {{name}}",
         "verified": "Asset verificato",
@@ -3413,7 +3436,8 @@
         "regSame": "Stesso ticker altrove: {{n}}",
         "regListed": "Nel registro",
         "regNot": "Non nel registro",
-        "search": "Ticker o ID asset"
+        "search": "Ticker o ID asset",
+        "yourWallet": "Il tuo wallet"
       },
       "depth": {
         "empty": "Il grafico di profondità si riempie man mano che arrivano ordini.",
@@ -3586,7 +3610,10 @@
         "noBuyers": "Ancora nessun compratore",
         "emptyTitle": "Nessuno scambia ancora {{ticker}}",
         "emptyBody": "Pubblica il primo ordine e comparirà qui per tutti nella rete.",
-        "foot": "Gli ordini si riempiono interi. Clicca per scambiarne uno."
+        "foot": "Gli ordini si riempiono interi. Clicca per scambiarne uno.",
+        "loading": "Caricamento delle offerte…",
+        "makerOnline": "Maker online",
+        "makerAway": "Maker assente"
       },
       "market": {
         "unreachable": "Impossibile raggiungere il daemon del mercato",
@@ -3705,6 +3732,57 @@
       },
       "walletSwitch": {
         "original": "Il primo wallet su questo computer"
+      },
+      "offers": {
+        "marketTitle": "Mercato P2P",
+        "simpleSwap": "Scambio semplice",
+        "publish": "Pubblica offerta",
+        "onchainMarket": "Mercato on-chain",
+        "sharedWith": "Mercato condiviso con",
+        "available": "Offerte",
+        "mine": "Le mie offerte",
+        "pricePerUnit": "Prezzo per unità",
+        "quantity": "Quantità",
+        "expires": "Scadenza",
+        "summary": "Riepilogo offerta",
+        "pay": "Paghi",
+        "receive": "Ricevi",
+        "onchain": "On-chain",
+        "retained": "Sat che restano nel wallet con l’asset RGB",
+        "reserve": "Bitcoin da riservare",
+        "review": "Rivedi scambio",
+        "chooseHint": "Seleziona un’offerta per verificarne prezzo e commissioni.",
+        "new": "Nuova offerta",
+        "close": "Chiudi modulo offerta",
+        "yourPrice": "Il tuo prezzo",
+        "makeHint": "Scegli il prezzo e tieni la desktop online per rispondere a chi accetta l’offerta.",
+        "advanced": "Profondità di mercato e strumenti di trading",
+        "webMarket": "Mercato web Mosaik",
+        "nostrDiscovery": "Offerte via Nostr",
+        "nostrRelays": "Relay Nostr ({{n}})",
+        "configuredRelays": "Relay configurati",
+        "manageRelays": "Gestisci relay",
+        "nostrMaker": "Maker su Nostr",
+        "nostrProfile": "Vedi profilo Nostr",
+        "hideProfile": "Nascondi profilo"
+      },
+      "cost": {
+        "platform": "Commissione P2P",
+        "network": "Commissione di rete",
+        "unavailable": "Non disponibile"
+      },
+      "guide": {
+        "s1": "Deposita",
+        "s2": "Compra o vendi",
+        "s3": "Conferma e preleva",
+        "s2Body": "Seleziona un’offerta o pubblica il tuo prezzo via Nostr. Tieni l’app online finché l’offerta o lo scambio è attivo.",
+        "title": "Come funziona",
+        "show": "Come funziona lo scambio?",
+        "hide": "Nascondi la guida",
+        "s1Body": "Deposita BTC in questo wallet sulla rete selezionata. Per vendere un asset, deposita anche quello qui.",
+        "s1Cta": "Deposita ora",
+        "s3Body": "Segui lo scambio in Attività. Potrai prelevare i fondi quando arriveranno le conferme richieste ({{n}}).",
+        "s3BodyNow": "Segui lo scambio in Attività. Puoi prelevare i fondi regolati e non riservati."
       }
     },
     "tabDeposits": "Depositi",
@@ -3795,7 +3873,9 @@
   },
   "p2pTrade": {
     "swap": "Swap",
-    "book": "Order book"
+    "book": "Order book",
+    "market": "Mercato P2P",
+    "simpleSwap": "Scambio semplice"
   },
   "p2pWallet": {
     "assetTransfers": "Trasferimenti di asset",
@@ -4204,5 +4284,36 @@
     "next": "Avanti",
     "done": "Inizia a fare trading",
     "faucet": "Prendi monete di prova gratis"
+  },
+  "mainnetWallet": {
+    "assets": "Bitcoin e asset RGB",
+    "checkFailed": "Impossibile verificare la disponibilità del wallet",
+    "unavailable": "Anteprima del wallet mainnet",
+    "walletHint": "Questa versione deve ancora integrare il wallet mainnet. Puoi già creare o aprire un wallet on-chain su una rete di test.",
+    "historyHint": "Lo storico delle transazioni sarà disponibile insieme al wallet mainnet.",
+    "openTest": "Apri wallet di test",
+    "testHint": "Cambia rete per usare fondi di test.",
+    "retry": "Riprova"
+  },
+  "unified": {
+    "testNetworks": "Reti di test",
+    "test": "test",
+    "market": "Mercato P2P",
+    "node": "Nodo Lightning",
+    "activity": "Attività",
+    "accounts": "Account e KaleidoMind",
+    "marketTestOnly": "Trova e pubblica offerte via Nostr. Sulle reti di test gli scambi vengono regolati on-chain con il tuo wallet di trading separato.",
+    "nodeTestOnly": "Avvia un nodo RGB Lightning locale o collegati a un nodo remoto su una rete di test.",
+    "switchTest": "Passa alle reti di test",
+    "openNode": "Apri {{name}} · {{network}}",
+    "manageNodes": "Gestisci account dei nodi",
+    "mainnetWallet": "Wallet mainnet",
+    "testMarketLabel": "Mercato P2P su Nostr · Reti di test"
+  },
+  "nodeReachability": {
+    "unresponsiveTitle": "Il nodo non risponde",
+    "unresponsiveMessage": "Il nodo potrebbe essere occupato con operazioni del wallet oppure disconnesso. Puoi continuare a navigare; i saldi potrebbero non essere aggiornati. Controlla la cronologia prima di ripetere un pagamento o un’operazione sugli asset.",
+    "checking": "Verifica della connessione…",
+    "retryIncomplete": "Verifica terminata senza risposta. Il nodo potrebbe essere ancora occupato; i controlli automatici continuano."
   }
 }

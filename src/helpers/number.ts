@@ -201,9 +201,9 @@ export const formatAssetAmountWithPrecision = (
   amount: number,
   asset: string,
   bitcoinUnit: string,
-  assets?: NiaAsset[] | null
+  assets?: NiaAsset[] | null,
+  locale = getNumberLocale()
 ): string => {
-  const locale = getNumberLocale()
   const precision = getAssetPrecision(asset, bitcoinUnit, assets)
 
   // For precision 0, the amount is already in base units, no division needed
