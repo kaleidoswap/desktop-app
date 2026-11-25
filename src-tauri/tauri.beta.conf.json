@@ -8,5 +8,12 @@
         "version": "0.7.0.1"
       }
     }
+  },
+  "identifier": "com.kaleidoswap.beta",
+  "mainBinaryName": "KaleidoSwapBeta",
+  "plugins": {
+    "updater": {
+      "endpoints": []
+    }
   }
 }

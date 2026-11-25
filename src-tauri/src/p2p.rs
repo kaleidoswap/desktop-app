@@ -284,8 +284,14 @@ impl P2pProcess {
             reap_orphan(&data_dir.join("p2pd.pid"));
             let mut cmd = Command::new(&program);
             cmd.env("P2PD_API_TOKEN", &token);
+            // p2pd uses --name as its keychain account. A dot cannot occur in a desktop profile name.
+            let keychain_account = if cfg!(kaleidoswap_beta) {
+                format!("beta.{}", cfg.account)
+            } else {
+                cfg.account.clone()
+            };
             cmd.arg("--name")
-                .arg(&cfg.account)
+                .arg(keychain_account)
                 .args(["--port", &port.to_string()])
                 .args(["--network", &cfg.network])
                 .args(["--indexer", &cfg.indexer_url])

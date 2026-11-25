@@ -40,3 +40,19 @@ fn null_removes_an_overridden_key() {
     );
     assert!(config["bundle"]["macOS"].get("signingIdentity").is_none());
 }
+
+#[test]
+fn beta_package_has_its_own_storage_binary_and_updater_configuration() {
+    let mut config: serde_json::Value =
+        serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+    let base = config.clone();
+    build_config::merge_config(
+        &mut config,
+        serde_json::from_str(include_str!("../tauri.beta.conf.json")).unwrap(),
+    );
+    assert_ne!(base["identifier"], config["identifier"]);
+    assert_ne!(base["mainBinaryName"], config["mainBinaryName"]);
+    assert_ne!(base["productName"], config["productName"]);
+    assert_eq!(config["bundle"]["createUpdaterArtifacts"], false);
+    assert_eq!(config["plugins"]["updater"]["endpoints"], json!([]));
+}

@@ -1,6 +1,6 @@
 # Windows private beta verification
 
-CI builds MSI/NSIS, runs the P2P backend tests, verifies a disposable Windows Credential Manager entry, extracts the actual MSI and starts its app executable, requiring a surviving process and a real window. No installer is uploaded. Administrative extraction is not an install/uninstall or SmartScreen acceptance test.
+CI builds MSI/NSIS, runs the P2P backend tests, verifies a disposable Windows Credential Manager entry, extracts the actual MSI and starts its app executable, requiring a surviving process and a real window. A versioned beta tag attaches the verified installers to a draft prerelease. Branch verification keeps packages on the runner. Administrative extraction is not an install/uninstall or SmartScreen acceptance test.
 
 The current installer is unsigned: no Authenticode certificate/signing service is configured. Apple Developer ID and Tauri updater keys are not Windows publisher certificates. Do not claim verified publisher, bypass Windows warnings, or purchase a signing service automatically. Authenticode and clean-machine installer/SmartScreen verification remain distribution gates.
 

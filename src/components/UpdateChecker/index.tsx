@@ -87,6 +87,11 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
         logger.warn('Failed to get current version, using fallback:', e)
       }
 
+      if (currentVersion.includes('-beta.')) {
+        updateCheckInProgress.current = false
+        return
+      }
+
       let update: Update | null
 
       try {
@@ -135,6 +140,16 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
       currentVersion = await getVersion()
     } catch (e) {
       logger.warn('Failed to get current version, using fallback:', e)
+    }
+
+    if (currentVersion.includes('-beta.')) {
+      addNotification({
+        autoClose: 5000,
+        message: 'Install beta updates from the desktop prerelease.',
+        title: 'Beta updates',
+        type: 'info',
+      })
+      return
     }
 
     lastCheckTime.current = now

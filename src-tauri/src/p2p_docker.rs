@@ -124,11 +124,16 @@ pub fn decide(native: bool, engine: Engine, image_ok: bool) -> Availability {
 }
 
 pub fn container_name(account: &str) -> String {
-    format!("kaleido-p2pd-{account}")
+    let prefix = if cfg!(kaleidoswap_beta) {
+        "kaleido-beta-p2pd"
+    } else {
+        "kaleido-p2pd"
+    };
+    format!("{prefix}-{account}")
 }
 
 fn volume_name(account: &str) -> String {
-    format!("kaleido-p2pd-{account}-data")
+    format!("{}-data", container_name(account))
 }
 
 /// Where the container sees the app's listing file.
@@ -323,7 +328,7 @@ mod tests {
             &HostFiles::default(),
         );
         assert!(a.contains(&"127.0.0.1:51234:51234".to_string()));
-        assert!(a.contains(&"kaleido-p2pd-wallet-signetcustom-data:/data".to_string()));
+        assert!(a.contains(&format!("{}:/data", volume_name("wallet-signetcustom"))));
         assert_eq!(a.last().unwrap(), "kaleidoswap/p2pd:1@sha256:abc");
         assert!(a.contains(&"--rm".to_string()) && a.contains(&"-i".to_string()));
     }

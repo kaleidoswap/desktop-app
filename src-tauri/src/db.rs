@@ -237,15 +237,19 @@ pub fn get_db_path() -> String {
         // In production, use the local app data directory
         let local_app_data = if cfg!(target_os = "macos") {
             let home = env::var("HOME").expect("Failed to get HOME directory");
-            PathBuf::from(home).join("Library/Application Support/com.kaleidoswap.dev")
+            PathBuf::from(home)
+                .join("Library/Application Support")
+                .join(env!("KALEIDOSWAP_BUNDLE_ID"))
         } else if cfg!(target_os = "windows") {
             let local_app_data =
                 env::var("LOCALAPPDATA").expect("Failed to get LOCALAPPDATA directory");
-            PathBuf::from(local_app_data).join("com.kaleidoswap.dev")
+            PathBuf::from(local_app_data).join(env!("KALEIDOSWAP_BUNDLE_ID"))
         } else {
             // Linux
             let home = env::var("HOME").expect("Failed to get HOME directory");
-            PathBuf::from(home).join(".local/share/com.kaleidoswap.dev")
+            PathBuf::from(home)
+                .join(".local/share")
+                .join(env!("KALEIDOSWAP_BUNDLE_ID"))
         };
 
         // Create the directory if it doesn't exist

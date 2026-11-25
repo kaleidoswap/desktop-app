@@ -35,7 +35,11 @@ fn normalize_network_name(network: &str) -> String {
 fn default_base_dir() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join(".kaleido")
+        .join(if cfg!(kaleidoswap_beta) {
+            ".kaleido-beta"
+        } else {
+            ".kaleido"
+        })
 }
 
 // Configuration structs
@@ -694,6 +698,15 @@ impl DockerNodeManager {
 
     fn run_compose(compose_dir: &Path, args: &[&str]) -> Result<std::process::Output, String> {
         let mut cmd = Self::docker_command();
+        if cfg!(kaleidoswap_beta) {
+            let environment = compose_dir
+                .file_name()
+                .ok_or("missing Docker environment name")?;
+            cmd.env(
+                "COMPOSE_PROJECT_NAME",
+                format!("ksbeta-{}", environment.to_string_lossy()),
+            );
+        }
         cmd.args(["compose", "--file", COMPOSE_FILE])
             .args(args)
             .current_dir(compose_dir);

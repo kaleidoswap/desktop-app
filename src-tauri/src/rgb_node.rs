@@ -422,17 +422,25 @@ impl NodeProcess {
             println!("MacOS: Using Application Support directory");
             let home =
                 env::var("HOME").map_err(|e| format!("Failed to get HOME directory: {}", e))?;
-            PathBuf::from(home).join("Library/Application Support/com.kaleidoswap.dev/data")
+            PathBuf::from(home)
+                .join("Library/Application Support")
+                .join(env!("KALEIDOSWAP_BUNDLE_ID"))
+                .join("data")
         } else if cfg!(target_os = "windows") {
             println!("Windows: Using LOCALAPPDATA directory");
             let local_app_data = env::var("LOCALAPPDATA")
                 .map_err(|e| format!("Failed to get LOCALAPPDATA: {}", e))?;
-            PathBuf::from(local_app_data).join("com.kaleidoswap.dev/data")
+            PathBuf::from(local_app_data)
+                .join(env!("KALEIDOSWAP_BUNDLE_ID"))
+                .join("data")
         } else {
             println!("Linux: Using .local/share directory");
             let home =
                 env::var("HOME").map_err(|e| format!("Failed to get HOME directory: {}", e))?;
-            PathBuf::from(home).join(".local/share/com.kaleidoswap.dev/data")
+            PathBuf::from(home)
+                .join(".local/share")
+                .join(env!("KALEIDOSWAP_BUNDLE_ID"))
+                .join("data")
         };
 
         println!("App data directory: {:?}", app_data_dir);
@@ -1194,18 +1202,23 @@ fn node_log_dir() -> Result<PathBuf, String> {
     } else if cfg!(target_os = "macos") {
         // macOS: ~/Library/Logs/com.kaleidoswap.dev/
         let home = env::var("HOME").map_err(|e| format!("Failed to get HOME directory: {}", e))?;
-        Ok(PathBuf::from(home).join("Library/Logs/com.kaleidoswap.dev"))
+        Ok(PathBuf::from(home)
+            .join("Library/Logs")
+            .join(env!("KALEIDOSWAP_BUNDLE_ID")))
     } else if cfg!(target_os = "windows") {
         // Windows: %APPDATA%\com.kaleidoswap.dev\logs
         let app_data =
             env::var("APPDATA").map_err(|e| format!("Failed to get APPDATA directory: {}", e))?;
         Ok(PathBuf::from(app_data)
-            .join("com.kaleidoswap.dev")
+            .join(env!("KALEIDOSWAP_BUNDLE_ID"))
             .join("logs"))
     } else {
         // Linux: ~/.local/share/com.kaleidoswap.dev/logs
         let home = env::var("HOME").map_err(|e| format!("Failed to get HOME directory: {}", e))?;
-        Ok(PathBuf::from(home).join(".local/share/com.kaleidoswap.dev/logs"))
+        Ok(PathBuf::from(home)
+            .join(".local/share")
+            .join(env!("KALEIDOSWAP_BUNDLE_ID"))
+            .join("logs"))
     }
 }
 

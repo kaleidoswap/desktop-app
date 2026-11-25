@@ -1,8 +1,9 @@
-name: Beta verification (no release)
+name: Desktop beta
 
 on:
   push:
-    branches: [codex/p2p-beta-verification]
+    branches: [dev, codex/desktop-beta-integration, codex/p2p-beta-verification]
+    tags: ['v*-beta.*']
   workflow_dispatch:
 
 permissions:
@@ -13,7 +14,45 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check beta version and installer identity
+        run: |
+          python3 - <<'PYTHON'
+          import json, os, re
+          from pathlib import Path
+          config = json.loads(Path("src-tauri/tauri.beta.conf.json").read_text())
+          version = config["version"]
+          parts = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)-beta\.(\d+)", version)
+          if not parts or config["bundle"]["windows"]["wix"]["version"] != ".".join(parts.groups()):
+              raise SystemExit("Set matching beta and numeric MSI versions in tauri.beta.conf.json")
+          if os.environ["GITHUB_REF_TYPE"] == "tag" and os.environ["GITHUB_REF_NAME"] != "v" + version:
+              raise SystemExit("The tag must match the package beta version")
+          PYTHON
+      - name: Open or resume the draft for this commit
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release view "$GITHUB_REF_NAME" --json isDraft,isPrerelease,body |
+              jq -e --arg sha "$GITHUB_SHA" '.isDraft and .isPrerelease and (.body | contains($sha))'
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag --draft --prerelease --latest=false \
+              --title "KaleidoSwap Desktop ${GITHUB_REF_NAME#v}" \
+              --notes "Beta packages for commit $GITHUB_SHA. Windows installers are unsigned. See docs/WINDOWS-BETA-VERIFICATION.md before distribution."
+          fi
+
   desktop:
+    needs: prepare
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -37,6 +76,8 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Import Developer ID certificate into an ephemeral keychain
         if: runner.os == 'macOS'
         env:
@@ -91,7 +132,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev pkg-config
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libdbus-1-dev pkg-config
       - uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows'
         with:
@@ -103,6 +144,13 @@ jobs:
           $linker = Join-Path $env:VCToolsInstallDir 'bin\Hostx64\x64\link.exe'
           if (!(Test-Path $linker)) { throw 'MSVC linker was not installed' }
           "CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER=$linker" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Fetch the locked private signer dependency
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: 'true'
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: url.https://x-access-token:${{ secrets.P2PD_REPO_TOKEN }}@github.com/kaleidoswap/p2pd.insteadOf
+          GIT_CONFIG_VALUE_0: https://github.com/kaleidoswap/p2pd
+        run: cargo fetch --locked --manifest-path src-tauri/Cargo.toml
       - name: Install frontend and check P2P backend
         env:
           BUILD_AND_RUN_RGB_LIGHTNING_NODE: "false"
@@ -156,7 +204,22 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/test-windows-package.ps1
-      # No release, registry push, updater JSON, or artifact upload.
+      - name: Attach verified installers to the draft
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" --json isDraft,isPrerelease,body |
+            jq -e --arg sha "$GITHUB_SHA" '.isDraft and .isPrerelease and (.body | contains($sha))'
+          root="src-tauri/target/$TARGET/release/bundle"
+          case "$RUNNER_OS" in
+            macOS) files=("$root"/dmg/*.dmg);;
+            Linux) files=("$root"/deb/*.deb "$root"/appimage/*.AppImage);;
+            Windows) files=("$root"/msi/*.msi "$root"/nsis/*.exe);;
+          esac
+          for file in "${files[@]}"; do test -f "$file"; done
+          gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber
       - name: Clean ephemeral signing and private checkout files
         if: always()
         run: |
@@ -167,6 +230,7 @@ jobs:
           fi
 
   docker-linux-amd64:
+    needs: prepare
     runs-on: ubuntu-22.04
     timeout-minutes: 90
     steps:
@@ -183,3 +247,26 @@ jobs:
       - name: Show non-secret smoke result
         if: always()
         run: test ! -f docker-smoke.json || cat docker-smoke.json
+
+  verify-draft:
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: [desktop, docker-linux-amd64]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Verify complete installer set and attach checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" --json isDraft,isPrerelease,body |
+            jq -e --arg sha "$GITHUB_SHA" '.isDraft and .isPrerelease and (.body | contains($sha))'
+          mkdir installers
+          cd installers
+          gh release download "$GITHUB_REF_NAME" -p '*.dmg' -p '*.msi' -p '*.exe' -p '*.deb' -p '*.AppImage'
+          shopt -s nullglob
+          mac=( *.dmg ); linux=( *.deb *.AppImage ); windows=( *.msi *.exe )
+          [[ ${#mac[@]} == 2 && ${#linux[@]} == 2 && ${#windows[@]} == 2 ]]
+          sha256sum -- "${mac[@]}" "${linux[@]}" "${windows[@]}" > SHA256SUMS
+          gh release upload "$GITHUB_REF_NAME" SHA256SUMS --clobber
