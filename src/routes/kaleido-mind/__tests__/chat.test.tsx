@@ -138,3 +138,22 @@ describe('Mind chat navigation', () => {
     expect(screen.getByRole('button', { name: 'Clear' })).toBeEnabled()
   })
 })
+
+it('archives the previous conversation when starting a new chat', async () => {
+  mock.mind.chat.mockResolvedValueOnce({ text: '**Saved answer**' })
+  renderChat()
+  fireEvent.change(screen.getByRole('textbox'), {
+    target: { value: 'Remember this chat' },
+  })
+  await act(async () =>
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
+  )
+  await act(async () =>
+    fireEvent.click(screen.getByRole('button', { name: 'New chat' }))
+  )
+  const saved = JSON.parse(
+    localStorage.getItem('kaleido-mind.chat-archives.v1')!
+  )
+  expect(saved).toHaveLength(1)
+  expect(saved[0].messages[1].text).toBe('**Saved answer**')
+})

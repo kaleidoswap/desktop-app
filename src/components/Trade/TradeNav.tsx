@@ -2,7 +2,7 @@
 // Nostr P2P, DCA, Limit Orders) one consistent tab strip instead of each page
 // inventing its own header.
 
-import { ArrowLeftRight, Radio, Store, Target, TrendingUp } from 'lucide-react'
+import { ArrowLeftRight, Store, Target, TrendingUp } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'

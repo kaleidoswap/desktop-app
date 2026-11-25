@@ -17,8 +17,11 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
+import { useAppDispatch } from '../../app/store/hooks'
+import { DEFAULT_UTXO_SIZE } from '../../constants'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { uiSliceActions } from '../../slices/ui/ui.slice'
 import { getAssignmentAmount } from '../../utils/rgbUtils'
 import { Modal } from '../ui/Modal'
 import { logger } from '../../utils/logger'
@@ -48,6 +51,7 @@ export const UTXOManagementModal = ({
   bitcoinUnit,
 }: UTXOManagementModalProps) => {
   const { t } = useTranslation()
+  const dispatch = useAppDispatch()
   const [step, setStep] = useState<'list' | 'create'>('list')
 
   // ── List step state ──────────────────────────────────────────────────────
@@ -287,7 +291,28 @@ export const UTXOManagementModal = ({
     return () => clearInterval(intervalId)
   }, [step, estimateFee, refreshBalance])
 
+  const spendable = btcBalanceResponse.data?.vanilla?.spendable ?? 0
+  const safeNum = Number.isFinite(num) && num > 0 ? num : 1
+  const maxSize = Math.floor(spendable / safeNum)
+  const balanceLoaded = btcBalanceResponse.data !== undefined
+  const insufficientBalance = balanceLoaded && maxSize < DEFAULT_UTXO_SIZE
+  const sizeValid =
+    Number.isFinite(size) && size >= DEFAULT_UTXO_SIZE && size <= maxSize
+
+  // Keep the field, slider and label on one value inside the allowed range.
+  useEffect(() => {
+    if (!balanceLoaded || insufficientBalance) return
+    if (!Number.isFinite(size) || size > maxSize) setValue('size', maxSize)
+    else if (size < DEFAULT_UTXO_SIZE) setValue('size', DEFAULT_UTXO_SIZE)
+  }, [balanceLoaded, insufficientBalance, maxSize, size, setValue])
+
+  const openDeposit = () => {
+    onClose()
+    dispatch(uiSliceActions.setModal({ assetId: undefined, type: 'deposit' }))
+  }
+
   const onSubmitCreate = (data: CreateFormFields) => {
+    if (insufficientBalance || !sizeValid) return
     setIsCreating(true)
     createutxos({
       fee_rate: Math.round(
@@ -483,7 +508,33 @@ export const UTXOManagementModal = ({
             </p>
           </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmitCreate)}>
+          {insufficientBalance && (
+            <div
+              className="flex flex-col gap-3 rounded-lg bg-status-danger/10 border border-status-danger/30 p-4"
+              role="alert"
+            >
+              <p className="text-sm text-status-danger">
+                {t('createUtxos.fields.insufficientBalance', {
+                  min: DEFAULT_UTXO_SIZE.toLocaleString(),
+                  num: safeNum,
+                  required: (safeNum * DEFAULT_UTXO_SIZE).toLocaleString(),
+                })}
+              </p>
+              <button
+                className="self-start px-3 py-1.5 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg text-sm font-semibold"
+                onClick={openDeposit}
+                type="button"
+              >
+                {t('createUtxos.fields.receiveBtc')}
+              </button>
+            </div>
+          )}
+
+          <form
+            className="space-y-6"
+            noValidate
+            onSubmit={handleSubmit(onSubmitCreate)}
+          >
             {/* Number of UTXOs */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-content-secondary">
@@ -493,6 +544,7 @@ export const UTXOManagementModal = ({
                 {...register('num', { valueAsNumber: true })}
                 className="w-full bg-surface-overlay/50 text-white px-4 py-2.5 rounded-lg border border-border-default
                          focus:border-primary/50 focus:ring-1 focus:ring-primary/20 focus:outline-none text-sm"
+                disabled={insufficientBalance}
                 max={10}
                 min={1}
                 placeholder={t('createUtxos.fields.numberPlaceholder')}
@@ -510,52 +562,41 @@ export const UTXOManagementModal = ({
                   {...register('size', { valueAsNumber: true })}
                   className="flex-1 bg-surface-overlay/50 text-white px-4 py-2.5 rounded-lg border border-border-default
                            focus:border-primary/50 focus:ring-1 focus:ring-primary/20 focus:outline-none text-sm"
-                  max={
-                    btcBalanceResponse.data
-                      ? Math.floor(
-                          (btcBalanceResponse.data?.vanilla?.spendable ?? 0) /
-                            num
-                        )
-                      : 0
-                  }
-                  min={0}
+                  disabled={insufficientBalance}
+                  max={maxSize}
+                  min={DEFAULT_UTXO_SIZE}
                   placeholder={t('createUtxos.fields.sizePlaceholder')}
                   type="number"
                 />
                 <span className="text-base font-semibold text-white min-w-[100px] text-right">
-                  {size.toLocaleString()}
+                  {Number.isFinite(size) ? size.toLocaleString() : '-'}
                 </span>
               </div>
               <input
                 className="w-full h-2 bg-surface-high rounded-lg appearance-none cursor-pointer mt-2"
-                max={
-                  btcBalanceResponse.data
-                    ? Math.floor(
-                        (btcBalanceResponse.data?.vanilla?.spendable ?? 0) / num
-                      )
-                    : 0
-                }
-                min={0}
+                disabled={insufficientBalance}
+                max={Math.max(maxSize, DEFAULT_UTXO_SIZE)}
+                min={DEFAULT_UTXO_SIZE}
                 onChange={(e) => setValue('size', Number(e.target.value))}
                 step="1000"
                 type="range"
-                value={size}
+                value={Number.isFinite(size) ? size : DEFAULT_UTXO_SIZE}
               />
+              {!insufficientBalance && balanceLoaded && !sizeValid && (
+                <p className="text-xs text-status-danger" role="alert">
+                  {t('createUtxos.fields.sizeOutOfRange', {
+                    max: maxSize.toLocaleString(),
+                    min: DEFAULT_UTXO_SIZE.toLocaleString(),
+                  })}
+                </p>
+              )}
             </div>
 
             {/* Available balance */}
             <p className="text-sm text-content-secondary">
-              {t('createUtxos.fields.availableBalance', {
-                defaultValue: 'Available Balance',
-              })}
-              :{' '}
+              {t('createUtxos.fields.availableBalance')}:{' '}
               <span className="text-white font-semibold">
-                {btcBalanceResponse.data
-                  ? (
-                      btcBalanceResponse.data?.vanilla?.spendable ?? 0
-                    ).toLocaleString()
-                  : '0'}{' '}
-                sats
+                {balanceLoaded ? spendable.toLocaleString() : '...'} sats
               </span>
             </p>
 
@@ -609,7 +650,12 @@ export const UTXOManagementModal = ({
               <button
                 className="px-4 py-2 bg-primary hover:bg-primary-emphasis disabled:opacity-50 disabled:cursor-not-allowed
                          text-primary-foreground rounded-lg transition-colors flex items-center gap-1.5 text-sm font-semibold"
-                disabled={isCreating}
+                disabled={
+                  isCreating ||
+                  !balanceLoaded ||
+                  insufficientBalance ||
+                  !sizeValid
+                }
                 type="submit"
               >
                 {isCreating ? (

@@ -504,6 +504,10 @@
     "localNodeNotSupported": "El nodo local no es compatible con Windows. Usa una conexión de nodo remoto en su lugar.",
     "backendNative": "Binario nativo",
     "backendNativeDescription": "Ejecutar el nodo como un proceso local. No requiere Docker.",
+    "recheckDocker": "Volver a comprobar Docker",
+    "checkingBackends": "Comprobando…",
+    "dockerReady": "Docker está listo.",
+    "startDockerHint": "Inicia Docker y vuelve a comprobar aquí.",
     "backendDocker": "Contenedor Docker",
     "backendDockerDescription": "Ejecutar el nodo en un contenedor Docker. Funciona en todas las plataformas.",
     "backendUnavailable": "No disponible",
@@ -2001,6 +2005,10 @@
       "numberPlaceholder": "Introduce la cantidad",
       "sizeLabel": "Tamaño del UTXO (en satoshis)",
       "sizePlaceholder": "Introduce el tamaño",
+      "availableBalance": "Saldo disponible",
+      "insufficientBalance": "Saldo insuficiente. Crear {{num}} UTXO de al menos {{min}} sats requiere más de {{required}} sats más comisiones. Deposita BTC on-chain para continuar.",
+      "receiveBtc": "Recibir BTC",
+      "sizeOutOfRange": "El tamaño de los UTXO debe estar entre {{min}} y {{max}} sats.",
       "feeRate": "Tarifa de Comisión"
     },
     "feeOptions": {
@@ -2538,6 +2546,7 @@
       "insufficientBalance": "Saldo insuficiente. No tienes {{asset}} disponible para enviar.",
       "enterAmount": "Por favor ingresa una cantidad para enviar.",
       "minimumOrderSize": "El tamaño mínimo de orden es {{amount}} {{asset}}.",
+      "minimumReceiveAmount": "Debes recibir al menos {{amount}} {{asset}} por swap.",
       "maxSendAmount": "Solo puedes enviar hasta {{amount}} {{asset}}.",
       "unableToReceive": "No se puede recibir {{asset}}. No hay capacidad de canal disponible.",
       "maxReceiveAmount": "Solo puedes recibir hasta {{amount}} {{asset}}.",
@@ -2901,6 +2910,7 @@
         "status": {
           "completed": "Completado",
           "failed": "Fallido",
+          "funded": "Canal financiado",
           "created": "Creado",
           "unknown": "Desconocido"
         },
@@ -2974,6 +2984,9 @@
       "statusCreateNewOrder": "Crear nuevo pedido",
       "statusErrorHelp": "Si se realizó el pago, no se descontaron fondos. Inténtalo de nuevo o contacta con soporte si el problema persiste.",
       "statusErrorMessage": "Hubo un problema al procesar tu pedido de canal.",
+      "statusFundedTitle": "Canal financiado, esperando al proveedor",
+      "statusFundedMessage": "Tu pago se recibió y el proveedor financió el canal on-chain, pero se desconectó antes de terminar la apertura.",
+      "statusFundedHelp": "No vuelvas a pagar. El canal se podrá usar automáticamente cuando el proveedor vuelva a estar en línea. Si sigue pendiente, contacta con soporte indicando el ID del pedido.",
       "statusErrorTitle": "Pedido fallido",
       "statusExpiredMessage": "La ventana de pago ha caducado sin recibir el pago.",
       "statusExpiredTitle": "Pago caducado",
@@ -4285,5 +4298,11 @@
     "manageNodes": "Gestionar cuentas de nodos",
     "mainnetWallet": "Cartera de mainnet",
     "testMarketLabel": "Mercado P2P en Nostr · Redes de prueba"
+  },
+  "nodeReachability": {
+    "unresponsiveTitle": "El nodo no responde",
+    "unresponsiveMessage": "Es posible que el nodo esté ocupado con operaciones de la billetera o desconectado. Puedes seguir navegando; los saldos podrían no estar actualizados. Revisa el historial antes de repetir un pago o una operación con activos.",
+    "checking": "Comprobando la conexión…",
+    "retryIncomplete": "Comprobación terminada sin respuesta. Es posible que el nodo siga ocupado; las comprobaciones automáticas continúan."
   }
 }

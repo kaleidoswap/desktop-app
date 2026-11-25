@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { shortenAddress, isValidPubkeyAndAddress } from '../address'
+import {
+  isValidPeerConnectionString,
+  isValidPubkeyAndAddress,
+  shortenAddress,
+} from '../address'
 
 const VALID_PUBKEY = 'a'.repeat(66)
 
@@ -102,5 +106,21 @@ describe('isValidPubkeyAndAddress — full pubkey@host:port format', () => {
 
   it('rejects empty string', () => {
     expect(isValidPubkeyAndAddress('')).toBe(false)
+  })
+})
+
+describe('isValidPeerConnectionString', () => {
+  const pubkey = '02' + 'a'.repeat(64)
+
+  it('accepts pubkey@host:port', () => {
+    expect(isValidPeerConnectionString(`${pubkey}@1.2.3.4:9735`)).toBe(true)
+  })
+
+  it('rejects a bare pubkey, which connectpeer cannot dial', () => {
+    expect(isValidPeerConnectionString(pubkey)).toBe(false)
+  })
+
+  it('rejects a missing port', () => {
+    expect(isValidPeerConnectionString(`${pubkey}@1.2.3.4`)).toBe(false)
   })
 })

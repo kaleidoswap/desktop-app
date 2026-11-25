@@ -504,6 +504,10 @@
     "localNodeNotSupported": "Le nœud local n'est pas disponible sous Windows. Utilisez plutôt un nœud distant.",
     "backendNative": "Binaire natif",
     "backendNativeDescription": "Exécuter le nœud en tant que processus local. Docker non requis.",
+    "recheckDocker": "Revérifier Docker",
+    "checkingBackends": "Vérification…",
+    "dockerReady": "Docker est prêt.",
+    "startDockerHint": "Démarrez Docker, puis vérifiez à nouveau ici.",
     "backendDocker": "Conteneur Docker",
     "backendDockerDescription": "Exécuter le nœud dans un conteneur Docker. Fonctionne sur toutes les plateformes.",
     "backendUnavailable": "Non disponible",
@@ -2001,6 +2005,10 @@
       "numberPlaceholder": "Saisir le montant",
       "sizeLabel": "Taille de l'UTXO (en satoshis)",
       "sizePlaceholder": "Saisir la taille",
+      "availableBalance": "Solde disponible",
+      "insufficientBalance": "Solde insuffisant. Créer {{num}} UTXO d'au moins {{min}} sats nécessite plus de {{required}} sats, frais en sus. Déposez des BTC on-chain pour continuer.",
+      "receiveBtc": "Recevoir des BTC",
+      "sizeOutOfRange": "La taille des UTXO doit être comprise entre {{min}} et {{max}} sats.",
       "feeRate": "Taux de frais"
     },
     "feeOptions": {
@@ -2538,6 +2546,7 @@
       "insufficientBalance": "Solde insuffisant. Vous n'avez pas de {{asset}} disponible à envoyer.",
       "enterAmount": "Veuillez saisir un montant à envoyer.",
       "minimumOrderSize": "La taille minimale de commande est {{amount}} {{asset}}.",
+      "minimumReceiveAmount": "Vous devez recevoir au moins {{amount}} {{asset}} par swap.",
       "maxSendAmount": "Vous ne pouvez envoyer que jusqu'à {{amount}} {{asset}}.",
       "unableToReceive": "Impossible de recevoir {{asset}}. Aucune capacité de canal disponible.",
       "maxReceiveAmount": "Vous ne pouvez recevoir que jusqu'à {{amount}} {{asset}}.",
@@ -2901,6 +2910,7 @@
         "status": {
           "completed": "Terminé",
           "failed": "Échoué",
+          "funded": "Canal financé",
           "created": "Créé",
           "unknown": "Inconnu"
         },
@@ -2974,6 +2984,9 @@
       "statusCreateNewOrder": "Créer une nouvelle commande",
       "statusErrorHelp": "Si un paiement a été effectué, aucun fonds n'a été prélevé. Veuillez réessayer ou contacter le support si le problème persiste.",
       "statusErrorMessage": "Un problème est survenu lors du traitement de votre commande de canal.",
+      "statusFundedTitle": "Canal financé, en attente du fournisseur",
+      "statusFundedMessage": "Votre paiement a été reçu et le fournisseur a financé le canal on-chain, mais il s'est déconnecté avant la fin de l'ouverture.",
+      "statusFundedHelp": "Ne payez pas à nouveau. Le canal deviendra utilisable automatiquement quand le fournisseur sera de nouveau en ligne. S'il reste en attente, contactez le support avec l'ID de commande.",
       "statusErrorTitle": "Commande échouée",
       "statusExpiredMessage": "La fenêtre de paiement a expiré sans réception du paiement.",
       "statusExpiredTitle": "Paiement expiré",
@@ -4285,5 +4298,11 @@
     "manageNodes": "Gérer les comptes de nœuds",
     "mainnetWallet": "Portefeuille mainnet",
     "testMarketLabel": "Marché P2P sur Nostr · Réseaux de test"
+  },
+  "nodeReachability": {
+    "unresponsiveTitle": "Le nœud ne répond pas",
+    "unresponsiveMessage": "Le nœud est peut-être occupé par des opérations du portefeuille ou déconnecté. Vous pouvez continuer à naviguer ; les soldes peuvent ne pas être à jour. Consultez l'historique avant de répéter un paiement ou une opération sur un actif.",
+    "checking": "Vérification de la connexion…",
+    "retryIncomplete": "Vérification terminée sans réponse. Le nœud est peut-être encore occupé ; les vérifications automatiques continuent."
   }
 }

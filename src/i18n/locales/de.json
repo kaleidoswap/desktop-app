@@ -504,6 +504,10 @@
     "localNodeNotSupported": "Lokale Nodes werden unter Windows nicht unterstützt. Verwende stattdessen eine Remote-Verbindung.",
     "backendNative": "Native Binary",
     "backendNativeDescription": "Node als lokalen Prozess ausführen. Kein Docker erforderlich.",
+    "recheckDocker": "Docker erneut prüfen",
+    "checkingBackends": "Wird geprüft…",
+    "dockerReady": "Docker ist bereit.",
+    "startDockerHint": "Starte Docker und prüfe hier erneut.",
     "backendDocker": "Docker Container",
     "backendDockerDescription": "Node in einem Docker-Container ausführen. Funktioniert auf allen Plattformen.",
     "backendUnavailable": "Nicht verfügbar",
@@ -2001,6 +2005,10 @@
       "numberPlaceholder": "Anzahl eingeben",
       "sizeLabel": "UTXO-Größe (in Satoshis)",
       "sizePlaceholder": "Größe eingeben",
+      "availableBalance": "Verfügbares Guthaben",
+      "insufficientBalance": "Unzureichendes Guthaben. Für {{num}} UTXOs von mindestens {{min}} sats werden mehr als {{required}} sats plus Gebühren benötigt. Zahle BTC on-chain ein, um fortzufahren.",
+      "receiveBtc": "BTC empfangen",
+      "sizeOutOfRange": "Die UTXO-Größe muss zwischen {{min}} und {{max}} sats liegen.",
       "feeRate": "Gebührensatz"
     },
     "feeOptions": {
@@ -2532,6 +2540,7 @@
       "insufficientBalance": "Unzureichendes Guthaben. Sie haben keine {{asset}} zum Senden verfügbar.",
       "enterAmount": "Bitte geben Sie einen zu sendenden Betrag ein.",
       "minimumOrderSize": "Die Mindestbestellmenge beträgt {{amount}} {{asset}}.",
+      "minimumReceiveAmount": "Du musst pro Swap mindestens {{amount}} {{asset}} erhalten.",
       "maxSendAmount": "Sie können nur bis zu {{amount}} {{asset}} senden.",
       "unableToReceive": "{{asset}} kann nicht empfangen werden. Keine Channel-Kapazität verfügbar.",
       "maxReceiveAmount": "Sie können nur bis zu {{amount}} {{asset}} empfangen.",
@@ -2895,6 +2904,7 @@
         "status": {
           "completed": "Abgeschlossen",
           "failed": "Fehlgeschlagen",
+          "funded": "Kanal finanziert",
           "created": "Erstellt",
           "unknown": "Unbekannt"
         },
@@ -2968,6 +2978,9 @@
       "statusCreateNewOrder": "Neue Bestellung erstellen",
       "statusErrorHelp": "Wenn eine Zahlung erfolgt ist, wurden keine Mittel abgezogen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support, wenn das Problem bestehen bleibt.",
       "statusErrorMessage": "Bei der Verarbeitung Ihrer Kanalbestellung ist ein Problem aufgetreten.",
+      "statusFundedTitle": "Kanal finanziert, warte auf den Anbieter",
+      "statusFundedMessage": "Deine Zahlung ist eingegangen und der Anbieter hat den Kanal on-chain finanziert, ist aber offline gegangen, bevor die Eröffnung abgeschlossen war.",
+      "statusFundedHelp": "Bitte nicht erneut bezahlen. Der Kanal wird automatisch nutzbar, sobald der Anbieter wieder online ist. Bleibt er ausstehend, kontaktiere den Support mit der Bestell-ID.",
       "statusErrorTitle": "Bestellung fehlgeschlagen",
       "statusExpiredMessage": "Das Zahlungsfenster ist abgelaufen, ohne dass eine Zahlung eingegangen ist.",
       "statusExpiredTitle": "Zahlung abgelaufen",
@@ -4279,5 +4292,11 @@
     "manageNodes": "Node-Konten verwalten",
     "mainnetWallet": "Mainnet-Wallet",
     "testMarketLabel": "Nostr-P2P-Markt · Testnetze"
+  },
+  "nodeReachability": {
+    "unresponsiveTitle": "Keine Antwort vom Node",
+    "unresponsiveMessage": "Der Node ist möglicherweise mit Wallet-Vorgängen beschäftigt oder getrennt. Du kannst weiter navigieren; Guthaben sind eventuell nicht aktuell. Prüfe den Verlauf, bevor du eine Zahlung oder einen Asset-Vorgang wiederholst.",
+    "checking": "Verbindung wird geprüft…",
+    "retryIncomplete": "Prüfung ohne Antwort beendet. Der Node ist möglicherweise noch beschäftigt; automatische Prüfungen laufen weiter."
   }
 }

@@ -10,16 +10,12 @@ import {
   Server,
   Container,
   ArrowLeft,
-  HelpCircle,
-  Bell,
   Brain,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
-
-import { useNotification } from '../../components/NotificationSystem'
 
 import {
   WALLET_INIT_PATH,
@@ -33,11 +29,10 @@ import logoFull from '../../assets/logo-full.svg'
 import { findTradingWallet, rememberProfile } from '../p2p-home/navigation'
 import { AppVersion } from '../../components/AppVersion'
 import { Layout } from '../../components/Layout'
-import { SupportModal } from '../../components/SupportModal'
 import { Toolbar } from '../../components/Toolbar'
 import { WalletAction, IconWrapper } from '../../components/wallet-setup'
 import { setAppMode } from '../../slices/settings/settings.slice'
-import { logger } from '../../utils/logger'
+import { useLocalNodeCapabilities } from './useLocalNodeCapabilities'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { saveNetwork, writeSelectedWalletId } from '../trade/nostr-p2p/wallets'
@@ -54,63 +49,16 @@ export const Component = () => {
     rememberProfile('node')
   }, [])
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const [showSupportModal, setShowSupportModal] = useState(false)
-  const { toggleNotificationPanel, notifications } = useNotification()
-  // Docker / local node mode
-  const [isNativeSupported, setIsNativeSupported] = useState(false)
-  const [isDockerAvailable, setIsDockerAvailable] = useState(false)
-  const [capabilitiesLoaded, setCapabilitiesLoaded] = useState(false)
-  const [localNodeMode, setLocalNodeMode] = useState<
-    'native' | 'docker' | null
-  >(null)
+  const {
+    isNativeSupported,
+    isDockerAvailable,
+    capabilitiesLoaded,
+    localNodeMode,
+    setLocalNodeMode,
+    checkingCapabilities,
+    checkCapabilities,
+  } = useLocalNodeCapabilities()
 
-  // Check local node capabilities (native binary + Docker)
-  useEffect(() => {
-    const checkCapabilities = async () => {
-      try {
-        const caps = await invoke<Record<string, boolean>>(
-          'get_local_node_capabilities'
-        )
-        const native = caps.native ?? false
-        const docker = caps.docker ?? false
-        setIsNativeSupported(native)
-        setIsDockerAvailable(docker)
-
-        // Prefer Docker when present so local setup can proceed immediately.
-        if (docker) {
-          setLocalNodeMode('docker')
-        } else if (native) {
-          setLocalNodeMode('native')
-        }
-      } catch (error) {
-        logger.error('Failed to check local node capabilities:', error)
-        // Fallback: check each backend separately
-        try {
-          const supported = await invoke<boolean>('is_local_node_supported')
-          if (supported) {
-            setIsNativeSupported(true)
-            setLocalNodeMode('native')
-          }
-        } catch {
-          // Native not available
-        }
-        try {
-          const docker = await invoke<boolean>('is_docker_available')
-          if (docker) {
-            setIsDockerAvailable(true)
-            setLocalNodeMode((mode) => mode ?? 'docker')
-          }
-        } catch {
-          // Docker command not available
-        }
-      }
-      setCapabilitiesLoaded(true)
-    }
-
-    checkCapabilities()
-  }, [])
-
-  // the P2P market is not bundled on every system (not on Windows yet)
   const [p2pWhere, setP2pWhere] = useState<{
     backend: string | null
     hint: string | null
@@ -258,7 +206,7 @@ export const Component = () => {
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden relative flex flex-col">
-          {/* Top bar with Support + Notifications */}
+          {/* Profile navigation */}
           <div className="flex-shrink-0 z-30 bg-surface-base/80 backdrop-blur-xl border-b border-divider/20 px-6 py-4 flex justify-end items-center gap-2">
             {!hasNodes && (
               <>
@@ -274,27 +222,6 @@ export const Component = () => {
               <Wallet className="h-4 w-4" />
               {t('unified.mainnetWallet', { defaultValue: 'Mainnet wallet' })}
             </Link>
-            <button
-              aria-label="Support"
-              className="p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
-                         transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-              onClick={() => setShowSupportModal(true)}
-            >
-              <HelpCircle className="w-5 h-5" />
-            </button>
-            <button
-              aria-label="Toggle notifications"
-              className="relative p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
-                         transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-              onClick={toggleNotificationPanel}
-            >
-              <Bell className="w-5 h-5" />
-              {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-cyan to-cyan/80 text-white text-xs font-bold flex items-center justify-center rounded-full shadow-lg shadow-primary/30 animate-pulse ring-2 ring-surface-base">
-                  {notifications.length}
-                </span>
-              )}
-            </button>
           </div>
 
           {/* Animated background gradient */}
@@ -638,6 +565,31 @@ export const Component = () => {
                       </button>
                     </div>
 
+                    <div
+                      aria-live="polite"
+                      className="mb-6 flex flex-wrap items-center gap-3"
+                    >
+                      <button
+                        className="rounded-lg border border-white/20 px-4 py-2 text-sm text-content-primary disabled:opacity-50"
+                        disabled={checkingCapabilities}
+                        onClick={() => void checkCapabilities()}
+                        type="button"
+                      >
+                        {t(
+                          checkingCapabilities
+                            ? 'walletSetup.checkingBackends'
+                            : 'walletSetup.recheckDocker'
+                        )}
+                      </button>
+                      <p className="text-sm text-content-secondary">
+                        {t(
+                          isDockerAvailable
+                            ? 'walletSetup.dockerReady'
+                            : 'walletSetup.startDockerHint'
+                        )}
+                      </p>
+                    </div>
+
                     {/* Message when no backend is available */}
                     {!isNativeSupported && !isDockerAvailable && (
                       <div className="mb-8 p-4 rounded-xl bg-status-warning/10 border border-status-warning/30">
@@ -683,11 +635,6 @@ export const Component = () => {
           </div>
         </div>
       </div>
-
-      <SupportModal
-        isOpen={showSupportModal}
-        onClose={() => setShowSupportModal(false)}
-      />
     </Layout>
   )
 }

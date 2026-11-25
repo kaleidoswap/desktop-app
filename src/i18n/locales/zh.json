@@ -504,6 +504,10 @@
     "localNodeNotSupported": "Windows 不支持本地节点。请使用远程节点连接。",
     "backendNative": "原生二进制",
     "backendNativeDescription": "以本地进程运行节点。无需 Docker。",
+    "recheckDocker": "重新检查 Docker",
+    "checkingBackends": "检查中…",
+    "dockerReady": "Docker 已就绪。",
+    "startDockerHint": "启动 Docker，然后在此重新检查。",
     "backendDocker": "Docker 容器",
     "backendDockerDescription": "在 Docker 容器中运行节点。适用于所有平台。",
     "backendUnavailable": "不可用",
@@ -2001,6 +2005,10 @@
       "numberPlaceholder": "输入数量",
       "sizeLabel": "UTXO 大小（以聪为单位）",
       "sizePlaceholder": "输入大小",
+      "availableBalance": "可用余额",
+      "insufficientBalance": "余额不足。创建 {{num}} 个至少 {{min}} sats 的 UTXO 需要超过 {{required}} sats 外加手续费。请先链上充值 BTC。",
+      "receiveBtc": "接收 BTC",
+      "sizeOutOfRange": "UTXO 大小必须在 {{min}} 到 {{max}} sats 之间。",
       "feeRate": "费率"
     },
     "feeOptions": {
@@ -2529,6 +2537,7 @@
       "insufficientBalance": "余额不足。您没有可用于发送的 {{asset}}。",
       "enterAmount": "请输入要发送的金额。",
       "minimumOrderSize": "最小订单量为 {{amount}} {{asset}}。",
+      "minimumReceiveAmount": "每次兑换至少需要收到 {{amount}} {{asset}}。",
       "maxSendAmount": "您最多只能发送 {{amount}} {{asset}}。",
       "unableToReceive": "无法接收 {{asset}}。没有可用的通道容量。",
       "maxReceiveAmount": "您最多只能接收 {{amount}} {{asset}}。",
@@ -2892,6 +2901,7 @@
         "status": {
           "completed": "已完成",
           "failed": "失败",
+          "funded": "已注资",
           "created": "已创建",
           "unknown": "未知"
         },
@@ -2965,6 +2975,9 @@
       "statusCreateNewOrder": "创建新订单",
       "statusErrorHelp": "如果已付款，资金并未被扣除。请重试；若问题持续，请联系支持。",
       "statusErrorMessage": "处理你的通道订单时出现问题。",
+      "statusFundedTitle": "通道已注资，等待服务商",
+      "statusFundedMessage": "已收到你的付款，服务商已在链上为通道注资，但在通道开通完成前离线了。",
+      "statusFundedHelp": "请勿重复付款。服务商恢复在线后通道会自动可用。如果一直处于待定状态，请携带订单 ID 联系支持。",
       "statusErrorTitle": "订单失败",
       "statusExpiredMessage": "支付窗口已过期，未收到付款。",
       "statusExpiredTitle": "支付已过期",
@@ -4276,5 +4289,11 @@
     "manageNodes": "管理节点账户",
     "mainnetWallet": "主网钱包",
     "testMarketLabel": "Nostr P2P 市场 · 测试网络"
+  },
+  "nodeReachability": {
+    "unresponsiveTitle": "节点无响应",
+    "unresponsiveMessage": "节点可能正忙于处理钱包操作，或已断开连接。你可以继续浏览，但余额可能不是最新的。在重复付款或资产操作之前，请先查看操作历史。",
+    "checking": "正在检查连接…",
+    "retryIncomplete": "检查结束但未收到响应。节点可能仍在忙碌，自动检查将继续进行。"
   }
 }

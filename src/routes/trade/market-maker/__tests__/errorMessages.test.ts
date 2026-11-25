@@ -112,6 +112,24 @@ describe('getValidationError', () => {
     toAsset: 'USDT',
   }
 
+  it('rejects receiving less BTC than the RGB HTLC minimum', () => {
+    const args = (toAmount: number) =>
+      getValidationError(
+        5_000_000,
+        toAmount,
+        1,
+        22_000_000,
+        defaults.maxToAmount,
+        10_000_000,
+        'USDT',
+        'BTC',
+        formatAmount,
+        displayAsset
+      )
+    expect(args(2_999)).toMatch(/at least/)
+    expect(args(3_000)).toBeNull()
+  })
+
   it('returns null while quote is loading', () => {
     const result = getValidationError(
       1000,

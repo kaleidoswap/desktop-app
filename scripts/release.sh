@@ -79,4 +79,6 @@ echo "📦 Check progress at: https://github.com/kaleidoswap/desktop-app/actions
 if [ "$TEST_FLAG" != "--test" ]; then
     echo "🔄 The updater will automatically detect this release."
     echo "📱 Apps running version < $VERSION will show update notification."
+    echo "🔏 Once the build finishes, sign the checksums with the hardware key:"
+    echo "   ./scripts/sign-release.sh $TAG_PREFIX$VERSION"
 fi 

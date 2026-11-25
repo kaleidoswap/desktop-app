@@ -28,11 +28,13 @@ import { Link } from 'react-router-dom'
 import { SETTINGS_PATH, WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppSelector } from '../../app/store/hooks'
 
+import { preserveReplyFormatting } from './reply-formatting'
 import { BrainLauncher } from './brain-launcher'
 import { ToolEventView, fmtSats } from './cards'
 import {
   useMindContext,
   useMindChat,
+  type ChatMsg,
   type ChatMsgStats,
   type ChatToolEvent,
 } from './shared'
@@ -318,15 +320,51 @@ export const Component: React.FC = () => {
     state.nodeSettings.data.default_maker_url?.trim()
   )
   const [showHistory, setShowHistory] = useState(false)
+  const [archives, setArchives] = useState<
+    { id: string; messages: ChatMsg[] }[]
+  >(() => {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem('kaleido-mind.chat-archives.v1') ?? '[]'
+      )
+      return Array.isArray(saved)
+        ? saved.filter(
+            (item) =>
+              typeof item.id === 'string' && Array.isArray(item.messages)
+          )
+        : []
+    } catch {
+      return []
+    }
+  })
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   // chatId of the in-flight turn, so the stop button can cancel it.
 
   const [clearError, setClearError] = useState<string | null>(null)
-  const clearChat = async () => {
+  const clearChat = async (archive = false) => {
     setSending(true)
     setClearError(null)
     try {
+      if (archive && messages.length) {
+        const next = [
+          ...archives.filter(
+            (item) => !messages[0].id || item.messages[0]?.id !== messages[0].id
+          ),
+          {
+            id: messages[0].id ?? crypto.randomUUID(),
+            messages: messages.map(
+              ({ streaming: _streaming, ...message }) => message
+            ),
+          },
+        ]
+        // Do not discard a conversation when its archive cannot be saved.
+        localStorage.setItem(
+          'kaleido-mind.chat-archives.v1',
+          JSON.stringify(next)
+        )
+        setArchives(next)
+      }
       await mind.clearChat()
       setMessages([])
       setInput('')
@@ -522,7 +560,7 @@ export const Component: React.FC = () => {
                   stoppedRef.current &&
                   (!reply.text || reply.text === '(no response)')
                     ? message.text || 'Stopped.'
-                    : reply.text,
+                    : preserveReplyFormatting(message.text, reply.text),
                 thinking: reply.thinking ?? message.thinking,
               }
             : message
@@ -601,7 +639,7 @@ export const Component: React.FC = () => {
             aria-label="New chat"
             className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border-default text-content-secondary hover:bg-surface-overlay disabled:opacity-40 disabled:hover:bg-transparent"
             disabled={messages.length === 0 || sending}
-            onClick={() => void clearChat()}
+            onClick={() => void clearChat(true)}
             title="New chat"
             type="button"
           >
@@ -660,7 +698,7 @@ export const Component: React.FC = () => {
               <button
                 className="inline-flex items-center gap-1 text-xs text-content-tertiary hover:text-content-primary"
                 disabled={sending}
-                onClick={() => void clearChat()}
+                onClick={() => void clearChat(true)}
                 type="button"
               >
                 <Plus className="h-3.5 w-3.5" /> New chat
@@ -674,6 +712,34 @@ export const Component: React.FC = () => {
                 <Trash2 className="h-3.5 w-3.5" /> Clear
               </button>
             </div>
+          </div>
+          <div className="max-h-64 overflow-y-auto space-y-2">
+            {archives.map((archive) => (
+              <details
+                className="rounded border border-divider/30 p-2"
+                key={archive.id}
+              >
+                <summary className="cursor-pointer text-sm text-content-primary">
+                  {archive.messages
+                    .find((message) => message.role === 'user')
+                    ?.text.slice(0, 80) || 'Saved chat'}
+                </summary>
+                <p className="py-2 text-xs text-content-tertiary">
+                  Saved chat · read only
+                </p>
+                {archive.messages.map((message) => (
+                  <div
+                    className="py-2 text-sm text-content-primary"
+                    key={message.id}
+                  >
+                    <p className="font-semibold">
+                      {message.role === 'user' ? 'You' : 'Mind'}
+                    </p>
+                    <MarkdownText text={message.text} />
+                  </div>
+                ))}
+              </details>
+            ))}
           </div>
           <div className="max-h-40 space-y-1 overflow-y-auto">
             {messages.length === 0 ? (

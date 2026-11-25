@@ -1,7 +1,7 @@
 {
   "name": "desktop-app",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -32,7 +32,7 @@
     "@tauri-apps/plugin-process": "2.3.1",
     "@tauri-apps/plugin-updater": "2.14.1",
     "acorn": "^8.19.0",
-    "axios": "^1.20.0",
+    "axios": "^1.21.0",
     "decimal.js": "^10.6.0",
     "i18next": "^25.10.10",
     "i18next-browser-languagedetector": "^8.2.1",
@@ -76,13 +76,12 @@
     "eslint-plugin-sort-keys-fix": "^1.1.2",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
-    "lint-staged": "^15.5.2",
+    "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.1",
     "vite": "^7.3.7",
-    "vite-plugin-node-polyfills": "^0.25.0",
     "vitest": "^4.1.12"
   },
   "lint-staged": {
