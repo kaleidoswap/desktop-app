@@ -3765,7 +3765,14 @@
         "s1": "Deposit",
         "s2": "Buy or sell",
         "s3": "Settle and withdraw",
-        "s2Body": "Select an offer or publish your own price via Nostr. Keep the app online while your offer or swap is active."
+        "s2Body": "Select an offer or publish your own price via Nostr. Keep the app online while your offer or swap is active.",
+        "title": "How it works",
+        "show": "How does this work?",
+        "hide": "Hide this guide",
+        "s1Body": "Add BTC on the selected network to this trading wallet. To sell an asset, deposit it here too.",
+        "s1Cta": "Deposit now",
+        "s3Body": "Follow the swap in Activity. Once the required confirmations arrive ({{n}}), you can withdraw the settled funds.",
+        "s3BodyNow": "Follow the swap in Activity. You can withdraw settled funds that are not reserved."
       }
     },
     "tabDeposits": "Deposits",

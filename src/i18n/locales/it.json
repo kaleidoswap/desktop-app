@@ -3765,7 +3765,14 @@
         "s1": "Deposita",
         "s2": "Compra o vendi",
         "s3": "Conferma e preleva",
-        "s2Body": "Seleziona un’offerta o pubblica il tuo prezzo via Nostr. Tieni l’app online finché l’offerta o lo scambio è attivo."
+        "s2Body": "Seleziona un’offerta o pubblica il tuo prezzo via Nostr. Tieni l’app online finché l’offerta o lo scambio è attivo.",
+        "title": "Come funziona",
+        "show": "Come funziona lo scambio?",
+        "hide": "Nascondi la guida",
+        "s1Body": "Deposita BTC in questo wallet sulla rete selezionata. Per vendere un asset, deposita anche quello qui.",
+        "s1Cta": "Deposita ora",
+        "s3Body": "Segui lo scambio in Attività. Potrai prelevare i fondi quando arriveranno le conferme richieste ({{n}}).",
+        "s3BodyNow": "Segui lo scambio in Attività. Puoi prelevare i fondi regolati e non riservati."
       }
     },
     "tabDeposits": "Depositi",

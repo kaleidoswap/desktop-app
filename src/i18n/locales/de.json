@@ -3765,7 +3765,14 @@
         "s1": "Einzahlen",
         "s2": "Kaufen oder verkaufen",
         "s3": "Abwickeln und auszahlen",
-        "s2Body": "Wähle ein Angebot oder veröffentliche deinen Preis über Nostr. Lass die App online, solange dein Angebot oder Swap aktiv ist."
+        "s2Body": "Wähle ein Angebot oder veröffentliche deinen Preis über Nostr. Lass die App online, solange dein Angebot oder Swap aktiv ist.",
+        "title": "So funktioniert es",
+        "show": "Wie funktioniert der Tausch?",
+        "hide": "Anleitung ausblenden",
+        "s1Body": "Zahle BTC über das ausgewählte Netzwerk in diese Handelswallet ein. Wenn du einen Vermögenswert verkaufen möchtest, zahle ihn ebenfalls hier ein.",
+        "s1Cta": "Jetzt einzahlen",
+        "s3Body": "Verfolge den Tausch unter Aktivitäten. Sobald die erforderlichen Bestätigungen vorliegen ({{n}}), kannst du das abgerechnete Guthaben auszahlen.",
+        "s3BodyNow": "Verfolge den Tausch unter Aktivitäten. Abgerechnetes Guthaben kannst du auszahlen, soweit es nicht reserviert ist."
       }
     },
     "tabDeposits": "Einzahlungen",

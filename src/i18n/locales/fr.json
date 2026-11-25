@@ -3771,7 +3771,14 @@
         "s1": "Déposer",
         "s2": "Acheter ou vendre",
         "s3": "Régler et retirer",
-        "s2Body": "Choisissez une offre ou publiez votre prix via Nostr. Gardez l’application en ligne tant que votre offre ou votre échange est actif."
+        "s2Body": "Choisissez une offre ou publiez votre prix via Nostr. Gardez l’application en ligne tant que votre offre ou votre échange est actif.",
+        "title": "Fonctionnement",
+        "show": "Comment fonctionne l’échange ?",
+        "hide": "Masquer ce guide",
+        "s1Body": "Déposez des BTC dans ce portefeuille sur le réseau sélectionné. Pour vendre un actif, déposez-le également ici.",
+        "s1Cta": "Déposer maintenant",
+        "s3Body": "Suivez l’échange dans Activité. Vous pourrez retirer les fonds réglés une fois les confirmations requises obtenues ({{n}}).",
+        "s3BodyNow": "Suivez l’échange dans Activité. Vous pouvez retirer les fonds réglés qui ne sont pas réservés."
       }
     },
     "tabDeposits": "Dépôts",

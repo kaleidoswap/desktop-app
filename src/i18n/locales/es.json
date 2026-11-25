@@ -3771,7 +3771,14 @@
         "s1": "Depositar",
         "s2": "Comprar o vender",
         "s3": "Liquidar y retirar",
-        "s2Body": "Elige una oferta o publica tu precio a través de Nostr. Mantén la aplicación conectada mientras tu oferta o intercambio esté activo."
+        "s2Body": "Elige una oferta o publica tu precio a través de Nostr. Mantén la aplicación conectada mientras tu oferta o intercambio esté activo.",
+        "title": "Cómo funciona",
+        "show": "¿Cómo funciona el intercambio?",
+        "hide": "Ocultar esta guía",
+        "s1Body": "Deposita BTC en este monedero de intercambio usando la red seleccionada. Si quieres vender un activo, deposítalo aquí también.",
+        "s1Cta": "Depositar ahora",
+        "s3Body": "Sigue el intercambio en Actividad. Cuando lleguen las confirmaciones necesarias ({{n}}), podrás retirar los fondos liquidados.",
+        "s3BodyNow": "Sigue el intercambio en Actividad. Puedes retirar los fondos liquidados que no estén reservados."
       }
     },
     "tabDeposits": "Depósitos",
