@@ -1,6 +1,8 @@
 name: PR Checks
 
 on:
+  push:
+    branches: [codex/desktop-beta-integration]
   pull_request:
     branches:
       - main
