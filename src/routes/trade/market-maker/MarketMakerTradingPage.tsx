@@ -61,6 +61,7 @@ import {
   isAssetId,
 } from './assetUtils'
 import {
+  channelOrderPrefill,
   hasTradableChannels,
   getTradableChannels,
   hasOnlyUnconfirmedChannelsForAsset,
@@ -793,7 +794,14 @@ export const Component = () => {
   // Update formatAmount callback to ensure comma thousand separators
   const formatAmount = useCallback(
     (amount: number, asset: string) => {
-      return formatAssetAmountWithPrecision(amount, asset, bitcoinUnit, assets)
+      // The editable fields accept a dot decimal separator and group with commas.
+      return formatAssetAmountWithPrecision(
+        amount,
+        asset,
+        bitcoinUnit,
+        assets,
+        'en-US'
+      )
     },
     [assets, bitcoinUnit]
   )
@@ -3185,75 +3193,26 @@ export const Component = () => {
     navigate(CREATE_NEW_CHANNEL_PATH)
   }, [navigate])
 
-  // Determine which asset (if any) to preselect on the Buy Channel page, along
-  // with the amount the user intended to trade. The amount becomes the client
-  // (user-side) balance of the asset in the new channel.
-  const resolvePreselectedAsset = useCallback((): {
-    assetId?: string
-    amount?: number
-  } => {
-    const toAsset = form.getValues().toAsset
-    const fromAsset = form.getValues().fromAsset
-    const toAmount = parseFloat(form.getValues().to || '0') || undefined
-    const fromAmount = parseFloat(form.getValues().from || '0') || undefined
-
-    if (missingChannelAsset) {
-      return {
-        amount: missingChannelAsset.isFromAsset ? fromAmount : toAmount,
-        assetId: missingChannelAsset.assetId,
-      }
-    }
-
-    const channelAssetIds = new Set(
-      channels
-        .filter((c) => c.ready)
-        .map((c) => c.asset_id)
-        .filter((id): id is string => id !== null)
-    )
-    channelAssetIds.add('BTC')
-
-    if (
-      toAsset !== 'BTC' &&
-      !channelAssetIds.has(selectedPair?.quote_asset_id || '')
-    ) {
-      return {
-        amount: toAmount,
-        assetId: selectedPair?.quote_asset_id || undefined,
-      }
-    }
-
-    if (
-      fromAsset !== 'BTC' &&
-      !channelAssetIds.has(selectedPair?.base_asset_id || '')
-    ) {
-      return {
-        amount: fromAmount,
-        assetId: selectedPair?.base_asset_id || undefined,
-      }
-    }
-
-    if (toAsset && toAsset !== 'BTC') {
-      return {
-        amount: toAmount,
-        assetId: selectedPair?.quote_asset_id || undefined,
-      }
-    }
-
-    return {}
-  }, [missingChannelAsset, form, channels, selectedPair])
-
-  // Navigate to the full Buy Channel page with the asset preselected,
-  // remembering where to return after the order completes / is cancelled.
   const goToBuyChannel = useCallback(() => {
-    const { assetId, amount } = resolvePreselectedAsset()
     navigate(ORDER_CHANNEL_PATH, {
       state: {
-        preselectedAssetAmount: amount,
-        preselectedAssetId: assetId,
+        ...channelOrderPrefill(
+          form.getValues(),
+          missingChannelAsset,
+          channels,
+          selectedPair
+        ),
         returnTo: location.pathname,
       },
     })
-  }, [navigate, resolvePreselectedAsset, location.pathname])
+  }, [
+    channels,
+    form,
+    location.pathname,
+    missingChannelAsset,
+    navigate,
+    selectedPair,
+  ])
 
   const handleBuyChannelAction = useCallback(() => {
     goToBuyChannel()

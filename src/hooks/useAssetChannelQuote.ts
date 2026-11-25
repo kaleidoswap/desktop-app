@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Layer } from 'kaleido-sdk'
 import { QuoteResponse, makerApi } from '../slices/makerApi/makerApi.slice'
@@ -53,7 +53,12 @@ export function useAssetChannelQuote({
   refreshBufferMs = DEFAULT_REFRESH_BUFFER_MS,
 }: UseAssetChannelQuoteParams) {
   const [getQuote] = makerApi.endpoints.getQuote.useLazyQuery()
-  const [quote, setQuote] = useState<QuoteResponse | null>(null)
+  const [received, setReceived] = useState<{
+    assetId: string
+    amount: number
+    quote: QuoteResponse
+  } | null>(null)
+  const latestRequest = useRef(0)
   const [quoteLoading, setQuoteLoading] = useState(false)
   const [quoteError, setQuoteError] = useState<string | null>(null)
 
@@ -71,8 +76,16 @@ export function useAssetChannelQuote({
     return Math.round(parsed * Math.pow(10, precision))
   }, [assetId, assetMap, clientAssetAmount, enabled])
 
+  const quote =
+    received &&
+    received.assetId === assetId &&
+    received.amount === requestedAmount
+      ? received.quote
+      : null
+
   const resetQuote = useCallback(() => {
-    setQuote(null)
+    latestRequest.current += 1
+    setReceived(null)
     setQuoteError(null)
     setQuoteLoading(false)
   }, [])
@@ -83,6 +96,7 @@ export function useAssetChannelQuote({
       return null
     }
 
+    const requestId = ++latestRequest.current
     setQuoteLoading(true)
     setQuoteError(null)
 
@@ -99,33 +113,35 @@ export function useAssetChannelQuote({
         },
       })
 
+      if (requestId !== latestRequest.current) return null
       if (response.error) {
         const message = getQuoteErrorMessage(
           response.error,
           'Failed to get quote'
         )
-        setQuote(null)
+        setReceived(null)
         setQuoteError(message)
         return null
       }
 
       if (response.data) {
-        setQuote(response.data)
+        setReceived({ assetId, amount: requestedAmount, quote: response.data })
         setQuoteError(null)
         return response.data
       }
 
-      setQuote(null)
+      setReceived(null)
       setQuoteError('No quote data returned')
       return null
     } catch (error) {
-      setQuote(null)
+      if (requestId !== latestRequest.current) return null
+      setReceived(null)
       setQuoteError(
         getQuoteErrorMessage(error, 'Failed to get quote. Please try again.')
       )
       return null
     } finally {
-      setQuoteLoading(false)
+      if (requestId === latestRequest.current) setQuoteLoading(false)
     }
   }, [assetId, enabled, getQuote, requestedAmount, resetQuote])
 
@@ -140,6 +156,7 @@ export function useAssetChannelQuote({
     }, debounceMs)
 
     return () => {
+      latestRequest.current += 1
       window.clearTimeout(timeoutId)
     }
   }, [assetId, debounceMs, enabled, requestQuote, requestedAmount, resetQuote])

@@ -320,6 +320,14 @@ export const Step2: React.FC<Props> = ({
       setValue('clientBalanceSat', Math.floor(clamped / 2).toString())
   }
 
+  const changeAssetCapacity = (amount: string) => {
+    setValue('lspAssetAmount', amount)
+    const capacity = Number(amount) || 0
+    if (Number(clientAssetAmount) > capacity) {
+      setValue('clientAssetAmount', String(capacity))
+    }
+  }
+
   // Select an asset (or clear it for a BTC-only channel) and reset the amounts.
   const selectAsset = (asset: AssetInfo | null) => {
     setSelectedAsset(asset)
@@ -974,10 +982,7 @@ export const Step2: React.FC<Props> = ({
                                     }`}
                                     key={preset}
                                     onClick={() =>
-                                      setValue(
-                                        'lspAssetAmount',
-                                        preset.toString()
-                                      )
+                                      changeAssetCapacity(preset.toString())
                                     }
                                     type="button"
                                   >
@@ -1000,8 +1005,7 @@ export const Step2: React.FC<Props> = ({
                                           `^\\d*\\.?\\d{0,${assetInfo.precision}}$`
                                         )
                                       : /^\d*$/
-                                  if (re.test(val))
-                                    setValue('lspAssetAmount', val)
+                                  if (re.test(val)) changeAssetCapacity(val)
                                 }
                               }}
                               placeholder="0"
@@ -1018,7 +1022,7 @@ export const Step2: React.FC<Props> = ({
                             <div className="mt-4">
                               <LiquiditySlider
                                 inboundColor="bg-[#6EE7B7]/60"
-                                inboundLabel={`${Math.max(0, (parseFloat(lspAssetAmount) || 0) - (parseFloat(clientAssetAmount) || 0)).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${selectedAsset.ticker}`}
+                                inboundLabel={`${Math.max(0, (parseFloat(lspAssetAmount) || 0) - (parseFloat(clientAssetAmount) || 0)).toLocaleString('en-US', { maximumFractionDigits: assetInfo.precision })} ${selectedAsset.ticker}`}
                                 inputFocusClass="focus:border-emerald-400"
                                 inputHint={`Type the exact ${selectedAsset.ticker} amount you want available to send immediately after funding.`}
                                 inputLabel="Available to send now"
@@ -1031,7 +1035,7 @@ export const Step2: React.FC<Props> = ({
                                   setValue('clientAssetAmount', val.toString())
                                 }
                                 outboundColor="bg-[#10B981]"
-                                outboundLabel={`${(parseFloat(clientAssetAmount) || 0).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${selectedAsset.ticker}`}
+                                outboundLabel={`${(parseFloat(clientAssetAmount) || 0).toLocaleString('en-US', { maximumFractionDigits: assetInfo.precision })} ${selectedAsset.ticker}`}
                                 step={
                                   (parseFloat(lspAssetAmount) || 0) >= 1000
                                     ? 10

@@ -1,4 +1,6 @@
-import { Channel } from './types'
+import type { TradingPair } from '../../../slices/makerApi/makerApi.slice'
+import { parseNumberWithCommas } from '../../../helpers/number'
+import type { Channel, Fields } from './types'
 import { logger } from '../../../utils/logger'
 
 /** Checks if a single channel is considered tradable */
@@ -205,4 +207,33 @@ export const getAssetChannelStatus = (
     readyChannelCount: readyChannels.length,
     totalChannelCount: assetChannels.length,
   }
+}
+
+/** Pass the quoted asset in display units to the first-channel order form. */
+export function channelOrderPrefill(
+  { from, fromAsset, to, toAsset }: Fields,
+  missing: { assetId: string; isFromAsset: boolean } | null,
+  channels: Channel[],
+  pair: Pick<TradingPair, 'base_asset_id' | 'quote_asset_id'> | null
+) {
+  const selection = (id: string | undefined, amount: string) => ({
+    preselectedAssetAmount: Number(parseNumberWithCommas(amount)) || undefined,
+    preselectedAssetId: id || undefined,
+  })
+  if (missing) {
+    return selection(missing.assetId, missing.isFromAsset ? from : to)
+  }
+  const readyIds = new Set(
+    channels
+      .filter((channel) => channel.ready)
+      .map((channel) => channel.asset_id)
+  )
+  readyIds.add('BTC')
+  if (toAsset !== 'BTC' && !readyIds.has(pair?.quote_asset_id ?? '')) {
+    return selection(pair?.quote_asset_id, to)
+  }
+  if (fromAsset !== 'BTC' && !readyIds.has(pair?.base_asset_id ?? '')) {
+    return selection(pair?.base_asset_id, from)
+  }
+  return toAsset && toAsset !== 'BTC' ? selection(pair?.quote_asset_id, to) : {}
 }
