@@ -1,3 +1,4 @@
+import { memoryWalletStore } from '../../trade/nostr-p2p/__tests__/memoryWalletStore'
 import { invoke } from '@tauri-apps/api/core'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -36,7 +37,7 @@ const localNetwork = {
 
 describe('unified wallet entry', () => {
   beforeEach(() => {
-    localStorage.clear()
+    vi.stubGlobal('localStorage', memoryWalletStore())
     vi.stubGlobal('__TAURI_INTERNALS__', {})
     vi.mocked(invoke).mockReset()
   })

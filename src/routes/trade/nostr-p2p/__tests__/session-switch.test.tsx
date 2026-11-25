@@ -1,3 +1,4 @@
+import { memoryWalletStore } from './memoryWalletStore'
 import { invoke } from '@tauri-apps/api/core'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -28,7 +29,7 @@ function deferred() {
 }
 
 beforeEach(() => {
-  localStorage.clear()
+  vi.stubGlobal('localStorage', memoryWalletStore())
   vi.stubGlobal('__TAURI_INTERNALS__', {})
   vi.clearAllMocks()
 })
