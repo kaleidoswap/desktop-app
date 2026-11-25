@@ -276,5 +276,5 @@ jobs:
           shopt -s nullglob
           mac=( *.dmg ); linux=( *.deb *.AppImage ); windows=( *.msi *.exe )
           [[ ${#mac[@]} == 2 && ${#linux[@]} == 2 && ${#windows[@]} == 2 ]]
-          sha256sum -- "${mac[@]}" "${linux[@]}" "${windows[@]}" > SHA256SUMS
+          sha256sum -- "${mac[@]}" "${linux[@]}" "${windows[@]}" | LC_ALL=C sort -k 2 > SHA256SUMS
           gh release upload "$GITHUB_REF_NAME" SHA256SUMS --clobber
