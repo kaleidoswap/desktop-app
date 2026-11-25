@@ -8,7 +8,7 @@ OS = $(shell uname -s)
 REPO_URL = https://github.com/kaleidoswap/rgb-lightning-node
 # rgb-lightning-node release bundled with the app; bump together with any
 # unlock/API changes.
-RLN_VERSION ?= v0.10.1
+RLN_VERSION ?= v0.10.3
 PROJECT_DIR = $(ROOT_DIR)/$(PROJECT_NAME)
 BIN_DIR = $(ROOT_DIR)/bin
 
