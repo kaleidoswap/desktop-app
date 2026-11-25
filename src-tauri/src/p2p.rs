@@ -286,7 +286,7 @@ impl P2pProcess {
             cmd.env("P2PD_API_TOKEN", &token);
             // p2pd uses --name as its keychain account. A dot cannot occur in a desktop profile name.
             let keychain_account = if cfg!(kaleidoswap_beta) {
-                format!("beta.{}", cfg.account)
+                format!("{}.beta", cfg.account)
             } else {
                 cfg.account.clone()
             };
