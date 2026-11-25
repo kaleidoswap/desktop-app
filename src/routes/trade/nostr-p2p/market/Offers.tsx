@@ -134,7 +134,7 @@ export function Offers({
   )
 }
 
-function MakerIdentity({ offer }: { offer: Order }) {
+function MakerIdentity({ offer, network }: { offer: Order; network?: string }) {
   const tr = useTr()
   const [showProfile, setShowProfile] = useState(false)
   const { maker, maker_npub: npub, amount, away, precision } = offer
@@ -168,7 +168,9 @@ function MakerIdentity({ offer }: { offer: Order }) {
           >
             {showProfile
               ? tr('offers.hideProfile', 'Hide profile')
-              : tr('offers.nostrProfile', 'View Nostr profile')}
+              : network === 'signetcustom'
+                ? tr('reputation.open', 'Nostr profile and reputation')
+                : tr('offers.nostrProfile', 'View Nostr profile')}
           </button>
         )}
       </div>
@@ -178,7 +180,9 @@ function MakerIdentity({ offer }: { offer: Order }) {
             {npub}
           </code>
           <MakerList
+            assetId={offer.asset_id}
             makers={[{ amount, away, maker, npub }]}
+            network={network}
             precision={precision}
             ticker={tickerOf(offer)}
           />
@@ -190,9 +194,11 @@ function MakerIdentity({ offer }: { offer: Order }) {
 
 export function OfferSummary({
   offer,
+  network,
   onReview,
 }: {
   offer?: Order
+  network?: string
   onReview: (order: Order) => void
 }) {
   const tr = useTr()
@@ -264,7 +270,11 @@ export function OfferSummary({
           </dd>
         </div>
       </dl>
-      <MakerIdentity key={offer.maker_npub ?? offer.maker} offer={offer} />
+      <MakerIdentity
+        key={offer.maker_npub ?? offer.maker}
+        network={network}
+        offer={offer}
+      />
       <div className="[&_dd]:shrink-0 [&_dd]:whitespace-nowrap">
         <SummaryRows rows={rows} />
       </div>

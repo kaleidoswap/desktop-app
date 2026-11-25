@@ -69,13 +69,15 @@ describe('P2P market', () => {
     const npub = 'npub1makeridentity'
     const profiles = vi.spyOn(marketApi, 'makers').mockResolvedValue([])
     const { manageRelays } = openMarket(npub)
-    await screen.findByRole('button', { name: 'View Nostr profile' })
+    await screen.findByRole('button', { name: 'Nostr profile and reputation' })
     expect(profiles).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Nostr relays (1)' }))
     expect(screen.getByText('wss://relay.example')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Manage relays' }))
     expect(manageRelays).toHaveBeenCalledOnce()
-    fireEvent.click(screen.getByRole('button', { name: 'View Nostr profile' }))
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Nostr profile and reputation' })
+    )
     expect(await screen.findByText(npub)).toBeInTheDocument()
     expect(profiles).toHaveBeenCalledWith([npub])
     fireEvent.click(screen.getByRole('button', { name: 'Sell' }))

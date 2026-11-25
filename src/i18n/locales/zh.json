@@ -3407,6 +3407,16 @@
       "nodeSub": "你的积蓄"
     },
     "market": {
+      "reputation": {
+        "open": "Nostr 资料与信誉",
+        "title": "Mosaik 信誉",
+        "verified": "已通过 Mosaik 验证",
+        "issuer": "目录中列出的该资产发行方",
+        "settled": "近 30 天已结算的兑换",
+        "peers": "不同交易对手数",
+        "volume": "交易量（聪）",
+        "unavailable": "该做市商目前没有有效的签名报告。"
+      },
       "header": {
         "imitation": "可能是对 {{name}} 的仿冒",
         "verified": "已验证资产",

@@ -107,6 +107,21 @@ export interface Order {
   registry: RegistryNote | null
 }
 
+export interface MakerReputation {
+  verified: boolean
+  settled: number
+  volume_sat: number
+  counterparties: number
+  self_trades: number
+  negotiations: number
+  aborted: number
+  abort_rate: number | null
+  presence: number | null
+  computed_at: number
+  expires_at: number
+  event_id: string
+}
+
 /** Who a maker says it is (its Nostr profile), with its NIP-05 name checked against the domain. */
 export interface MakerProfile {
   npub: string
@@ -114,6 +129,9 @@ export interface MakerProfile {
   picture: string | null
   nip05: string | null
   nip05_verified: boolean
+  /** Checked by the daemon against the Mosaik signing key for this network. */
+  reputation?: MakerReputation | null
+  issuer_assets?: string[]
 }
 
 export type TradeStatus = 'negotiating' | 'broadcast' | 'settled' | 'failed'

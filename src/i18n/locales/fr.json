@@ -3416,6 +3416,16 @@
       "nodeSub": "votre épargne"
     },
     "market": {
+      "reputation": {
+        "open": "Profil Nostr et réputation",
+        "title": "Réputation Mosaik",
+        "verified": "Vérifié par Mosaik",
+        "issuer": "Émetteur de cet actif selon le catalogue",
+        "settled": "Échanges réglés · 30 jours",
+        "peers": "Contreparties distinctes",
+        "volume": "Volume en sats",
+        "unavailable": "Aucun rapport signé en cours de validité pour ce maker."
+      },
       "header": {
         "imitation": "Imitation possible de {{name}}",
         "verified": "Actif vérifié",

@@ -3416,6 +3416,16 @@
       "nodeSub": "tus ahorros"
     },
     "market": {
+      "reputation": {
+        "open": "Perfil Nostr y reputación",
+        "title": "Reputación en Mosaik",
+        "verified": "Verificado por Mosaik",
+        "issuer": "Emisor de este activo según el catálogo",
+        "settled": "Intercambios liquidados · 30 días",
+        "peers": "Contrapartes distintas",
+        "volume": "Volumen en sats",
+        "unavailable": "No hay un informe firmado vigente para este maker."
+      },
       "header": {
         "imitation": "Posible imitación de {{name}}",
         "verified": "Activo verificado",

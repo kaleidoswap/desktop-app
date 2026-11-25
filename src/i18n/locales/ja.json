@@ -3416,6 +3416,16 @@
       "nodeSub": "あなたの貯蓄"
     },
     "market": {
+      "reputation": {
+        "open": "Nostr プロフィールと評価",
+        "title": "Mosaik の評価",
+        "verified": "Mosaik 認証済み",
+        "issuer": "カタログに登録されたこの資産の発行者",
+        "settled": "過去30日間の決済済みスワップ",
+        "peers": "取引相手の数",
+        "volume": "取引量（sat）",
+        "unavailable": "このメイカーの有効な署名済みレポートはありません。"
+      },
       "header": {
         "imitation": "{{name}} の偽物の可能性があります",
         "verified": "検証済みアセット",

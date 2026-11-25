@@ -3410,6 +3410,16 @@
       "nodeSub": "deine Ersparnisse"
     },
     "market": {
+      "reputation": {
+        "open": "Nostr-Profil und Reputation",
+        "title": "Mosaik-Reputation",
+        "verified": "Von Mosaik bestätigt",
+        "issuer": "Im Katalog als Emittent dieses Assets geführt",
+        "settled": "Abgewickelte Swaps · 30 Tage",
+        "peers": "Verschiedene Handelspartner",
+        "volume": "Volumen in Sats",
+        "unavailable": "Für diesen Maker liegt kein gültiger signierter Bericht vor."
+      },
       "header": {
         "imitation": "Mögliche Imitation von {{name}}",
         "verified": "Verifiziertes Asset",

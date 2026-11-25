@@ -9,7 +9,8 @@
 ### P2P trading on test networks
 
 - Create a separate trading wallet on Mutinynet or Signet. The 12-word recovery phrase restores bitcoin. Restoring RGB assets also requires the wallet data.
-- View offers published through Nostr, inspect the maker profile and manage the relays used to discover offers.
+- Browse offers from each Nostr relay, including older active offers on quieter relays. Inspect maker profiles and manage the relays used for discovery.
+- On Mutinynet, maker profiles show settled swaps over 30 days, distinct counterparties and volume when Mosaik supplies a current signed report. A signed catalog also identifies issuers for individual assets.
 - Submit market and limit orders, review the amounts and fees, and follow settlement in the activity view.
 - Deposit and withdraw bitcoin and RGB assets. An empty test wallet can request funds from the faucet where available.
 - The P2P daemon is bundled on macOS and Linux. Windows runs the daemon with Docker Desktop.

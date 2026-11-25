@@ -3410,6 +3410,16 @@
       "nodeSub": "your savings"
     },
     "market": {
+      "reputation": {
+        "open": "Nostr profile and reputation",
+        "title": "Mosaik reputation",
+        "verified": "Verified by Mosaik",
+        "issuer": "Listed issuer of this asset",
+        "settled": "Settled swaps · 30 days",
+        "peers": "Distinct counterparties",
+        "volume": "Volume in sats",
+        "unavailable": "No current signed report for this maker."
+      },
       "header": {
         "imitation": "Possible imitation of {{name}}",
         "verified": "Verified asset",

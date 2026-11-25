@@ -364,6 +364,7 @@ export function Market({
             </>
           ) : tab === 'offers' ? (
             <OfferSummary
+              network={info.data?.network}
               offer={activeOffer}
               onReview={(o) => setTaking([o])}
             />
