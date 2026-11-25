@@ -54,7 +54,7 @@ sysinfo = { version = "0.37", default-features = false, features = ["system"] }
 
 # Maker signer: the client side of a hosted p2pd maker (kaleidoswap/p2pd, branch feat/desktop-next).
 # Use the same rgb-lib revision as the pinned signer-core.
-signer-core = { git = "https://github.com/kaleidoswap/p2pd", rev = "2935f68410747a1ada7b78a9b2a36fbe2da71d7d" }
+signer-core = { git = "https://github.com/kaleidoswap/p2pd", rev = "1cc41c69c6bb357d6b6755c26e91c3a3583d577a" }
 rgb-lib = { git = "https://github.com/kaleidoswap/rgb-lib", rev = "90668f51da32f72a302deba2c90bdf24ef678af2", features = ["esplora", "camel_case"] }
 base64 = "0.22"
 
@@ -80,7 +80,7 @@ tauri-plugin-updater = "2.14.1"
 # Same narrow LRU dependency backport as p2pd; see vendor/README.md.
 [patch.crates-io]
 # Use the same patched Esplora HTTPS client as the bundled daemon.
-esplora-client = { git = "https://github.com/kaleidoswap/p2pd", rev = "2935f68410747a1ada7b78a9b2a36fbe2da71d7d" }
+esplora-client = { git = "https://github.com/kaleidoswap/p2pd", rev = "1cc41c69c6bb357d6b6755c26e91c3a3583d577a" }
 nostr-database = { path = "vendor/nostr-database" }
 nostr-relay-pool = { path = "vendor/nostr-relay-pool" }
 
