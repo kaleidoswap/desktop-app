@@ -1,0 +1,174 @@
+name: Recover Desktop beta.2 for macOS Intel
+
+on:
+  push:
+    branches: [codex/desktop-beta2-intel-recovery]
+
+permissions:
+  contents: read
+
+jobs:
+  macos-intel:
+    runs-on: macos-15-intel
+    permissions:
+      contents: write
+    timeout-minutes: 210
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 65266be00cf2f1592a38052db89703c9e0800b13
+          persist-credentials: false
+      - name: Verify the tagged beta source
+        run: |
+          test "$(git rev-parse HEAD)" = "65266be00cf2f1592a38052db89703c9e0800b13"
+          git fetch --no-tags origin refs/tags/v0.7.0-beta.2
+          test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "$(git rev-parse HEAD)"
+          test "$(jq -r .version src-tauri/tauri.beta.conf.json)" = "0.7.0-beta.2"
+      - name: Import Developer ID certificate into an ephemeral keychain
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          umask 077
+          : "${APPLE_CERTIFICATE:?missing Apple certificate}"
+          : "${APPLE_SIGNING_IDENTITY:?missing signing identity}"
+          : "${KEYCHAIN_PASSWORD:?missing keychain password}"
+          : "${APPLE_ID:?missing notarization Apple ID}"
+          : "${APPLE_PASSWORD:?missing notarization credential}"
+          : "${APPLE_TEAM_ID:?missing Apple team}"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/beta-certificate.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/beta-signing.keychain-db"
+          security set-keychain-settings -lut 21600 "$RUNNER_TEMP/beta-signing.keychain-db"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/beta-signing.keychain-db"
+          security import "$RUNNER_TEMP/beta-certificate.p12" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -k "$RUNNER_TEMP/beta-signing.keychain-db"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$RUNNER_TEMP/beta-signing.keychain-db"
+          security list-keychains -d user -s "$RUNNER_TEMP/beta-signing.keychain-db" "$HOME/Library/Keychains/login.keychain-db"
+          python3 scripts/check-beta-signing.py
+          xcrun notarytool history --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --output-format json > "$RUNNER_TEMP/beta-notary-auth.json"
+          echo 'Notarization credentials accepted.'
+      - name: Verify private daemon access configuration
+        env:
+          P2PD_REPO: ${{ secrets.P2PD_REPO }}
+          P2PD_REPO_TOKEN: ${{ secrets.P2PD_REPO_TOKEN }}
+        run: |
+          test -n "$P2PD_REPO" || { echo 'Missing P2PD_REPO'; exit 1; }
+          test -n "$P2PD_REPO_TOKEN" || { echo 'Missing P2PD_REPO_TOKEN'; exit 1; }
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - name: Fetch the locked private signer dependency
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: 'true'
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: url.https://x-access-token:${{ secrets.P2PD_REPO_TOKEN }}@github.com/kaleidoswap/p2pd.insteadOf
+          GIT_CONFIG_VALUE_0: https://github.com/kaleidoswap/p2pd
+        run: cargo fetch --locked --manifest-path src-tauri/Cargo.toml
+      - name: Install frontend and check P2P backend
+        env:
+          BUILD_AND_RUN_RGB_LIGHTNING_NODE: "false"
+        run: |
+          pnpm install --frozen-lockfile
+          cargo test --locked --manifest-path src-tauri/Cargo.toml p2p
+          cargo test --locked --manifest-path src-tauri/Cargo.toml --test build_config
+      - name: Build bundled Lightning node
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+        run: |
+          for attempt in 1 2 3; do
+            if make release; then exit 0; fi
+            if [[ "$attempt" == 3 ]]; then exit 1; fi
+            sleep 20
+          done
+      - name: Checkout and stage the exact private daemon revision
+        env:
+          P2PD_REPO: ${{ secrets.P2PD_REPO }}
+          P2PD_REPO_TOKEN: ${{ secrets.P2PD_REPO_TOKEN }}
+          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+        run: |
+          bash scripts/checkout-p2pd.sh
+          P2PD_SRC="$PWD/.p2pd-src" bash scripts/prepare-p2p-bundle.sh
+      - name: Build and notarize without a GitHub release or updater upload
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+          APPLE_ID: ${{ runner.os == 'macOS' && secrets.APPLE_ID || '' }}
+          APPLE_PASSWORD: ${{ runner.os == 'macOS' && secrets.APPLE_PASSWORD || '' }}
+          APPLE_TEAM_ID: ${{ runner.os == 'macOS' && secrets.APPLE_TEAM_ID || '' }}
+        run: |
+          extra=()
+          if [[ "$RUNNER_OS" != Windows ]]; then extra+=(--config src-tauri/tauri.p2p.conf.json); fi
+          pnpm exec tauri build --target 'x86_64-apple-darwin' --bundles 'app,dmg' --config src-tauri/tauri.beta.conf.json "${extra[@]}"
+      - name: Verify notarization and Gatekeeper
+        run: |
+          app="src-tauri/target/x86_64-apple-darwin/release/bundle/macos/KaleidoSwap Beta.app"
+          codesign --verify --deep --strict "$app"
+          xcrun stapler validate "$app"
+          spctl --assess --type execute --verbose "$app"
+      - name: Check the packaged version, architecture and DMG signature
+        run: |
+          bundle="src-tauri/target/x86_64-apple-darwin/release/bundle"
+          app="$bundle/macos/KaleidoSwap Beta.app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")" = "0.7.0-beta.2"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist")" = "com.kaleidoswap.beta"
+          test "$(lipo -archs "$app/Contents/MacOS/KaleidoSwapBeta")" = x86_64
+          dmgs=("$bundle"/dmg/*.dmg)
+          test "${#dmgs[@]}" -eq 1
+          codesign --verify --strict "${dmgs[0]}"
+          shasum -a 256 "${dmgs[0]}"
+      - name: Attach the verified DMG to the existing internal prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view v0.7.0-beta.2 --json isDraft,isPrerelease,body,targetCommitish |
+            jq -e --arg sha "$(git rev-parse HEAD)" '.isDraft and .isPrerelease and .targetCommitish == $sha and (.body | contains($sha))'
+          gh release upload v0.7.0-beta.2 src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+      - name: Clean ephemeral signing and private checkout files
+        if: always()
+        run: |
+          rm -rf .p2pd-src
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            security delete-keychain "$RUNNER_TEMP/beta-signing.keychain-db" || true
+            rm -f "$RUNNER_TEMP/beta-certificate.p12" "$RUNNER_TEMP/beta-notary-auth.json"
+          fi
+
+  verify-draft:
+    needs: macos-intel
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Verify complete installer set and attach checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: v0.7.0-beta.2
+          RELEASE_COMMIT: 65266be00cf2f1592a38052db89703c9e0800b13
+        run: |
+          gh release view "$RELEASE_TAG" --json isDraft,isPrerelease,targetCommitish,body |
+            jq -e --arg sha "$RELEASE_COMMIT" '.isDraft and .isPrerelease and .targetCommitish == $sha and (.body | contains($sha))'
+          mkdir installers
+          cd installers
+          gh release download "$RELEASE_TAG" -p '*.dmg' -p '*.msi' -p '*.exe' -p '*.deb' -p '*.AppImage'
+          shopt -s nullglob
+          mac=( *.dmg ); linux=( *.deb *.AppImage ); windows=( *.msi *.exe )
+          [[ ${#mac[@]} == 2 && ${#linux[@]} == 2 && ${#windows[@]} == 2 ]]
+          sha256sum -- "${mac[@]}" "${linux[@]}" "${windows[@]}" | LC_ALL=C sort -k 2 > SHA256SUMS
+          gh release upload "$RELEASE_TAG" SHA256SUMS
