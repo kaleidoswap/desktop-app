@@ -16,18 +16,18 @@ export const isMindEnabled = (mode: AppMode) => mode !== 'node'
 interface SettingsState {
   bitcoinUnit: string
   nodeConnectionString: string
-  language: string
+  language: string | null
   fiatCurrency: FiatCurrency
   theme: Theme
   appMode: AppMode
 }
 
-// Load initial language from localStorage (where i18n stores it)
-const getInitialLanguage = (): string => {
+// An empty preference lets i18next detect the system language.
+const getInitialLanguage = (): string | null => {
   try {
-    return localStorage.getItem('kaleidoswap_language') || 'en'
+    return localStorage.getItem('kaleidoswap_language')
   } catch {
-    return 'en'
+    return null
   }
 }
 

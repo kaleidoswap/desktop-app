@@ -16,6 +16,7 @@ const { dispatch, navigate } = vi.hoisted(() => ({
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
 vi.mock('react-router-dom', async (load) => ({
   ...(await load<typeof import('react-router-dom')>()),
+  useLocation: () => ({ state: null }),
   useNavigate: () => navigate,
 }))
 vi.mock('react-i18next', () => ({

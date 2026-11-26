@@ -1,3 +1,4 @@
+import { Button, cardSurface } from 'kaleido-ui'
 import {
   ChevronDown,
   RadioTower,
@@ -131,23 +132,14 @@ export function PairHeader({
             }
 
   return (
-    <header className="rounded-2xl border border-divider/20 bg-surface-card">
-      <div className="relative flex min-h-[96px] flex-wrap items-center gap-x-4 gap-y-2 rounded-t-2xl bg-[#352452] px-5 py-4">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-t-2xl opacity-80"
-          style={{
-            background:
-              'linear-gradient(128deg, transparent 48%, #8c69af3b 48% 61%, transparent 61% 72%, #a88eba36 72% 82%, transparent 82%), repeating-linear-gradient(128deg, transparent 0 27px, #a488cc22 28px 29px)',
-            maskImage: 'linear-gradient(to right, transparent 25%, black 85%)',
-          }}
-        />
+    <header className={cx(cardSurface.primary, 'relative z-10')}>
+      <div className="flex min-h-24 flex-wrap items-center gap-x-4 gap-y-2 rounded-t-2xl bg-gradient-card-hero px-5 py-4">
         {market && (
           <span
             aria-hidden
             className="relative flex shrink-0 items-center pr-5"
           >
-            <span className="absolute -right-0.5 top-1/2 grid h-8 w-8 -translate-y-1/3 place-items-center rounded-full bg-[#ffc779] text-base font-bold text-[#6c3907]">
+            <span className="absolute -right-0.5 top-1/2 grid h-8 w-8 -translate-y-1/3 place-items-center rounded-full bg-card text-base font-bold text-warning-fg shadow-raised">
               ₿
             </span>
             <span className="relative z-[1]">
@@ -159,7 +151,7 @@ export function PairHeader({
           </span>
         )}
         <div className="relative min-w-0">
-          <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[.14em] text-[#ded2ef]">
+          <p className="mb-0.5 text-tiny font-semibold uppercase tracking-wide text-secondary-content">
             {tr('offers.nostrDiscovery', 'Offers via Nostr')}
           </p>
           <Picker
@@ -185,23 +177,26 @@ export function PairHeader({
         </div>
         <div className="relative ml-auto flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
           {info.network === 'signetcustom' && (
-            <div className="hidden text-right text-xs text-[#ded2ef] lg:block">
+            <div className="hidden text-right text-caption text-muted-foreground lg:block">
               {tr('offers.sharedWith', 'Market shared with')}
-              <strong className="block text-sm text-[#faf7ff]">Mosaik</strong>
+              <strong className="block text-body text-foreground">
+                Mosaik
+              </strong>
             </div>
           )}
-          <button
+          <Button
             aria-expanded={showRelays}
-            className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[#bba0db]/50 bg-[#463061] px-3 text-xs font-semibold text-[#faf7ff] hover:bg-[#573d74]"
             onClick={() => setShowRelays(!showRelays)}
+            size="sm"
             type="button"
+            variant="surface"
           >
             <RadioTower aria-hidden size={15} />
             {tr('offers.nostrRelays', 'Nostr relays ({{n}})', {
               n: relayUrls.length,
             })}
             <ChevronDown aria-hidden size={13} />
-          </button>
+          </Button>
         </div>
       </div>
       {showRelays && (
@@ -219,14 +214,15 @@ export function PairHeader({
             </ul>
           </div>
           {onManageRelays && (
-            <button
-              className="inline-flex items-center gap-2 rounded-lg border border-divider/25 px-3 py-2 text-xs font-semibold text-content-primary hover:bg-surface-raised"
+            <Button
               onClick={onManageRelays}
+              size="sm"
               type="button"
+              variant="outline"
             >
               <Settings2 aria-hidden size={14} />
               {tr('offers.manageRelays', 'Manage relays')}
-            </button>
+            </Button>
           )}
         </div>
       )}

@@ -379,7 +379,7 @@ export const Component = () => {
   }
 
   return (
-    <Layout>
+    <Layout setupBusy={isUnlocking || isStartingDocker}>
       {isCheckingStatus ? (
         <div className="flex flex-col items-center justify-center h-full gap-3">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />

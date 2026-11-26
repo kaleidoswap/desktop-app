@@ -63,8 +63,8 @@
       "mind": {
         "body": "Run local AI models on this desktop. You can connect a node any time later."
       },
-      "remote": "Connect a node",
-      "local": "Run a node here"
+      "remote": "ノードに接続",
+      "local": "ローカルでノードを実行"
     },
     "recommended": "Recommended",
     "p2pCard": {
@@ -4304,7 +4304,7 @@
   "unified": {
     "testNetworks": "テストネットワーク",
     "test": "テスト",
-    "market": "P2P市場",
+    "market": "Nostr P2P市場",
     "node": "Lightningノード",
     "activity": "アクティビティ",
     "accounts": "アカウントとKaleidoMind",

@@ -6,6 +6,10 @@ const makePath = (paths: string[]) => {
   return ''
 }
 
+// React Router matches these static routes case-insensitively and accepts trailing slashes.
+export const desktopPathname = (pathname: string) =>
+  pathname.replace(/\/+$/, '').toLowerCase() || BASE_PATH
+
 export const ROOT_PATH = makePath([])
 
 export const WALLET_SETUP_PATH = makePath(['wallet-setup'])
@@ -35,6 +39,7 @@ export const MAINNET_PATH = makePath(['mainnet'])
 export const MAINNET_WALLET_PATH = `${MAINNET_PATH}/wallet`
 export const MAINNET_ACTIVITY_PATH = `${MAINNET_PATH}/activity`
 export const MAINNET_MARKET_PATH = `${MAINNET_PATH}/market`
+export const MAINNET_SETTINGS_PATH = `${MAINNET_PATH}/settings`
 export const MAINNET_NODE_PATH = `${MAINNET_PATH}/node`
 
 export const TRADE_DCA_PATH = makePath(['dca'])

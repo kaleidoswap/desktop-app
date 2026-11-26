@@ -1,4 +1,10 @@
-import { useState } from 'react'
+import {
+  PageHeader,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from 'kaleido-ui'
 import { useTranslation } from 'react-i18next'
 
 import { Component as AssetsHistory } from '../wallet-history/assets'
@@ -6,56 +12,52 @@ import { Component as DepositsHistory } from '../wallet-history/deposits'
 import { Component as WithdrawalsHistory } from '../wallet-history/withdrawals'
 import { SwapsHistory } from './SwapsHistory'
 
-type Tab = 'swaps' | 'assets' | 'deposits' | 'withdrawals'
-
 export const Component = () => {
   const { t } = useTranslation()
-  const [tab, setTab] = useState<Tab>('swaps')
-  const tabs: [Tab, string][] = [
-    ['swaps', t('p2pSwaps.tab', { defaultValue: 'Swaps' })],
-    ['deposits', t('p2pMarket.tabDeposits', { defaultValue: 'Deposits' })],
-    [
-      'withdrawals',
-      t('p2pMarket.tabWithdrawals', { defaultValue: 'Withdrawals' }),
-    ],
-    [
-      'assets',
-      t('p2pWallet.assetTransfers', { defaultValue: 'Asset transfers' }),
-    ],
+  const title = t('unified.activity', { defaultValue: 'Activity' })
+  const tabs = [
+    {
+      Panel: SwapsHistory,
+      label: t('p2pSwaps.tab', { defaultValue: 'Swaps' }),
+      value: 'swaps',
+    },
+    {
+      Panel: DepositsHistory,
+      label: t('p2pMarket.tabDeposits', { defaultValue: 'Deposits' }),
+      value: 'deposits',
+    },
+    {
+      Panel: WithdrawalsHistory,
+      label: t('p2pMarket.tabWithdrawals', { defaultValue: 'Withdrawals' }),
+      value: 'withdrawals',
+    },
+    {
+      Panel: AssetsHistory,
+      label: t('p2pWallet.assetTransfers', { defaultValue: 'Asset transfers' }),
+      value: 'assets',
+    },
   ]
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-4">
-        <h1 className="text-2xl font-bold tracking-tight text-content-primary">
-          {t('unified.activity', { defaultValue: 'Activity' })}
-        </h1>
-        <div
-          className="flex gap-1 rounded-xl bg-surface-inset p-1"
-          role="tablist"
+    <section className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+      <PageHeader title={title} variant="page" />
+      <Tabs defaultValue="swaps">
+        <TabsList
+          aria-label={title}
+          className="h-auto max-w-full flex-wrap justify-start"
         >
-          {tabs.map(([id, label]) => (
-            <button
-              aria-selected={tab === id}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                tab === id
-                  ? 'bg-surface-raised text-content-primary'
-                  : 'text-content-tertiary hover:text-content-secondary'
-              }`}
-              key={id}
-              onClick={() => setTab(id)}
-              role="tab"
-              type="button"
-            >
+          {tabs.map(({ value, label }) => (
+            <TabsTrigger key={value} value={value}>
               {label}
-            </button>
+            </TabsTrigger>
           ))}
-        </div>
-      </div>
-      {tab === 'swaps' && <SwapsHistory />}
-      {tab === 'assets' && <AssetsHistory />}
-      {tab === 'deposits' && <DepositsHistory />}
-      {tab === 'withdrawals' && <WithdrawalsHistory />}
+        </TabsList>
+        {tabs.map(({ value, Panel }) => (
+          <TabsContent key={value} value={value}>
+            <Panel />
+          </TabsContent>
+        ))}
+      </Tabs>
     </section>
   )
 }

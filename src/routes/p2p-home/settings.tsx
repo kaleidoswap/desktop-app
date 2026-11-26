@@ -8,8 +8,6 @@ import { RecoveryPhraseModal } from '../trade/nostr-p2p/RecoveryPhraseModal'
 import { RelaysModal } from '../trade/nostr-p2p/RelaysModal'
 import { useP2pSession } from '../trade/nostr-p2p/session'
 
-import { NetworkPicker } from './NetworkPicker'
-
 const Section = ({
   title,
   body,
@@ -64,15 +62,12 @@ export const Component = () => {
       </h1>
 
       {networks.length > 1 && (
-        <Section
-          body={t('p2pSettings.networkBody', {
+        <p className="text-sm text-content-secondary">
+          {t('p2pSettings.networkBody', {
             defaultValue:
               'Each network has wallets of its own. Switching restarts the trading wallet.',
           })}
-          title={t('p2pSettings.network', { defaultValue: 'Network' })}
-        >
-          <NetworkPicker className="w-64" />
-        </Section>
+        </p>
       )}
 
       <Section

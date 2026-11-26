@@ -6,6 +6,7 @@
 
 /* Tell Tailwind v4 where to scan for class names. */
 @source './**/*.{ts,tsx}';
+@source '../node_modules/kaleido-ui/dist/web';
 
 /* Class-based dark mode — the app toggles `.dark` / `.light` on <html>
    (see ThemeProvider). Make the `dark:` variant follow the `.dark` class
@@ -240,17 +241,6 @@
   }
 }
 
-/* Global press animation — outside @layer so it overrides transition-colors utilities */
-button {
-  transition: all 150ms ease;
-}
-button:not([disabled]):hover {
-  transform: scale(1.02);
-}
-button:not([disabled]):active {
-  transform: scale(0.98);
-}
-
 /* Modal portal target: when no modal is mounted the empty overlay must not
    intercept clicks/scrolls on the content behind it. As soon as a modal is
    portaled in, `:empty` no longer matches and pointer events return to normal. */
@@ -258,15 +248,16 @@ button:not([disabled]):active {
   pointer-events: none;
 }
 
-/* Modals portal into #modal-portal, which fills #content-area — a region shorter
-   than the viewport that clips its overflow. Modal scroll wrappers cap their
-   height in viewport units (max-h-[85vh]/[90vh]); on windows under ~1000px tall
-   that exceeds the content area and the modal (header / footer actions) gets
-   clipped. Cap the scroll region to the space actually available below the top
-   bar so it scrolls internally instead. The `.overflow-y-scroll` class is used
-   only by these modal wrappers — nested lists/dropdowns use `.overflow-y-auto`. */
+/* Measure the available space below the desktop header and contextual navigation.
+   Keep dialog actions reachable when the navigation wraps on narrow windows. */
+#modal-portal {
+  container-type: size;
+}
 #modal-portal .overflow-y-scroll {
-  max-height: calc(100vh - 7rem);
+  max-height: calc(100cqh - 2rem);
+}
+#modal-portal .max-h-\[85vh\].overflow-y-auto {
+  max-height: min(85vh, calc(100cqh - 2rem));
 }
 
 /* Icon-only action buttons — override global scale with explicit center origin to prevent lateral drift */

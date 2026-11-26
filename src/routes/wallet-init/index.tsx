@@ -1,3 +1,4 @@
+import { defaultNodeNetwork } from '../p2p-home/networks'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import {
@@ -18,7 +19,12 @@ import {
 import { useState, useEffect, useRef } from 'react'
 import { SubmitHandler, UseFormReturn, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import {
+  useLocation,
+  Navigate,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import {
@@ -149,6 +155,10 @@ export const Component = () => {
 
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const { state } = useLocation()
+  const returnPath = state?.fromLocalSetup
+    ? `${WALLET_SETUP_PATH}?node=local`
+    : WALLET_SETUP_PATH
 
   const WALLET_INIT_STEPS = [
     { id: 'terms', label: t('walletInit.steps.terms') },
@@ -160,12 +170,13 @@ export const Component = () => {
   ]
 
   // Separate forms for each step
+  const initialNetwork = defaultNodeNetwork()
   const nodeSetupForm = useForm<NodeSetupFields>({
     defaultValues: {
       bearer_token: '',
       name: generateRandomName(),
-      network: 'SignetCustom',
-      ...NETWORK_DEFAULTS['SignetCustom'],
+      network: initialNetwork,
+      ...NETWORK_DEFAULTS[initialNetwork],
     },
   })
 
@@ -200,7 +211,7 @@ export const Component = () => {
   const handleBackNavigation = () => {
     switch (currentStep) {
       case 'terms':
-        navigate(WALLET_SETUP_PATH)
+        navigate(returnPath)
         break
       case 'setup':
         handleStepChange('terms')
@@ -1101,7 +1112,7 @@ export const Component = () => {
             <div className="flex justify-between w-full max-w-sm mt-8">
               <button
                 className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
-                onClick={() => navigate(WALLET_SETUP_PATH)}
+                onClick={() => navigate(returnPath)}
                 type="button"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
@@ -1123,7 +1134,7 @@ export const Component = () => {
             <NodeSetupForm
               errors={errors}
               form={nodeSetupForm}
-              onBack={() => navigate(WALLET_SETUP_PATH)}
+              onBack={() => navigate(returnPath)}
               onSubmit={handleNodeSetup}
             />
           </div>
@@ -1286,11 +1297,21 @@ export const Component = () => {
 
   return (
     <>
-      <Layout>{renderCurrentStep()}</Layout>
+      <Layout
+        setupBusy={
+          isInitializing ||
+          isUnlocking ||
+          currentStep === 'mnemonic' ||
+          currentStep === 'verify'
+        }
+        setupNetwork={nodeSetupForm.watch('network')}
+      >
+        {renderCurrentStep()}
+      </Layout>
       <TermsWarningModal
         isOpen={showTermsModal}
         onAccept={handleTermsAccept}
-        onClose={() => navigate(WALLET_SETUP_PATH)}
+        onClose={() => navigate(returnPath)}
       />
       <SkipMnemonicWarningModal
         isOpen={showSkipMnemonicWarning}

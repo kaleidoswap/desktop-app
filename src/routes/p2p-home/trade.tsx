@@ -1,3 +1,4 @@
+import { Button, PageHeader } from 'kaleido-ui'
 import { ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -34,19 +35,21 @@ export const Component = () => {
   }
   return (
     <div className="flex flex-col gap-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-content-primary">
-          {t('p2pTrade.simpleSwap', { defaultValue: 'Simple swap' })}
-        </h1>
-        <button
-          className="flex items-center gap-2 rounded-lg border border-divider/25 px-3 py-2 text-sm font-medium text-content-primary hover:bg-surface-raised"
-          onClick={() => choose('book')}
-          type="button"
-        >
-          <ArrowLeft aria-hidden size={16} />
-          {t('p2pTrade.market', { defaultValue: 'P2P market' })}
-        </button>
-      </header>
+      <PageHeader
+        action={
+          <Button
+            onClick={() => choose('book')}
+            size="sm"
+            type="button"
+            variant="surface"
+          >
+            <ArrowLeft aria-hidden size={16} />
+            {t('p2pTrade.market', { defaultValue: 'P2P market' })}
+          </Button>
+        }
+        title={t('p2pTrade.simpleSwap', { defaultValue: 'Simple swap' })}
+        variant="page"
+      />
       <SwapView />
     </div>
   )

@@ -1,12 +1,15 @@
 import { invoke } from '@tauri-apps/api/core'
 import {
+  desktopPathname,
   MAINNET_ACTIVITY_PATH,
   MAINNET_MARKET_PATH,
   MAINNET_NODE_PATH,
+  MAINNET_SETTINGS_PATH,
   MAINNET_WALLET_PATH,
   P2P_ACTIVITY_PATH,
   P2P_BALANCE_PATH,
   P2P_NODE_PATH,
+  P2P_SETTINGS_PATH,
   P2P_TRADE_PATH,
   WALLET_SETUP_PATH,
 } from '../../app/router/paths'
@@ -23,18 +26,43 @@ const sections = [
   [MAINNET_ACTIVITY_PATH, P2P_ACTIVITY_PATH],
   [MAINNET_NODE_PATH, P2P_NODE_PATH],
   [MAINNET_WALLET_PATH, P2P_BALANCE_PATH],
+  [MAINNET_SETTINGS_PATH, P2P_SETTINGS_PATH],
 ] as const
 
 export function switchNetworkPath(path: string, mainnet: boolean): string {
-  const pair = sections.find(([main, test]) => path === main || path === test)
+  const pathname = desktopPathname(path)
+  const pair = sections.find(
+    ([main, test]) => pathname === main || pathname === test
+  )
   return (pair ?? sections[3])[mainnet ? 0 : 1]
 }
 
 type Profile = 'mainnet' | 'test' | 'node'
 const entryKey = 'kaleidoswap.desktop.last-profile'
+const walletContextKey = 'kaleidoswap.desktop.last-wallet-context'
+
+export function lastWalletContext(): 'mainnet' | 'test' {
+  try {
+    const last =
+      localStorage.getItem(walletContextKey) ?? localStorage.getItem(entryKey)
+    return last === 'test' ? 'test' : 'mainnet'
+  } catch {
+    return 'mainnet'
+  }
+}
+
+export function rememberWalletContext(context: 'mainnet' | 'test') {
+  try {
+    localStorage.setItem(walletContextKey, context)
+  } catch {
+    // The location still identifies the wallet context for this visit.
+  }
+}
 
 export function rememberProfile(profile: Profile) {
   try {
+    const walletContext = profile === 'node' ? lastWalletContext() : profile
+    rememberWalletContext(walletContext)
     localStorage.setItem(entryKey, profile)
   } catch {
     // Native account discovery also works without stored UI preferences.

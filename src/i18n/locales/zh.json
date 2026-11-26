@@ -63,8 +63,8 @@
       "mind": {
         "body": "Run local AI models on this desktop. You can connect a node any time later."
       },
-      "remote": "Connect a node",
-      "local": "Run a node here"
+      "remote": "连接节点",
+      "local": "运行本地节点"
     },
     "recommended": "Recommended",
     "p2pCard": {
@@ -4295,7 +4295,7 @@
   "unified": {
     "testNetworks": "测试网络",
     "test": "测试",
-    "market": "P2P 市场",
+    "market": "Nostr P2P 市场",
     "node": "闪电网络节点",
     "activity": "活动",
     "accounts": "账户和 KaleidoMind",

@@ -54,6 +54,10 @@ export const router = createBrowserRouter([
         path: 'wallet',
       },
       {
+        lazy: () => import('../../routes/mainnet-wallet/settings'),
+        path: 'settings',
+      },
+      {
         lazy: async () => ({
           Component: (await import('../../routes/mainnet-wallet')).Activity,
         }),

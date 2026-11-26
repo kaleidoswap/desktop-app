@@ -1,7 +1,16 @@
+import {
+  Button,
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  PageHeader,
+} from 'kaleido-ui'
 import { Cloud, Server } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 import {
+  desktopPathname,
   MAINNET_NODE_PATH,
   P2P_NODE_PATH,
   P2P_TRADE_PATH,
@@ -12,37 +21,43 @@ import {
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import { getNetworkDisplayName } from '../../constants'
 import { setAppMode } from '../../slices/settings/settings.slice'
-
-const button =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground'
-const secondary =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-divider/30 px-4 py-2 text-sm font-medium text-content-primary hover:bg-surface-overlay/50'
+import {
+  nodeWalletNetworkKey,
+  useSelectedTestNetwork,
+  useDesktopTestNetworks,
+} from './networks'
 
 export function TestNetworkGate() {
-  const { pathname } = useLocation()
+  const pathname = desktopPathname(useLocation().pathname)
   const { t } = useTranslation()
   const node = pathname === MAINNET_NODE_PATH
   return (
-    <section className="flex max-w-xl flex-col items-start gap-4">
-      <h1 className="text-2xl font-bold tracking-tight text-content-primary">
-        {node
-          ? t('unified.node', { defaultValue: 'Lightning node' })
-          : t('unified.market', { defaultValue: 'P2P market' })}
-      </h1>
-      <p className="text-content-secondary">
-        {node
-          ? t('unified.nodeTestOnly', {
-              defaultValue:
-                'Run a local RGB Lightning node or connect to a remote node on a test network.',
-            })
-          : t('unified.marketTestOnly', {
-              defaultValue:
-                'Find and publish offers via Nostr. On test networks, trades settle on-chain using your separate trading wallet.',
-            })}
-      </p>
-      <Link className={button} to={node ? P2P_NODE_PATH : P2P_TRADE_PATH}>
-        {t('unified.switchTest', { defaultValue: 'Switch to test networks' })}
-      </Link>
+    <section className="mx-auto flex w-full max-w-5xl flex-col items-start gap-5">
+      <PageHeader
+        className="max-w-xl"
+        description={
+          node
+            ? t('unified.nodeTestOnly', {
+                defaultValue:
+                  'Run a local RGB Lightning node or connect to a remote node on a test network.',
+              })
+            : t('unified.marketTestOnly', {
+                defaultValue:
+                  'Find and publish offers via Nostr. On test networks, trades settle on-chain using your separate trading wallet.',
+              })
+        }
+        title={
+          node
+            ? t('unified.node', { defaultValue: 'Lightning node' })
+            : t('unified.market', { defaultValue: 'P2P market' })
+        }
+        variant="page"
+      />
+      <Button asChild>
+        <Link to={node ? P2P_NODE_PATH : P2P_TRADE_PATH}>
+          {t('unified.switchTest', { defaultValue: 'Switch to test networks' })}
+        </Link>
+      </Button>
     </section>
   )
 }
@@ -52,51 +67,69 @@ export function Component() {
   const dispatch = useAppDispatch()
   const account = useAppSelector((s) => s.nodeSettings.data)
   const reachable = useAppSelector((s) => s.node.reachability === 'reachable')
-  // The account picker handles locked, remote and local nodes through their existing unlock flow.
-  const connected = account.name && account.network !== 'Mainnet' && reachable
+  const networks = useDesktopTestNetworks()
+  const selected = useSelectedTestNetwork(networks)
+  const connected =
+    account.name &&
+    account.network !== 'Mainnet' &&
+    reachable &&
+    (!selected || selected.key === nodeWalletNetworkKey(account.network))
   const activateNode = () => dispatch(setAppMode('both'))
   return (
-    <section className="flex max-w-2xl flex-col items-start gap-5">
-      <h1 className="text-2xl font-bold tracking-tight text-content-primary">
-        {t('unified.node', { defaultValue: 'Lightning node' })}
-      </h1>
+    <section className="mx-auto flex w-full max-w-5xl flex-col items-start gap-5">
+      <PageHeader
+        title={t('unified.node', { defaultValue: 'Lightning node' })}
+        variant="page"
+      />
       {connected && (
-        <Link
-          className={button}
-          onClick={activateNode}
-          to={WALLET_DASHBOARD_PATH}
+        <Button
+          asChild
+          className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left [overflow-wrap:anywhere]"
         >
-          {t('unified.openNode', {
-            defaultValue: 'Open {{name}} · {{network}}',
-            name: account.name,
-            network: getNetworkDisplayName(account.network),
-          })}
-        </Link>
+          <Link onClick={activateNode} to={WALLET_DASHBOARD_PATH}>
+            {t('unified.openNode', {
+              defaultValue: 'Open {{name}} · {{network}}',
+              name: account.name,
+              network: getNetworkDisplayName(account.network),
+            })}
+          </Link>
+        </Button>
       )}
-      <div className="flex flex-wrap gap-3">
-        <Link
-          className={secondary}
-          onClick={activateNode}
-          to={`${WALLET_SETUP_PATH}?node=local`}
-        >
-          <Server aria-hidden className="h-4 w-4" />
-          {t('launcher.cards.local', { defaultValue: 'Run a node here' })}
+      <Card aria-labelledby="node-setup-title" className="w-full" role="region">
+        <CardHeader>
+          <h2 className="text-subhead font-bold" id="node-setup-title">
+            {t('launcher.setUpNode')}
+          </h2>
+          <CardDescription>{t('unified.nodeTestOnly')}</CardDescription>
+        </CardHeader>
+        <CardFooter className="flex-wrap gap-3">
+          <Button asChild variant="surface">
+            <Link
+              onClick={activateNode}
+              state={{ from: P2P_NODE_PATH }}
+              to={`${WALLET_SETUP_PATH}?node=local`}
+            >
+              <Server aria-hidden size={18} />
+              {t('launcher.cards.local', { defaultValue: 'Run a node here' })}
+            </Link>
+          </Button>
+          <Button asChild variant="surface">
+            <Link
+              onClick={activateNode}
+              state={{ from: P2P_NODE_PATH }}
+              to={WALLET_REMOTE_PATH}
+            >
+              <Cloud aria-hidden size={18} />
+              {t('launcher.cards.remote', { defaultValue: 'Connect a node' })}
+            </Link>
+          </Button>
+        </CardFooter>
+      </Card>
+      <Button asChild className="px-0" size="sm" variant="link">
+        <Link to={WALLET_SETUP_PATH}>
+          {t('unified.manageNodes', { defaultValue: 'Manage node accounts' })}
         </Link>
-        <Link
-          className={secondary}
-          onClick={activateNode}
-          to={WALLET_REMOTE_PATH}
-        >
-          <Cloud aria-hidden className="h-4 w-4" />
-          {t('launcher.cards.remote', { defaultValue: 'Connect a node' })}
-        </Link>
-      </div>
-      <Link
-        className="text-sm font-medium text-primary hover:underline"
-        to={WALLET_SETUP_PATH}
-      >
-        {t('unified.manageNodes', { defaultValue: 'Manage node accounts' })}
-      </Link>
+      </Button>
     </section>
   )
 }
