@@ -63,8 +63,8 @@
       "mind": {
         "body": "Run local AI models on this desktop. You can connect a node any time later."
       },
-      "remote": "Connect a node",
-      "local": "Run a node here"
+      "remote": "노드 연결",
+      "local": "로컬에서 노드 실행"
     },
     "recommended": "Recommended",
     "p2pCard": {
