@@ -3,17 +3,18 @@
 ### Wallet and navigation
 
 - New installations open the mainnet wallet preview. Sending and receiving mainnet funds require a future native wallet integration.
-- Wallet, Market, Activity and Lightning share one navigation. KaleidoSwap Beta uses its own profiles, credentials and node data alongside the stable app. Create a disposable test wallet in the beta.
+- The on-chain wallet, Nostr P2P market, Activity and Lightning node share the same Kaleido-UI menu. Switch networks or choose one of eight interface languages from the header. Accounts, settings and help stay in the same place when you open a node.
+- KaleidoSwap Beta uses its own profiles, credentials and node data alongside the stable app. Create a disposable test wallet in the beta.
 - Connect to a remote RGB Lightning node or run a local node on a supported test network. The bundled node and Docker image use RLN 0.10.3.
 
 ### P2P trading on test networks
 
 - Create a separate trading wallet on Mutinynet or Signet. The 12-word recovery phrase restores bitcoin. Restoring RGB assets also requires the wallet data.
 - Browse offers from each Nostr relay, including older active offers on quieter relays. Inspect maker profiles and manage the relays used for discovery.
-- On Mutinynet, maker profiles show settled swaps over 30 days, distinct counterparties and volume when Mosaik supplies a current signed report. A signed catalog also identifies issuers for individual assets.
+- On Mutinynet, maker profiles show settled swaps over 30 days, distinct counterparties and volume when Mosaik supplies a current signed report. New reports depend on the Mutinynet preview indexer. A signed catalog also identifies issuers for individual assets.
 - Submit market and limit orders, review the amounts and fees, and follow settlement in the activity view.
 - Deposit and withdraw bitcoin and RGB assets. An empty test wallet can request funds from the faucet where available.
-- The P2P daemon is bundled on macOS and Linux. Windows runs the daemon with Docker Desktop.
+- The P2P daemon is bundled on macOS and Linux. On Windows it uses Docker Desktop. The P2P flow on a Windows client still needs a private tester run.
 
 ## [Version 0.6.1] - 2026-10-22
 
