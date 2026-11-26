@@ -6,11 +6,13 @@ import { expect, it, vi } from 'vitest'
 
 import { i18n } from '../../../i18n'
 import { Component as MainnetSettings } from '../../../routes/mainnet-wallet/settings'
+import { memoryWalletStore } from '../../../routes/trade/nostr-p2p/__tests__/memoryWalletStore'
 import { settingsReducer } from '../../../slices/settings/settings.slice'
 import { I18nProvider } from '../../I18nProvider'
 import { LanguagePicker } from '../LanguagePicker'
 
 it('follows the system locale until the user chooses a language and syncs both settings controls', async () => {
+  vi.stubGlobal('localStorage', memoryWalletStore())
   const system = vi
     .spyOn(navigator, 'languages', 'get')
     .mockReturnValue(['de-DE'])
@@ -52,6 +54,6 @@ it('follows the system locale until the user chooses a language and syncs both s
     expect(localStorage.getItem('kaleidoswap_fiat_currency')).toBe('eur')
   } finally {
     system.mockRestore()
-    localStorage.clear()
+    vi.unstubAllGlobals()
   }
 })
