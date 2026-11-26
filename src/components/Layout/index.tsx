@@ -260,7 +260,7 @@ function UserProfile({ onLogout }: { onLogout: () => void }) {
 }
 
 export const Layout = (props: Props) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [lastDeposit, setLastDeposit] = useState<number | undefined>(undefined)
   const [isRetrying, setIsRetrying] = useState(false)
   const [isShuttingDown, setIsShuttingDown] = useState(false)
@@ -316,6 +316,11 @@ export const Layout = (props: Props) => {
       : 'node'
   const links = isMindRoute ? getMindLinks(t) : getNodeLinks(t)
   const activeLink = links.find((link) => matchesSectionLink(link, pathname))
+  const activeTab = useRef<HTMLAnchorElement>(null)
+  useLayoutEffect(() => {
+    activeTab.current?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+  }, [pathname, i18n.resolvedLanguage])
+
   const title = isMindRoute
     ? t('navigation.kaleidoMind')
     : isSettingsRoute
@@ -694,6 +699,7 @@ export const Layout = (props: Props) => {
                         aria-current={activeLink === link ? 'page' : undefined}
                         className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-2 text-sm font-medium [&>svg]:h-4 [&>svg]:w-4 ${activeLink === link ? 'bg-primary/10 text-primary' : 'text-content-secondary hover:bg-surface-overlay hover:text-content-primary'}`}
                         key={link.to}
+                        ref={activeLink === link ? activeTab : undefined}
                         to={link.to}
                       >
                         {link.icon}
