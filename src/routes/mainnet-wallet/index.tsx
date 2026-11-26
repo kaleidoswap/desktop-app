@@ -1,4 +1,3 @@
-import { invoke } from '@tauri-apps/api/core'
 import {
   Button,
   Card,
@@ -16,8 +15,10 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { P2P_BALANCE_PATH } from '../../app/router/paths'
+import { OnchainSetup } from './OnchainSetup'
+import { readWallet, type WalletStatus } from './onchain'
 
-type Status = 'checking' | 'not_bundled' | 'error'
+type Status = WalletStatus | 'checking' | 'not_bundled' | 'error'
 
 /** This route never mounts the trading wallet, which holds funds on a different network. */
 function MainnetPage({ activity = false }: { activity?: boolean }) {
@@ -27,9 +28,18 @@ function MainnetPage({ activity = false }: { activity?: boolean }) {
 
   useEffect(() => {
     let current = true
-    invoke<unknown>('mainnet_wallet_status').then(
+    readWallet().then(
       (result) => {
-        if (current) setStatus(result === 'not_bundled' ? result : 'error')
+        if (!current) return
+        if (
+          result === 'not_bundled' ||
+          result?.state === 'empty' ||
+          (result?.state === 'ready' && result.wallet?.fingerprint)
+        ) {
+          setStatus(result)
+        } else {
+          setStatus('error')
+        }
       },
       () => {
         if (current) setStatus('error')
@@ -71,22 +81,33 @@ function MainnetPage({ activity = false }: { activity?: boolean }) {
           </div>
         </CardHeader>
         <CardContent>
-          <div aria-live="polite" className="max-w-xl">
-            <h3 className="text-body font-semibold">
-              {status === 'checking'
-                ? t('common.loading')
-                : status === 'error'
-                  ? t('mainnetWallet.checkFailed')
-                  : t('mainnetWallet.unavailable')}
-            </h3>
-            {status === 'not_bundled' && (
-              <CardDescription className="mt-1">
-                {activity
-                  ? t('mainnetWallet.historyHint')
-                  : t('mainnetWallet.walletHint')}
-              </CardDescription>
-            )}
-          </div>
+          {typeof status === 'object' ? (
+            activity ? (
+              <CardDescription>{t('onchainSetup.offline')}</CardDescription>
+            ) : (
+              <OnchainSetup
+                onReady={(wallet) => setStatus({ state: 'ready', wallet })}
+                wallet={status.wallet}
+              />
+            )
+          ) : (
+            <div aria-live="polite" className="max-w-xl">
+              <h3 className="text-body font-semibold">
+                {status === 'checking'
+                  ? t('common.loading')
+                  : status === 'error'
+                    ? t('mainnetWallet.checkFailed')
+                    : t('mainnetWallet.unavailable')}
+              </h3>
+              {status === 'not_bundled' && (
+                <CardDescription className="mt-1">
+                  {activity
+                    ? t('mainnetWallet.historyHint')
+                    : t('mainnetWallet.walletHint')}
+                </CardDescription>
+              )}
+            </div>
+          )}
           {status === 'error' && (
             <Button
               className="mt-3"

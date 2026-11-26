@@ -1,0 +1,14 @@
+{
+  "build": {
+    "features": ["macos-passkeys"]
+  },
+  "bundle": {
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "entitlements": "target/passkey-signing/Entitlements.plist",
+      "files": {
+        "embedded.provisionprofile": "target/passkey-signing/embedded.provisionprofile"
+      }
+    }
+  }
+}

@@ -1,4 +1,6 @@
 mod build_config;
+#[path = "macos/passkey_build.rs"]
+mod passkey_build;
 
 use dotenvy::dotenv;
 use serde_json::Value;
@@ -14,6 +16,10 @@ use std::time::Duration;
 // --------------------------------------------------
 fn main() {
     dotenv().ok();
+    if cfg!(feature = "macos-passkeys") && env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos")
+    {
+        passkey_build::compile();
+    }
 
     // Read the ENV that decides whether to build/run rgb-lightning-node
     // On Windows, rgb-lightning-node is not supported, so skip building it

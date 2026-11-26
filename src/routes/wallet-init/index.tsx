@@ -34,10 +34,7 @@ import {
 import { useAppDispatch } from '../../app/store/hooks'
 import { Layout } from '../../components/Layout'
 import { MnemonicDisplay } from '../../components/MnemonicDisplay'
-import {
-  MnemonicVerifyForm,
-  MnemonicVerifyFields,
-} from '../../components/MnemonicVerifyForm'
+import { MnemonicVerifyForm } from '../../components/MnemonicVerifyForm'
 import { NetworkSelector } from '../../components/NetworkSelector'
 import {
   PasswordSetupForm,
@@ -187,12 +184,6 @@ export const Component = () => {
     },
   })
 
-  const mnemonicForm = useForm<MnemonicVerifyFields>({
-    defaultValues: {
-      mnemonic: '',
-    },
-  })
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -202,7 +193,6 @@ export const Component = () => {
       }
       nodeSetupForm.reset()
       passwordForm.reset()
-      mnemonicForm.reset()
       setErrors([])
     }
   }, [])
@@ -244,12 +234,6 @@ export const Component = () => {
         break
       case 'password':
         passwordForm.clearErrors()
-        break
-      case 'mnemonic':
-        // No form to clear for mnemonic display
-        break
-      case 'verify':
-        mnemonicForm.clearErrors()
         break
       case 'unlock':
         // Handle unlock step cleanup
@@ -900,16 +884,8 @@ export const Component = () => {
     )
   }
 
-  const handleMnemonicVerify: SubmitHandler<MnemonicVerifyFields> = async (
-    data
-  ) => {
+  const handleMnemonicVerify = async () => {
     try {
-      if (mnemonic.join(' ') !== data.mnemonic.trim()) {
-        setErrors([t('walletInit.verifyStep.mnemonicMismatch')])
-        return
-      }
-
-      // Clear any previous errors
       setErrors([])
       setIsNodeError(false)
       setNodeErrorMessage('')
@@ -926,7 +902,7 @@ export const Component = () => {
       } catch (error) {
         logger.error('Failed to store encrypted mnemonic:', error)
         toast.error(t('walletInit.passwordStep.failedToStoreRecovery'))
-        return
+        return false
       }
 
       // Move to unlock step
@@ -946,6 +922,7 @@ export const Component = () => {
           ? error.message
           : t('walletInit.verifyStep.unexpectedError')
       toast.error(errorMessage)
+      return false
     }
   }
 
@@ -1230,10 +1207,10 @@ export const Component = () => {
           <CheckCircle />,
           <div className="w-full">
             <MnemonicVerifyForm
-              errors={errors}
-              form={mnemonicForm}
-              onBack={() => handleBackNavigation()}
-              onSubmit={handleMnemonicVerify}
+              onBack={handleBackNavigation}
+              onVerified={handleMnemonicVerify}
+              phrase={mnemonic.join(' ')}
+              wordCount="all"
             />
           </div>
         )

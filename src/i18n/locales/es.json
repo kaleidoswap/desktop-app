@@ -791,6 +791,12 @@
     "goBack": "Volver",
     "goHome": "Ir al Inicio"
   },
+  "mnemonicCheck": {
+    "instruction": "Para cada posición, elige la palabra de la frase de recuperación que anotaste.",
+    "word": "Palabra {{number}}",
+    "mismatch": "Una o varias palabras son incorrectas. Revisa la frase que anotaste y vuelve a intentarlo.",
+    "unavailable": "Esta comprobación requiere tres palabras distintas en la frase. Vuelve a la frase de recuperación."
+  },
   "walletInit": {
     "steps": {
       "terms": "Términos",
@@ -4290,6 +4296,34 @@
     "next": "Siguiente",
     "done": "Empezar a operar",
     "faucet": "Consigue monedas de prueba gratis"
+  },
+  "onchainSetup": {
+    "title": "Monedero en cadena",
+    "choose": "Elige cómo crear tu monedero en la red principal",
+    "createPasskey": "Crear con una clave de acceso",
+    "createPhrase": "Crear con una frase de recuperación",
+    "confirmPasskey": "Vuelve a usar la misma clave de acceso de la aplicación de escritorio para comprobar que puedes recuperar el monedero con ella.",
+    "usePasskey": "Verificar la clave de acceso",
+    "resume": "Continuar la configuración de la clave de acceso",
+    "recoverPasskey": "Recuperar con una clave de acceso",
+    "restore": "Restaurar con una frase de recuperación",
+    "forgetPending": "Descartar la configuración pendiente",
+    "finish": "Guardar monedero",
+    "ready": "Monedero en cadena creado",
+    "fingerprint": "Huella digital del monedero",
+    "offline": "Este monedero está sin conexión. Los pagos en la red principal y el historial de transacciones no están disponibles en esta versión.",
+    "rgbBackup": "La frase de recuperación permite recuperar tus claves. Para restaurar tus activos RGB también necesitas los datos del monedero RGB.",
+    "export": "Mostrar la frase de recuperación con la clave de acceso",
+    "hide": "Ocultar las palabras",
+    "invalid": "Revisa las palabras de la frase de recuperación y su orden.",
+    "exists": "Ya existe otro monedero en cadena.",
+    "cancelled": "Se ha cancelado la solicitud de la clave de acceso. Puedes volver a intentarlo.",
+    "unsupported": "Este proveedor de claves de acceso no admite la función PRF necesaria para derivar las claves del monedero.",
+    "wrongKey": "Esta clave de acceso pertenece a otro monedero.",
+    "legacyKey": "Esta clave de acceso podría ser de una prueba anterior. Elige una clave de la aplicación de escritorio o restaura tu monedero con la frase de recuperación.",
+    "busy": "Completa primero la solicitud de clave de acceso que está abierta.",
+    "unavailable": "Esta versión no permite crear claves de acceso en este dispositivo. Puedes crear o restaurar un monedero con una frase de recuperación.",
+    "failed": "No se ha podido completar la configuración del monedero. Vuelve a intentarlo."
   },
   "mainnetWallet": {
     "assets": "Bitcoin y activos RGB",

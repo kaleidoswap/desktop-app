@@ -791,6 +791,12 @@
     "goBack": "Zurück",
     "goHome": "Zur Startseite"
   },
+  "mnemonicCheck": {
+    "instruction": "Wähle für jede Position das Wort aus deiner notierten Wiederherstellungsphrase.",
+    "word": "Wort {{number}}",
+    "mismatch": "Mindestens ein Wort ist falsch. Prüfe deine notierte Phrase und versuche es erneut.",
+    "unavailable": "Für diese Prüfung muss die Phrase drei verschiedene Wörter enthalten. Kehre zur Wiederherstellungsphrase zurück."
+  },
   "walletInit": {
     "steps": {
       "terms": "Bedingungen",
@@ -4284,6 +4290,34 @@
     "next": "Weiter",
     "done": "Mit dem Handel beginnen",
     "faucet": "Kostenlose Testmünzen holen"
+  },
+  "onchainSetup": {
+    "title": "On-Chain-Wallet",
+    "choose": "Wie möchtest du deine Mainnet-Wallet erstellen?",
+    "createPasskey": "Mit Passkey erstellen",
+    "createPhrase": "Mit Wiederherstellungsphrase erstellen",
+    "confirmPasskey": "Verwende denselben Passkey der Desktop-App erneut, um zu prüfen, ob sich deine Wallet damit wiederherstellen lässt.",
+    "usePasskey": "Passkey überprüfen",
+    "resume": "Passkey-Einrichtung fortsetzen",
+    "recoverPasskey": "Mit Passkey wiederherstellen",
+    "restore": "Mit Wiederherstellungsphrase wiederherstellen",
+    "forgetPending": "Angefangene Einrichtung verwerfen",
+    "finish": "Wallet speichern",
+    "ready": "On-Chain-Wallet erstellt",
+    "fingerprint": "Wallet-Fingerabdruck",
+    "offline": "Diese Wallet ist offline. Mainnet-Zahlungen und der Transaktionsverlauf sind in dieser Version nicht verfügbar.",
+    "rgbBackup": "Mit der Phrase kannst du deine Schlüssel wiederherstellen. Für die Wiederherstellung deiner RGB-Assets brauchst du zusätzlich die Daten der RGB-Wallet.",
+    "export": "Wiederherstellungsphrase mit Passkey anzeigen",
+    "hide": "Wörter ausblenden",
+    "invalid": "Prüfe die Wörter der Wiederherstellungsphrase und ihre Reihenfolge.",
+    "exists": "Es existiert bereits eine andere On-Chain-Wallet.",
+    "cancelled": "Die Passkey-Anfrage wurde abgebrochen. Du kannst es erneut versuchen.",
+    "unsupported": "Dieser Passkey-Anbieter unterstützt die für die Wallet-Schlüsselableitung erforderliche PRF-Funktion nicht.",
+    "wrongKey": "Dieser Passkey gehört zu einer anderen Wallet.",
+    "legacyKey": "Dieser Passkey stammt möglicherweise aus einem früheren Test. Wähle einen Passkey der Desktop-App oder stelle deine Wallet mit der Wiederherstellungsphrase wieder her.",
+    "busy": "Schließe zuerst die offene Passkey-Anfrage ab.",
+    "unavailable": "Mit dieser Version kannst du auf diesem Gerät keinen Passkey erstellen. Du kannst eine Wallet mit einer Wiederherstellungsphrase erstellen oder wiederherstellen.",
+    "failed": "Die Wallet-Einrichtung konnte nicht abgeschlossen werden. Versuche es erneut."
   },
   "mainnetWallet": {
     "assets": "Bitcoin und RGB-Assets",

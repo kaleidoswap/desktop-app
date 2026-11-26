@@ -791,6 +791,12 @@
     "goBack": "Go Back",
     "goHome": "Go Home"
   },
+  "mnemonicCheck": {
+    "instruction": "For each position, choose the word from your written recovery phrase.",
+    "word": "Word {{number}}",
+    "mismatch": "One or more words are incorrect. Check your written phrase and try again.",
+    "unavailable": "This check needs three different words in the phrase. Go back to the recovery phrase."
+  },
   "walletInit": {
     "steps": {
       "terms": "Terms",
@@ -4284,6 +4290,34 @@
     "next": "Next",
     "done": "Start trading",
     "faucet": "Get free test coins"
+  },
+  "onchainSetup": {
+    "title": "On-chain wallet",
+    "choose": "Choose how to create your mainnet wallet",
+    "createPasskey": "Create with a passkey",
+    "createPhrase": "Create with a recovery phrase",
+    "confirmPasskey": "Use the same desktop passkey again to verify that it can recover your wallet.",
+    "usePasskey": "Verify passkey",
+    "resume": "Continue passkey setup",
+    "recoverPasskey": "Recover with a passkey",
+    "restore": "Restore from a recovery phrase",
+    "forgetPending": "Discard pending setup",
+    "finish": "Save wallet",
+    "ready": "On-chain wallet created",
+    "fingerprint": "Wallet fingerprint",
+    "offline": "This wallet is offline. Mainnet payments and transaction history are unavailable in this build.",
+    "rgbBackup": "The phrase recovers your keys. Restoring RGB assets also requires the RGB wallet data.",
+    "export": "Show recovery phrase with passkey",
+    "hide": "Hide words",
+    "invalid": "Check the recovery words and their order.",
+    "exists": "A different on-chain wallet already exists.",
+    "cancelled": "Passkey request cancelled. You can try again.",
+    "unsupported": "This passkey provider does not support wallet derivation (PRF).",
+    "wrongKey": "This passkey belongs to a different wallet.",
+    "legacyKey": "This passkey may be from an earlier test. Choose a Desktop passkey or restore your wallet with its recovery phrase.",
+    "busy": "Finish the passkey request already open.",
+    "unavailable": "Passkey creation is unavailable in this build on this device. You can create or restore a wallet with a recovery phrase.",
+    "failed": "Wallet setup could not be completed. Please try again."
   },
   "mainnetWallet": {
     "assets": "Bitcoin and RGB assets",

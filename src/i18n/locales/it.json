@@ -791,6 +791,12 @@
     "goBack": "Torna Indietro",
     "goHome": "Vai alla Home"
   },
+  "mnemonicCheck": {
+    "instruction": "Per ogni posizione, scegli la parola dalla frase di recupero che hai annotato.",
+    "word": "Parola {{number}}",
+    "mismatch": "Una o più parole sono errate. Controlla la frase che hai annotato e riprova.",
+    "unavailable": "Per questa verifica servono tre parole diverse nella frase. Torna alla frase di recupero."
+  },
   "walletInit": {
     "steps": {
       "terms": "Termini",
@@ -4284,6 +4290,34 @@
     "next": "Avanti",
     "done": "Inizia a fare trading",
     "faucet": "Prendi monete di prova gratis"
+  },
+  "onchainSetup": {
+    "title": "Wallet on-chain",
+    "choose": "Scegli come creare il tuo wallet su mainnet",
+    "createPasskey": "Crea con una passkey",
+    "createPhrase": "Crea con una frase di recupero",
+    "confirmPasskey": "Usa di nuovo la stessa passkey dell’app desktop per verificare che possa recuperare il wallet.",
+    "usePasskey": "Verifica la passkey",
+    "resume": "Continua la configurazione con passkey",
+    "recoverPasskey": "Recupera con una passkey",
+    "restore": "Ripristina da una frase di recupero",
+    "forgetPending": "Annulla la configurazione in sospeso",
+    "finish": "Salva il wallet",
+    "ready": "Wallet on-chain creato",
+    "fingerprint": "Impronta del wallet",
+    "offline": "Il wallet è offline. In questa versione i pagamenti su mainnet e la cronologia delle transazioni non sono disponibili.",
+    "rgbBackup": "La frase di recupero permette di recuperare le tue chiavi. Per ripristinare gli asset RGB servono anche i dati del wallet RGB.",
+    "export": "Mostra la frase di recupero con la passkey",
+    "hide": "Nascondi le parole",
+    "invalid": "Controlla le parole della frase di recupero e il loro ordine.",
+    "exists": "Esiste già un altro wallet on-chain.",
+    "cancelled": "Richiesta della passkey annullata. Puoi riprovare.",
+    "unsupported": "Il gestore di passkey non supporta la funzione PRF necessaria per derivare le chiavi del wallet.",
+    "wrongKey": "Questa passkey appartiene a un altro wallet.",
+    "legacyKey": "Questa passkey potrebbe provenire da un vecchio test. Scegli una passkey della Desktop o ripristina il wallet con la frase di recupero.",
+    "busy": "Completa la richiesta di passkey già aperta.",
+    "unavailable": "Questa versione non consente di creare passkey su questo dispositivo. Puoi creare o ripristinare un wallet con una frase di recupero.",
+    "failed": "Impossibile completare la configurazione del wallet. Riprova."
   },
   "mainnetWallet": {
     "assets": "Bitcoin e asset RGB",
