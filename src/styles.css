@@ -6,6 +6,7 @@
 
 /* Tell Tailwind v4 where to scan for class names. */
 @source './**/*.{ts,tsx}';
+@source '../node_modules/kaleido-ui/dist/web';
 
 /* Class-based dark mode — the app toggles `.dark` / `.light` on <html>
    (see ThemeProvider). Make the `dark:` variant follow the `.dark` class
@@ -238,17 +239,6 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--app-primary) / 0.2);
   }
-}
-
-/* Global press animation — outside @layer so it overrides transition-colors utilities */
-button {
-  transition: all 150ms ease;
-}
-button:not([disabled]):hover {
-  transform: scale(1.02);
-}
-button:not([disabled]):active {
-  transform: scale(0.98);
 }
 
 /* Modal portal target: when no modal is mounted the empty overlay must not

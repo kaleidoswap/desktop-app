@@ -1,5 +1,16 @@
 import { invoke } from '@tauri-apps/api/core'
-import { ArrowRight, Bitcoin, FlaskConical, Layers3 } from 'lucide-react'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  OnchainNetworkIcon,
+  PageHeader,
+  RgbNetworkIcon,
+} from 'kaleido-ui'
+import { ArrowRight, FlaskConical } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -31,44 +42,37 @@ function MainnetPage({ activity = false }: { activity?: boolean }) {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <header>
-        <p className="mb-1 text-xs font-medium tracking-wide text-content-secondary">
-          Bitcoin Mainnet
-        </p>
-        <h1 className="text-3xl font-bold tracking-tight text-content-primary">
-          {activity
+      <PageHeader
+        description="Bitcoin Mainnet"
+        title={
+          activity
             ? t('unified.activity')
-            : t('p2pShell.wallet', { defaultValue: 'Wallet' })}
-        </h1>
-      </header>
-      <section
-        aria-labelledby="mainnet-wallet-title"
-        className="overflow-hidden rounded-2xl border border-divider/20 bg-surface-elevated"
-      >
-        <div className="flex flex-wrap items-center gap-4 border-b border-divider/15 bg-primary/5 px-6 py-6 sm:px-8">
-          <span aria-hidden className="flex shrink-0 items-center">
-            <span className="grid size-11 place-items-center rounded-full bg-status-warning/15 text-status-warning">
-              <Bitcoin size={24} />
+            : t('p2pShell.wallet', { defaultValue: 'Wallet' })
+        }
+        variant="page"
+      />
+      <Card aria-labelledby="mainnet-wallet-title" role="region">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <span aria-hidden className="flex shrink-0 items-center">
+              <span className="grid size-10 place-items-center rounded-full bg-warning/10">
+                <OnchainNetworkIcon className="size-5" />
+              </span>
+              <span className="-ml-2 grid size-10 place-items-center rounded-full bg-card shadow-raised">
+                <RgbNetworkIcon alt="" className="size-5" />
+              </span>
             </span>
-            <span className="-ml-2 grid size-11 place-items-center rounded-full border-2 border-surface-elevated bg-surface-raised text-primary">
-              <Layers3 size={20} />
-            </span>
-          </span>
-          <div>
-            <h2
-              className="text-xl font-bold tracking-tight text-content-primary"
-              id="mainnet-wallet-title"
-            >
-              {t('mainnetWallet.assets')}
-            </h2>
-            <p className="text-sm text-content-secondary">
-              {t('p2pShell.onchain')}
-            </p>
+            <div>
+              <h2 className="text-subhead font-bold" id="mainnet-wallet-title">
+                {t('mainnetWallet.assets')}
+              </h2>
+              <CardDescription>{t('p2pShell.onchain')}</CardDescription>
+            </div>
           </div>
-        </div>
-        <div className="flex flex-col items-start gap-3 p-6 sm:p-8">
+        </CardHeader>
+        <CardContent>
           <div aria-live="polite" className="max-w-xl">
-            <h3 className="font-semibold text-content-primary">
+            <h3 className="text-body font-semibold">
               {status === 'checking'
                 ? t('common.loading')
                 : status === 'error'
@@ -76,46 +80,41 @@ function MainnetPage({ activity = false }: { activity?: boolean }) {
                   : t('mainnetWallet.unavailable')}
             </h3>
             {status === 'not_bundled' && (
-              <p className="mt-1 text-sm text-content-secondary">
+              <CardDescription className="mt-1">
                 {activity
                   ? t('mainnetWallet.historyHint')
                   : t('mainnetWallet.walletHint')}
-              </p>
+              </CardDescription>
             )}
           </div>
           {status === 'error' && (
-            <button
-              className="rounded-lg border border-divider/30 px-4 py-2 text-sm font-medium text-content-primary"
+            <Button
+              className="mt-3"
               onClick={() => {
                 setStatus('checking')
                 setAttempt((previous) => previous + 1)
               }}
+              size="sm"
               type="button"
+              variant="outline"
             >
               {t('mainnetWallet.retry')}
-            </button>
+            </Button>
           )}
-        </div>
-      </section>
-      <Link
-        className="group flex max-w-xl items-center gap-4 rounded-xl border border-divider/20 bg-surface-elevated px-5 py-4 transition-colors hover:border-primary/50"
-        to={P2P_BALANCE_PATH}
-      >
-        <FlaskConical aria-hidden className="shrink-0 text-primary" size={20} />
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold text-content-primary">
-            {t('mainnetWallet.openTest')}
-          </span>
-          <span className="block text-sm text-content-secondary">
+        </CardContent>
+        <CardFooter className="flex-wrap gap-3">
+          <Button asChild variant="surface">
+            <Link aria-describedby="test-wallet-hint" to={P2P_BALANCE_PATH}>
+              <FlaskConical aria-hidden size={18} />
+              {t('mainnetWallet.openTest')}
+              <ArrowRight aria-hidden size={16} />
+            </Link>
+          </Button>
+          <CardDescription id="test-wallet-hint">
             {t('mainnetWallet.testHint')}
-          </span>
-        </span>
-        <ArrowRight
-          aria-hidden
-          className="shrink-0 text-content-secondary group-hover:text-primary"
-          size={18}
-        />
-      </Link>
+          </CardDescription>
+        </CardFooter>
+      </Card>
     </div>
   )
 }

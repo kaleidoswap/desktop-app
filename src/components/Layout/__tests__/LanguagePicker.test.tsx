@@ -22,7 +22,7 @@ it('follows the system locale until the user chooses a language and syncs both s
     render(
       <Provider store={store}>
         <I18nProvider>
-          <header>
+          <header aria-label="Desktop">
             <LanguagePicker />
           </header>
           <main>
@@ -32,12 +32,14 @@ it('follows the system locale until the user chooses a language and syncs both s
       </Provider>
     )
 
-    const header = within(screen.getByRole('banner'))
+    const header = within(screen.getByRole('banner', { name: 'Desktop' }))
     const picker = header.getByRole('combobox', { name: 'Sprache' })
-    expect(picker).toHaveValue('de')
+    expect(picker).toHaveTextContent('Deutsch')
     expect(localStorage.getItem('kaleidoswap_language')).toBeNull()
-    expect(within(picker).getAllByRole('option')).toHaveLength(8)
-    await userEvent.selectOptions(picker, '日本語')
+    await userEvent.click(picker)
+    const languages = within(await screen.findByRole('listbox'))
+    expect(languages.getAllByRole('option')).toHaveLength(8)
+    await userEvent.click(languages.getByRole('option', { name: '日本語' }))
 
     const main = within(screen.getByRole('main'))
     await waitFor(() =>
@@ -45,12 +47,12 @@ it('follows the system locale until the user chooses a language and syncs both s
     )
     expect(
       main.getByRole('combobox', { name: i18n.t('settings.language') })
-    ).toHaveValue('ja')
+    ).toHaveTextContent('日本語')
     expect(localStorage.getItem('kaleidoswap_language')).toBe('ja')
-    await userEvent.selectOptions(
-      main.getByRole('combobox', { name: i18n.t('settings.fiatCurrency') }),
-      'eur'
+    await userEvent.click(
+      main.getByRole('combobox', { name: i18n.t('settings.fiatCurrency') })
     )
+    await userEvent.click(await screen.findByRole('option', { name: 'EUR' }))
     expect(localStorage.getItem('kaleidoswap_fiat_currency')).toBe('eur')
   } finally {
     system.mockRestore()

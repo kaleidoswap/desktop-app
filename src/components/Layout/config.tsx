@@ -1,13 +1,5 @@
 import { TFunction } from 'i18next'
-import {
-  Clock,
-  Droplets,
-  Home,
-  LayoutDashboard,
-  Link as LinkIcon,
-  MessageSquare,
-  Zap,
-} from 'lucide-react'
+import { Icon } from 'kaleido-ui'
 import React from 'react'
 
 import {
@@ -58,13 +50,13 @@ export function matchesSectionLink(link: SectionLink, pathname: string) {
 
 export const getNodeLinks = (t: TFunction): SectionLink[] => [
   {
-    icon: <Home />,
+    icon: <Icon name="grid_view" size="sm" />,
     label: t('navigation.dashboard'),
     otherPaths: [CREATEUTXOS_PATH],
     to: WALLET_DASHBOARD_PATH,
   },
   {
-    icon: <Zap />,
+    icon: <Icon name="swap_horiz" size="sm" />,
     label: t('navigation.trade'),
     otherPaths: [
       TRADE_PATH,
@@ -76,19 +68,19 @@ export const getNodeLinks = (t: TFunction): SectionLink[] => [
     to: TRADE_MARKET_MAKER_PATH,
   },
   {
-    icon: <Clock />,
+    icon: <Icon name="history" size="sm" />,
     label: t('navigation.history'),
     parentPath: WALLET_HISTORY_PATH,
     to: WALLET_HISTORY_DEPOSITS_PATH,
   },
   {
-    icon: <Droplets />,
+    icon: <Icon name="hub" size="sm" />,
     label: t('navigation.channels'),
     otherPaths: [CREATE_NEW_CHANNEL_PATH, ORDER_CHANNEL_PATH],
     to: CHANNELS_PATH,
   },
   {
-    icon: <LinkIcon />,
+    icon: <Icon name="link" size="sm" />,
     label: t('navigation.nwc'),
     to: NWC_PATH,
   },
@@ -96,13 +88,13 @@ export const getNodeLinks = (t: TFunction): SectionLink[] => [
 
 export const getMindLinks = (t: TFunction): SectionLink[] => [
   {
-    icon: <MessageSquare />,
+    icon: <Icon name="chat_bubble" size="sm" />,
     label: t('navigation.chat'),
     otherPaths: [KALEIDO_MIND_CHAT_PATH],
     to: KALEIDO_MIND_PATH,
   },
   {
-    icon: <LayoutDashboard />,
+    icon: <Icon name="psychology" size="sm" />,
     label: t('navigation.brain'),
     otherPaths: [
       KALEIDO_MIND_MODELS_PATH,

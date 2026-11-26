@@ -1,3 +1,4 @@
+import { Button, PageHeader, cardSurface } from 'kaleido-ui'
 import { ArrowLeftRight, Plus, X } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 
@@ -201,32 +202,34 @@ export function Market({
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-content-primary sm:text-3xl">
-          {tr('offers.marketTitle', 'P2P market')}
-        </h1>
-        <div className="flex flex-wrap gap-2">
-          {onSimpleSwap && (
-            <button
-              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-content-secondary hover:bg-surface-raised"
-              onClick={onSimpleSwap}
+      <PageHeader
+        action={
+          <div className="flex flex-wrap gap-2">
+            {onSimpleSwap && (
+              <Button
+                onClick={onSimpleSwap}
+                size="sm"
+                type="button"
+                variant="surface"
+              >
+                <ArrowLeftRight aria-hidden size={15} />
+                {tr('offers.simpleSwap', 'Simple swap')}
+              </Button>
+            )}
+            <Button
+              disabled={!market}
+              onClick={openComposer}
+              size="sm"
               type="button"
             >
-              <ArrowLeftRight aria-hidden size={15} />
-              {tr('offers.simpleSwap', 'Simple swap')}
-            </button>
-          )}
-          <button
-            className="inline-flex items-center gap-2 rounded-lg border border-divider/25 bg-surface-card px-3 py-2 text-sm font-semibold text-content-primary hover:bg-surface-raised disabled:opacity-50"
-            disabled={!market}
-            onClick={openComposer}
-            type="button"
-          >
-            <Plus aria-hidden size={16} />
-            {tr('offers.publish', 'Publish offer')}
-          </button>
-        </div>
-      </header>
+              <Plus aria-hidden size={16} />
+              {tr('offers.publish', 'Publish offer')}
+            </Button>
+          </div>
+        }
+        title={tr('offers.marketTitle', 'P2P market')}
+        variant="page"
+      />
       <PairHeader
         bestAsk={asks[0]?.unit_price}
         bestBid={bids[0]?.unit_price}
@@ -255,7 +258,7 @@ export function Market({
       )}
 
       <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,1fr)]">
-        <section className="min-w-0 rounded-2xl border border-divider/20 bg-surface-card">
+        <section className={cx(cardSurface.secondary, 'min-w-0')}>
           <div className="flex gap-5 border-b border-divider/20 px-5">
             {(['offers', 'mine'] as const).map((key) => (
               <button
@@ -325,7 +328,10 @@ export function Market({
         </section>
         <section
           aria-label={tr('offers.summary', 'Offer summary')}
-          className="min-w-0 scroll-mt-3 rounded-2xl border border-divider/20 bg-surface-card outline-none"
+          className={cx(
+            cardSurface.secondary,
+            'min-w-0 scroll-mt-3 outline-none'
+          )}
           ref={ticketPanel}
           tabIndex={-1}
         >

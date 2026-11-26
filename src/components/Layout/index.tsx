@@ -2,16 +2,17 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import Decimal from 'decimal.js'
 import {
-  Activity,
-  Brain,
-  Download,
-  HardDriveDownload,
-  Loader2,
-  RefreshCw,
-  Server,
-  Upload,
-  User,
-} from 'lucide-react'
+  Button,
+  cn,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  Icon,
+} from 'kaleido-ui'
+import { Activity, Loader2, RefreshCw } from 'lucide-react'
 import React, { useEffect, useLayoutEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -30,7 +31,6 @@ import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import { type BitcoinNetwork, getNetworkDisplayName } from '../../constants'
 import { isBtcWalletTx } from '../../helpers/walletHistoryUtils'
 import { useNodeLifecycleEvents } from '../../hooks/useNodeLifecycleEvents'
-import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import {
@@ -47,7 +47,7 @@ import { useLimitOrderScheduler } from '../../hooks/useLimitOrderScheduler'
 import { useNwcAutostart } from '../../hooks/useNwcAutostart'
 import { useNodeReachabilityMonitor } from '../../hooks/useNodeReachabilityMonitor'
 import { useNodeReconnect } from '../../hooks/useNodeReconnect'
-import { LogoutModal, LogoutButton } from '../LogoutModal'
+import { LogoutModal } from '../LogoutModal'
 import { useNotification } from '../NotificationSystem'
 import { ShutdownAnimation } from '../ShutdownAnimation'
 import { SupportModal } from '../SupportModal'
@@ -74,14 +74,8 @@ interface Props {
   children: React.ReactNode
 }
 
-const profileItemClass =
-  'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium text-content-primary hover:bg-surface-overlay'
-
 function UserProfile({ onLogout }: { onLogout: () => void }) {
   const { t } = useTranslation()
-  const [isOpen, setIsOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
   const navigate = useNavigate()
   const nodeInfo = nodeApi.endpoints.nodeInfo.useQueryState()
   const dispatch = useAppDispatch()
@@ -113,8 +107,8 @@ function UserProfile({ onLogout }: { onLogout: () => void }) {
   const statusDotClass = !hasNode
     ? 'bg-content-tertiary'
     : isNodeReachable
-      ? 'bg-green shadow-lg shadow-green/50 animate-pulse'
-      : 'bg-red shadow-lg shadow-red/50'
+      ? 'bg-status-success'
+      : 'bg-status-danger'
 
   const {
     showBackupModal,
@@ -134,43 +128,94 @@ function UserProfile({ onLogout }: { onLogout: () => void }) {
     },
   })
 
-  useOnClickOutside(menuRef, () => setIsOpen(false))
-
   return (
-    <div
-      className="relative"
-      onKeyDown={(event) => {
-        if (event.key === 'Escape' && isOpen) {
-          setIsOpen(false)
-          triggerRef.current?.focus()
-        }
-      }}
-      ref={menuRef}
-    >
-      <button
-        aria-expanded={isOpen}
-        aria-label={`${nameText} · ${statusLabel}`}
-        className="flex min-h-9 items-center gap-2 rounded-lg p-1 text-left hover:bg-surface-overlay"
-        onClick={() => setIsOpen(!isOpen)}
-        ref={triggerRef}
-        type="button"
-      >
-        <span className="relative grid h-8 w-8 shrink-0 place-items-center rounded-full bg-purple/25 text-content-primary">
-          <User aria-hidden className="h-4 w-4" />
-          <span
-            className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-surface-base ${statusDotClass}`}
-          />
-        </span>
-        <span className="hidden max-w-44 flex-col lg:flex">
-          <span className="truncate text-xs font-medium text-content-primary">
-            {nameText}
-          </span>
-          <span className="truncate text-[0.65rem] text-content-secondary">
-            {statusLabel}
-          </span>
-        </span>
-      </button>
-
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            aria-label={`${nameText} · ${statusLabel}`}
+            className="max-w-full gap-2 px-1.5"
+            size="sm"
+            type="button"
+            variant="quiet"
+          >
+            <span className="relative grid size-7 shrink-0 place-items-center rounded-full bg-secondary/15 text-secondary-content">
+              <Icon name="person" size="md" />
+              <span
+                aria-hidden
+                className={`absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-background ${statusDotClass}`}
+              />
+            </span>
+            <span className="hidden min-w-0 max-w-44 flex-col items-start lg:flex">
+              <span className="max-w-full truncate text-caption font-medium text-foreground">
+                {nameText}
+              </span>
+              <span className="max-w-full truncate text-mini text-muted-foreground">
+                {statusLabel}
+              </span>
+            </span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuLabel>
+            <span className="block break-words">{nameText}</span>
+            <span className="block font-normal text-muted-foreground">
+              {statusLabel}
+            </span>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {!hasNode && (
+            <DropdownMenuItem
+              icon={<Icon name="hub" size="sm" />}
+              onSelect={() => navigate(WALLET_SETUP_PATH)}
+            >
+              {t('userProfile.connectNode')}
+            </DropdownMenuItem>
+          )}
+          {hasNode && !isNodeReachable && (
+            <DropdownMenuItem
+              disabled={isReconnecting}
+              icon={<Icon name="refresh" size="sm" />}
+              onSelect={() => void reconnect()}
+            >
+              {t(
+                isReconnecting
+                  ? 'userProfile.reconnecting'
+                  : 'userProfile.reconnect'
+              )}
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            icon={<Icon name="psychology" size="sm" />}
+            onSelect={() => {
+              if (!mindEnabled) dispatch(setAppMode('both'))
+              navigate(KALEIDO_MIND_PATH)
+            }}
+          >
+            {mindEnabled
+              ? t('launcher.openMind')
+              : t('navigation.activate', { name: t('navigation.kaleidoMind') })}
+          </DropdownMenuItem>
+          {hasNode && (
+            <>
+              <DropdownMenuItem
+                icon={<Icon name="folder_zip" size="sm" />}
+                onSelect={() => setShowBackupModal(true)}
+              >
+                {t('settings.backupWallet')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                destructive
+                icon={<Icon name="lock" size="sm" />}
+                onSelect={onLogout}
+              >
+                {t('logoutModal.logout')}
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <BackupModal
         backupPath={backupPath}
         control={backupControl}
@@ -182,80 +227,7 @@ function UserProfile({ onLogout }: { onLogout: () => void }) {
         setValue={backupControl.setValue}
         showModal={showBackupModal}
       />
-
-      {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-divider/30 bg-surface-elevated p-1 shadow-xl">
-          <div className="mb-1 border-b border-divider/20 px-3 py-2">
-            <div className="break-words text-sm font-semibold">{nameText}</div>
-            <div className="text-xs text-content-secondary">{statusLabel}</div>
-          </div>
-          {!hasNode && (
-            <Link
-              className={profileItemClass}
-              onClick={() => setIsOpen(false)}
-              to={WALLET_SETUP_PATH}
-            >
-              <Server aria-hidden className="h-4 w-4" />
-              {t('userProfile.connectNode')}
-            </Link>
-          )}
-          {hasNode && !isNodeReachable && (
-            <button
-              className={profileItemClass}
-              disabled={isReconnecting}
-              onClick={() => void reconnect()}
-              type="button"
-            >
-              {isReconnecting ? (
-                <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw aria-hidden className="h-4 w-4" />
-              )}
-              {t(
-                isReconnecting
-                  ? 'userProfile.reconnecting'
-                  : 'userProfile.reconnect'
-              )}
-            </button>
-          )}
-          <button
-            className={profileItemClass}
-            onClick={() => {
-              setIsOpen(false)
-              if (!mindEnabled) dispatch(setAppMode('both'))
-              navigate(KALEIDO_MIND_PATH)
-            }}
-            type="button"
-          >
-            <Brain aria-hidden className="h-4 w-4" />
-            {mindEnabled
-              ? t('launcher.openMind')
-              : t('navigation.activate', { name: t('navigation.kaleidoMind') })}
-          </button>
-          {hasNode && (
-            <>
-              <button
-                className={profileItemClass}
-                onClick={() => {
-                  setIsOpen(false)
-                  setShowBackupModal(true)
-                }}
-                type="button"
-              >
-                <HardDriveDownload aria-hidden className="h-4 w-4" />
-                {t('settings.backupWallet')}
-              </button>
-              <LogoutButton
-                onClick={() => {
-                  setIsOpen(false)
-                  onLogout()
-                }}
-              />
-            </>
-          )}
-        </div>
-      )}
-    </div>
+    </>
   )
 }
 
@@ -695,25 +667,37 @@ export const Layout = (props: Props) => {
                 >
                   {(isMindRoute ? mindSectionEnabled : nodeSectionEnabled) ? (
                     links.map((link) => (
-                      <Link
-                        aria-current={activeLink === link ? 'page' : undefined}
-                        className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-2 text-sm font-medium [&>svg]:h-4 [&>svg]:w-4 ${activeLink === link ? 'bg-primary/10 text-primary' : 'text-content-secondary hover:bg-surface-overlay hover:text-content-primary'}`}
+                      <Button
+                        asChild
+                        className={cn(
+                          'shrink-0',
+                          activeLink === link && 'bg-primary/10 text-brand'
+                        )}
                         key={link.to}
-                        ref={activeLink === link ? activeTab : undefined}
-                        to={link.to}
+                        size="sm"
+                        variant={activeLink === link ? 'ghost' : 'quiet'}
                       >
-                        {link.icon}
-                        {link.label}
-                      </Link>
+                        <Link
+                          aria-current={
+                            activeLink === link ? 'page' : undefined
+                          }
+                          ref={activeLink === link ? activeTab : undefined}
+                          to={link.to}
+                        >
+                          {link.icon}
+                          {link.label}
+                        </Link>
+                      </Button>
                     ))
                   ) : (
-                    <button
-                      className={profileItemClass}
+                    <Button
                       onClick={() => {
                         if (isMindRoute) dispatch(setAppMode('both'))
                         else navigate(WALLET_SETUP_PATH)
                       }}
+                      size="sm"
                       type="button"
+                      variant="quiet"
                     >
                       {t('navigation.activate', {
                         name: t(
@@ -722,27 +706,29 @@ export const Layout = (props: Props) => {
                             : 'navigation.node'
                         ),
                       })}
-                    </button>
+                    </Button>
                   )}
                 </nav>
                 {!isMindRoute && nodeSettingsData?.name && (
                   <div className="flex shrink-0 gap-1">
-                    <button
-                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-2 text-sm font-medium text-content-primary hover:bg-surface-overlay"
+                    <Button
                       onClick={() => handleTransactionAction('deposit')}
+                      size="sm"
                       type="button"
+                      variant="surface"
                     >
-                      <Download aria-hidden className="h-4 w-4 shrink-0" />
+                      <Icon name="download" size="sm" />
                       {t('actions.deposit')}
-                    </button>
-                    <button
-                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-2 text-sm font-medium text-content-primary hover:bg-surface-overlay"
+                    </Button>
+                    <Button
                       onClick={() => handleTransactionAction('withdraw')}
+                      size="sm"
                       type="button"
+                      variant="surface"
                     >
-                      <Upload aria-hidden className="h-4 w-4 shrink-0" />
+                      <Icon name="upload" size="sm" />
                       {t('actions.withdraw')}
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>

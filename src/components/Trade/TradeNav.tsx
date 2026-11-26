@@ -1,13 +1,4 @@
-// Shared trade-mode navigation. Gives every trading page (Market Maker, Manual,
-// Nostr P2P, DCA, Limit Orders) one consistent tab strip instead of each page
-// inventing its own header.
-
-import { ArrowLeftRight, Radio, Store, Target, TrendingUp } from 'lucide-react'
-import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { NavLink } from 'react-router-dom'
-import { twJoin } from 'tailwind-merge'
-
 import {
   TRADE_MARKET_MAKER_PATH,
   TRADE_MANUAL_PATH,
@@ -15,83 +6,25 @@ import {
   TRADE_LIMIT_PATH,
   TRADE_NOSTR_P2P_PATH,
 } from '../../app/router/paths'
+import { RouteTabs, type RouteTab } from '../Layout/RouteTabs'
 
-const TABS: {
-  to?: string
-  icon: React.ReactNode
-  labelKey: string
-  fallback: string
-  disabled?: boolean
-}[] = [
+const tabs: RouteTab[] = [
   {
-    fallback: 'Market Maker',
-    icon: <Store className="h-4 w-4" />,
+    icon: 'apps',
     labelKey: 'navigation.marketMaker',
     to: TRADE_MARKET_MAKER_PATH,
   },
   {
-    fallback: 'Manual Swaps',
-    icon: <ArrowLeftRight className="h-4 w-4" />,
+    icon: 'swap_horiz',
     labelKey: 'navigation.manualSwaps',
     to: TRADE_MANUAL_PATH,
   },
-  {
-    fallback: 'DCA',
-    icon: <TrendingUp className="h-4 w-4" />,
-    labelKey: 'navigation.dca',
-    to: TRADE_DCA_PATH,
-  },
-  {
-    fallback: 'Limit Orders',
-    icon: <Target className="h-4 w-4" />,
-    labelKey: 'navigation.limitOrders',
-    to: TRADE_LIMIT_PATH,
-  },
-  {
-    fallback: 'Nostr P2P',
-    icon: <Radio className="h-4 w-4" />,
-    labelKey: 'navigation.nostrP2P',
-    to: TRADE_NOSTR_P2P_PATH,
-  },
+  { icon: 'trending_up', labelKey: 'navigation.dca', to: TRADE_DCA_PATH },
+  { icon: 'tune', labelKey: 'navigation.limitOrders', to: TRADE_LIMIT_PATH },
+  { icon: 'hub', labelKey: 'navigation.nostrP2P', to: TRADE_NOSTR_P2P_PATH },
 ]
 
-export const TradeNav: React.FC = () => {
+export function TradeNav() {
   const { t } = useTranslation()
-
-  return (
-    <div className="mb-4 w-full border-b border-border-default flex overflow-x-auto">
-      {TABS.map((tab) => (
-        <NavLink
-          className={({ isActive }) =>
-            twJoin(
-              'shrink-0 flex items-center gap-2 px-3 py-2.5 text-sm whitespace-nowrap font-medium relative justify-center transition-colors duration-200',
-              isActive
-                ? 'text-primary'
-                : 'text-content-secondary hover:text-white'
-            )
-          }
-          end
-          key={tab.to}
-          to={tab.to!}
-        >
-          {({ isActive }) => (
-            <>
-              <div
-                className={twJoin(
-                  'p-1 rounded-md',
-                  isActive ? 'bg-primary/10 text-primary' : 'bg-transparent'
-                )}
-              >
-                {tab.icon}
-              </div>
-              <span>{t(tab.labelKey, { defaultValue: tab.fallback })}</span>
-              {isActive && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-              )}
-            </>
-          )}
-        </NavLink>
-      ))}
-    </div>
-  )
+  return <RouteTabs label={t('navigation.trade')} tabs={tabs} />
 }

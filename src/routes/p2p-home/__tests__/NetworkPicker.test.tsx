@@ -20,8 +20,8 @@ import { Component as NodeChooser } from '../node'
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (_: string, options: Record<string, string>) =>
-      options.defaultValue.replace(
+    t: (translationKey: string, options: Record<string, string> = {}) =>
+      (options.defaultValue ?? translationKey).replace(
         /{{(\w+)}}/g,
         (_, key: string) => options[key]
       ),
@@ -89,10 +89,14 @@ function renderNode(
 }
 
 async function chooseNetwork(name: string) {
-  fireEvent.click(screen.getByRole('button', { name: 'Network' }))
-  fireEvent.click(
-    await within(screen.getByRole('listbox')).findByRole('option', { name })
+  fireEvent.keyDown(screen.getByRole('combobox', { name: 'Network' }), {
+    key: 'ArrowDown',
+  })
+  const option = await within(await screen.findByRole('listbox')).findByRole(
+    'option',
+    { name }
   )
+  fireEvent.keyDown(option, { key: 'Enter' })
 }
 
 describe('network selection on a Lightning node', () => {
@@ -111,7 +115,7 @@ describe('network selection on a Lightning node', () => {
   it('opens the selected test network and offers the connected account only on its own chain', async () => {
     saveNetwork('SignetCustom')
     const store = renderNode('Signet')
-    expect(screen.getByRole('button', { name: 'Network' })).toHaveTextContent(
+    expect(screen.getByRole('combobox', { name: 'Network' })).toHaveTextContent(
       'Signet · test'
     )
     await chooseNetwork('Mutinynet · test')
@@ -133,7 +137,7 @@ describe('network selection on a Lightning node', () => {
 
   it('shows a node-only chain and can leave it for the mainnet node entry', async () => {
     renderNode('Testnet')
-    expect(screen.getByRole('button', { name: 'Network' })).toHaveTextContent(
+    expect(screen.getByRole('combobox', { name: 'Network' })).toHaveTextContent(
       'Testnet · test'
     )
     await chooseNetwork('Bitcoin Mainnet')
@@ -149,7 +153,7 @@ describe('network selection on a Lightning node', () => {
     expect(
       screen.getByRole('heading', { name: 'Accounts' })
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Network' })).toHaveTextContent(
+    expect(screen.getByRole('combobox', { name: 'Network' })).toHaveTextContent(
       'Signet · test'
     )
     expect(lastWalletContext()).toBe('test')
@@ -161,7 +165,7 @@ describe('network selection on a Lightning node', () => {
   it('labels unlock with the selected account even when its wallet preference differs', async () => {
     saveNetwork('SignetCustom')
     renderNode('Signet', '/wallet-unlock')
-    expect(screen.getByRole('button', { name: 'Network' })).toHaveTextContent(
+    expect(screen.getByRole('combobox', { name: 'Network' })).toHaveTextContent(
       'Signet · test'
     )
     await chooseNetwork('Bitcoin Mainnet')
@@ -173,7 +177,7 @@ describe('network selection on a Lightning node', () => {
   it('uses the network chosen in the setup form and returns to node setup when changing chains', async () => {
     saveNetwork('SignetCustom')
     renderNode('SignetCustom', '/wallet-config', 'Testnet')
-    expect(screen.getByRole('button', { name: 'Network' })).toHaveTextContent(
+    expect(screen.getByRole('combobox', { name: 'Network' })).toHaveTextContent(
       'Testnet · test'
     )
     await chooseNetwork('Signet · test')

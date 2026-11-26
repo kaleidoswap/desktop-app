@@ -129,7 +129,7 @@ export function Picker({
 
   const trigger =
     variant === 'market'
-      ? 'min-h-9 max-w-full rounded-lg text-xl font-semibold tracking-tight text-[#faf7ff] hover:bg-white/10 sm:text-2xl'
+      ? 'min-h-9 max-w-full rounded-lg text-xl font-semibold tracking-tight text-foreground hover:bg-foreground/5 sm:text-2xl'
       : variant === 'pill'
         ? 'min-h-10 rounded-full border border-divider/30 bg-surface-elevated px-3 text-sm'
         : 'min-h-11 w-full rounded-xl border border-divider/30 bg-surface-elevated px-3 text-sm'
@@ -153,7 +153,7 @@ export function Picker({
           {selected?.badge}
         </span>
         <ChevronDown
-          className={`h-4 w-4 flex-none ${variant === 'market' ? 'text-[#ded2ef]' : 'text-content-tertiary'} transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 flex-none ${variant === 'market' ? 'text-muted-foreground' : 'text-content-tertiary'} transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
 

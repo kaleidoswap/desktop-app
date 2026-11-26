@@ -1,4 +1,4 @@
-import { CircleHelp } from 'lucide-react'
+import { IconButton } from 'kaleido-ui'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Outlet, useLocation } from 'react-router-dom'
@@ -59,15 +59,12 @@ function Shell({ mainnet = false }: { mainnet?: boolean }) {
         context={mainnet ? 'mainnet' : 'test'}
         headerActions={
           session?.phase === 'running' && (
-            <button
-              aria-label={t('p2pShell.guide')}
-              className="rounded-md p-2 text-content-secondary hover:bg-surface-overlay"
+            <IconButton
+              icon="help"
+              label={t('p2pShell.guide')}
               onClick={() => openGuide()}
-              title={t('p2pShell.guide')}
               type="button"
-            >
-              <CircleHelp aria-hidden size={17} />
-            </button>
+            />
           )
         }
         section={section}

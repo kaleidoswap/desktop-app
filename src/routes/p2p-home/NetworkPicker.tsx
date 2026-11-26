@@ -1,3 +1,10 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from 'kaleido-ui'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -14,7 +21,6 @@ import {
 } from '../../app/router/paths'
 import { useAppSelector } from '../../app/store/hooks'
 import { type BitcoinNetwork, getNetworkDisplayName } from '../../constants'
-import { Picker } from '../trade/nostr-p2p/market/Picker'
 import { useOptionalP2pSession } from '../trade/nostr-p2p/session'
 import { saveNetwork } from '../trade/nostr-p2p/wallets'
 import { rememberWalletContext, switchNetworkPath } from './navigation'
@@ -89,10 +95,8 @@ export function NetworkPicker({
     ...testOptions,
   ]
   return (
-    <Picker
-      className={`${className} ${mainnet ? '[&>button]:bg-[#254635] [&>button]:text-[#b1f2ca]' : '[&>button]:bg-[#393049] [&>button]:text-[#d5baff]'}`}
-      label={t('p2pSettings.network', { defaultValue: 'Network' })}
-      onChange={(key) => {
+    <Select
+      onValueChange={(key) => {
         if (key === value) return
         if (networks.some((option) => option.key === key)) {
           if (session) session.setNetworkKey(key)
@@ -114,17 +118,35 @@ export function NetworkPicker({
           navigate(P2P_NODE_PATH)
         }
       }}
-      options={options.map((option) => ({
-        ...option,
-        leading: (
-          <span
-            aria-hidden
-            className={`h-2.5 w-2.5 flex-none rounded-full ${option.value === 'mainnet' ? 'bg-status-success' : 'bg-violet-400'}`}
-          />
-        ),
-      }))}
       value={value}
-      variant="pill"
-    />
+    >
+      <SelectTrigger
+        aria-label={t('p2pSettings.network', { defaultValue: 'Network' })}
+        className={`min-h-9 ${className}`}
+        compact
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent
+        align="end"
+        className="max-h-[var(--radix-select-content-available-height)]"
+      >
+        {options.map((option) => (
+          <SelectItem
+            key={option.value}
+            textValue={option.title}
+            value={option.value}
+          >
+            <span className="inline-flex items-center gap-2">
+              <span
+                aria-hidden
+                className={`h-2 w-2 shrink-0 rounded-full ${option.value === 'mainnet' ? 'bg-status-success' : 'bg-secondary-content'}`}
+              />
+              {option.title}
+            </span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
