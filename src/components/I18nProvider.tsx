@@ -15,14 +15,15 @@ export const I18nProvider = ({ children }: I18nProviderProps) => {
   )
 
   useEffect(() => {
-    // Use app-level language setting only
-    const preferredLanguage = settingsLanguage || 'en'
-
-    // Sync i18n language with app settings
-    if (preferredLanguage && i18n.language !== preferredLanguage) {
-      i18n.changeLanguage(preferredLanguage)
+    if (settingsLanguage && i18n.language !== settingsLanguage) {
+      void i18n.changeLanguage(settingsLanguage)
     }
   }, [settingsLanguage, i18n])
+
+  const language = i18n.resolvedLanguage
+  useEffect(() => {
+    if (language) document.documentElement.lang = language
+  }, [language])
 
   return <>{children}</>
 }

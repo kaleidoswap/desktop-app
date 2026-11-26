@@ -49,8 +49,8 @@ i18n
     // List of supported languages
     // Language detection configuration
     detection: {
-      // Cache the language in localStorage
-      caches: ['localStorage'],
+      // The settings slice persists explicit choices. Follow the system until then.
+      caches: [],
 
       // Lookup key in localStorage
       lookupLocalStorage: 'kaleidoswap_language',

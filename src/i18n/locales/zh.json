@@ -4295,7 +4295,7 @@
   "unified": {
     "testNetworks": "测试网络",
     "test": "测试",
-    "market": "P2P 市场",
+    "market": "Nostr P2P 市场",
     "node": "闪电网络节点",
     "activity": "活动",
     "accounts": "账户和 KaleidoMind",

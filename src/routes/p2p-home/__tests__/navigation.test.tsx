@@ -7,13 +7,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   MAINNET_MARKET_PATH,
   MAINNET_NODE_PATH,
+  MAINNET_SETTINGS_PATH,
   MAINNET_WALLET_PATH,
   P2P_BALANCE_PATH,
   P2P_NODE_PATH,
+  P2P_SETTINGS_PATH,
   P2P_TRADE_PATH,
   WALLET_SETUP_PATH,
 } from '../../../app/router/paths'
-import { rememberProfile, startupPath, switchNetworkPath } from '../navigation'
+import {
+  lastWalletContext,
+  rememberProfile,
+  startupPath,
+  switchNetworkPath,
+} from '../navigation'
 import { TestNetworkGate } from '../node'
 import { saveWallet } from '../../trade/nostr-p2p/wallets'
 
@@ -93,6 +100,15 @@ describe('unified wallet entry', () => {
     }
     expect(invoke).not.toHaveBeenCalled()
   })
+  it('keeps the previous wallet network while resuming a node', async () => {
+    expect(lastWalletContext()).toBe('mainnet')
+    localStorage.setItem('kaleidoswap.desktop.last-profile', 'test')
+    rememberProfile('node')
+    expect(lastWalletContext()).toBe('test')
+    expect(await startupPath(false)).toBe(WALLET_SETUP_PATH)
+    rememberProfile('mainnet')
+    expect(lastWalletContext()).toBe('mainnet')
+  })
   it('keeps Mind and account discovery failures on the legacy chooser', async () => {
     expect(await startupPath(true)).toBe(WALLET_SETUP_PATH)
     vi.mocked(invoke).mockRejectedValue(new Error('unavailable'))
@@ -101,6 +117,14 @@ describe('unified wallet entry', () => {
 })
 
 describe('explicit market and Lightning test network navigation', () => {
+  it('keeps the settings section when switching wallet networks', () => {
+    expect(switchNetworkPath(MAINNET_SETTINGS_PATH, false)).toBe(
+      P2P_SETTINGS_PATH
+    )
+    expect(switchNetworkPath(P2P_SETTINGS_PATH, true)).toBe(
+      MAINNET_SETTINGS_PATH
+    )
+  })
   it.each([
     [MAINNET_MARKET_PATH, P2P_TRADE_PATH],
     [MAINNET_NODE_PATH, P2P_NODE_PATH],

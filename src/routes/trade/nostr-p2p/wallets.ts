@@ -7,6 +7,15 @@
 
 const NETWORK_KEY = 'p2p-market.network'
 
+const networkListeners = new Set<() => void>()
+
+export const subscribeSavedNetwork = (listener: () => void) => {
+  networkListeners.add(listener)
+  return () => {
+    networkListeners.delete(listener)
+  }
+}
+
 export const savedNetwork = (): string | null => {
   try {
     return localStorage.getItem(NETWORK_KEY)
@@ -18,6 +27,7 @@ export const savedNetwork = (): string | null => {
 export const saveNetwork = (key: string) => {
   try {
     localStorage.setItem(NETWORK_KEY, key)
+    networkListeners.forEach((listener) => listener())
   } catch {
     // the choice is just not remembered
   }

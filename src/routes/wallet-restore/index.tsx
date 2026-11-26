@@ -1,3 +1,4 @@
+import { defaultNodeNetwork } from '../p2p-home/networks'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import {
@@ -14,7 +15,7 @@ import {
 import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import {
@@ -190,15 +191,20 @@ export const Component = () => {
   const [nodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
   const navigate = useNavigate()
+  const { state } = useLocation()
+  const returnPath = state?.fromLocalSetup
+    ? `${WALLET_SETUP_PATH}?node=local`
+    : WALLET_SETUP_PATH
   const dispatch = useAppDispatch()
 
+  const initialNetwork = defaultNodeNetwork()
   const form = useForm<FormData>({
     defaultValues: {
       backup_path: '',
       name: t('walletRestore.defaultAccountName'),
-      network: 'SignetCustom' as BitcoinNetwork,
+      network: initialNetwork,
       password: '',
-      ...NETWORK_DEFAULTS['SignetCustom'],
+      ...NETWORK_DEFAULTS[initialNetwork],
     },
   })
 
@@ -415,7 +421,10 @@ export const Component = () => {
   const labelCls = 'block text-sm font-medium text-content-secondary'
 
   return (
-    <Layout>
+    <Layout
+      setupBusy={isStartingNode || form.formState.isSubmitting}
+      setupNetwork={network}
+    >
       <div className="flex flex-1 overflow-hidden">
         {/* Left decorative panel */}
         <div className="hidden md:flex flex-col w-64 xl:w-72 shrink-0 bg-surface-base border-r border-border-subtle relative overflow-hidden">
@@ -597,7 +606,7 @@ export const Component = () => {
                   <div className="flex justify-between items-center pt-6">
                     <button
                       className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
-                      onClick={() => navigate(WALLET_SETUP_PATH)}
+                      onClick={() => navigate(returnPath)}
                       type="button"
                     >
                       <ArrowLeft className="w-3.5 h-3.5" />

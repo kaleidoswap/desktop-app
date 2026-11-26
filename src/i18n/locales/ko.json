@@ -4298,7 +4298,7 @@
   "unified": {
     "testNetworks": "테스트 네트워크",
     "test": "테스트",
-    "market": "P2P 시장",
+    "market": "Nostr P2P 시장",
     "node": "라이트닝 노드",
     "activity": "활동",
     "accounts": "계정 및 KaleidoMind",

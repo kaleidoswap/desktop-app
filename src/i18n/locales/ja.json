@@ -4304,7 +4304,7 @@
   "unified": {
     "testNetworks": "テストネットワーク",
     "test": "テスト",
-    "market": "P2P市場",
+    "market": "Nostr P2P市場",
     "node": "Lightningノード",
     "activity": "アクティビティ",
     "accounts": "アカウントとKaleidoMind",

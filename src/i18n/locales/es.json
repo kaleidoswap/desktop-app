@@ -4304,7 +4304,7 @@
   "unified": {
     "testNetworks": "Redes de prueba",
     "test": "prueba",
-    "market": "Mercado P2P",
+    "market": "Mercado P2P en Nostr",
     "node": "Nodo Lightning",
     "activity": "Actividad",
     "accounts": "Cuentas y KaleidoMind",

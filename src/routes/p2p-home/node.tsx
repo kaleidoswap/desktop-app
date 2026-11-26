@@ -2,6 +2,7 @@ import { Cloud, Server } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 import {
+  desktopPathname,
   MAINNET_NODE_PATH,
   P2P_NODE_PATH,
   P2P_TRADE_PATH,
@@ -12,6 +13,11 @@ import {
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import { getNetworkDisplayName } from '../../constants'
 import { setAppMode } from '../../slices/settings/settings.slice'
+import {
+  nodeWalletNetworkKey,
+  useSelectedTestNetwork,
+  useDesktopTestNetworks,
+} from './networks'
 
 const button =
   'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground'
@@ -19,7 +25,7 @@ const secondary =
   'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-divider/30 px-4 py-2 text-sm font-medium text-content-primary hover:bg-surface-overlay/50'
 
 export function TestNetworkGate() {
-  const { pathname } = useLocation()
+  const pathname = desktopPathname(useLocation().pathname)
   const { t } = useTranslation()
   const node = pathname === MAINNET_NODE_PATH
   return (
@@ -52,8 +58,13 @@ export function Component() {
   const dispatch = useAppDispatch()
   const account = useAppSelector((s) => s.nodeSettings.data)
   const reachable = useAppSelector((s) => s.node.reachability === 'reachable')
-  // The account picker handles locked, remote and local nodes through their existing unlock flow.
-  const connected = account.name && account.network !== 'Mainnet' && reachable
+  const networks = useDesktopTestNetworks()
+  const selected = useSelectedTestNetwork(networks)
+  const connected =
+    account.name &&
+    account.network !== 'Mainnet' &&
+    reachable &&
+    (!selected || selected.key === nodeWalletNetworkKey(account.network))
   const activateNode = () => dispatch(setAppMode('both'))
   return (
     <section className="flex max-w-2xl flex-col items-start gap-5">
@@ -77,6 +88,7 @@ export function Component() {
         <Link
           className={secondary}
           onClick={activateNode}
+          state={{ from: P2P_NODE_PATH }}
           to={`${WALLET_SETUP_PATH}?node=local`}
         >
           <Server aria-hidden className="h-4 w-4" />
@@ -85,6 +97,7 @@ export function Component() {
         <Link
           className={secondary}
           onClick={activateNode}
+          state={{ from: P2P_NODE_PATH }}
           to={WALLET_REMOTE_PATH}
         >
           <Cloud aria-hidden className="h-4 w-4" />

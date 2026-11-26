@@ -27,13 +27,13 @@ const TABS: {
   {
     fallback: 'Open Channel',
     icon: <PlusCircle className="h-4 w-4" />,
-    labelKey: 'navigation.openChannel',
+    labelKey: 'channels.openChannel',
     to: CREATE_NEW_CHANNEL_PATH,
   },
   {
     fallback: 'Buy Channel',
     icon: <ShoppingCart className="h-4 w-4" />,
-    labelKey: 'navigation.buyChannel',
+    labelKey: 'channels.buyChannel',
     to: ORDER_CHANNEL_PATH,
   },
 ]

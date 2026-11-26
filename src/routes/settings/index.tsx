@@ -44,7 +44,7 @@ import {
   StatusModal,
 } from '../../components/StatusModal'
 import { useBackup } from '../../hooks/useBackup'
-import { LANGUAGES } from '../../i18n'
+import { LanguagePicker } from '../../components/Layout/LanguagePicker'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { waitForNodeReady } from '../../utils/nodeState'
@@ -52,7 +52,6 @@ import {
   setAppMode,
   setBitcoinUnit,
   setFiatCurrency,
-  setLanguage,
   setNodeConnectionString,
   type AppMode,
   // setTheme, // temporarily unused — light mode disabled
@@ -68,7 +67,6 @@ import { NodeLogsPanel } from './NodeLogsPanel'
 interface FormFields {
   bitcoinUnit: string
   fiatCurrency: string
-  language: string
   nodeConnectionString: string
   lspUrl: string
   rpcConnectionUrl: string
@@ -174,10 +172,10 @@ const ActionCard = ({
 )
 
 export const Component: React.FC = () => {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const { bitcoinUnit, fiatCurrency, nodeConnectionString, language, appMode } =
+  const { bitcoinUnit, fiatCurrency, nodeConnectionString, appMode } =
     useSelector((state: RootState) => state.settings)
 
   const APP_MODE_OPTIONS: {
@@ -250,7 +248,6 @@ export const Component: React.FC = () => {
       defaultMakerUrl: nodeSettings.default_maker_url || '',
       fiatCurrency,
       indexerUrl: nodeSettings.indexer_url || '',
-      language: language || 'en',
       lspUrl:
         nodeSettings.default_lsp_url || nodeSettings.default_maker_url || '',
       makerUrls: Array.isArray(nodeSettings.maker_urls)
@@ -281,7 +278,6 @@ export const Component: React.FC = () => {
       defaultMakerUrl: nodeSettings.default_maker_url || '',
       fiatCurrency,
       indexerUrl: nodeSettings.indexer_url || '',
-      language: language || 'en',
       lspUrl:
         nodeSettings.default_lsp_url || nodeSettings.default_maker_url || '',
       makerUrls: Array.isArray(nodeSettings.maker_urls)
@@ -294,7 +290,7 @@ export const Component: React.FC = () => {
       proxyEndpoint: nodeSettings.proxy_endpoint || '',
       rpcConnectionUrl: nodeSettings.rpc_connection_url || '',
     })
-  }, [bitcoinUnit, language, nodeConnectionString, nodeSettings, reset])
+  }, [bitcoinUnit, fiatCurrency, nodeConnectionString, nodeSettings, reset])
 
   const handleRestartNode = async () => {
     try {
@@ -346,7 +342,6 @@ export const Component: React.FC = () => {
       const updates = async () => {
         dispatch(setBitcoinUnit(data.bitcoinUnit))
         dispatch(setFiatCurrency(data.fiatCurrency as any))
-        dispatch(setLanguage(data.language))
         dispatch(setNodeConnectionString(data.nodeConnectionString))
 
         await invoke('update_account', {
@@ -356,7 +351,7 @@ export const Component: React.FC = () => {
           defaultLspUrl: data.lspUrl,
           defaultMakerUrl: data.defaultMakerUrl,
           indexerUrl: data.indexerUrl,
-          language: data.language || 'en',
+          language: i18n.resolvedLanguage || 'en',
           ldkPeerListeningPort: currentAccount.ldk_peer_listening_port,
           makerUrls: data.makerUrls.join(','),
           name: currentAccount.name,
@@ -374,7 +369,7 @@ export const Component: React.FC = () => {
             default_lsp_url: data.lspUrl,
             default_maker_url: data.defaultMakerUrl,
             indexer_url: data.indexerUrl,
-            language: data.language || 'en',
+            language: i18n.resolvedLanguage || 'en',
             ldk_peer_listening_port: currentAccount.ldk_peer_listening_port,
             maker_urls: data.makerUrls,
             node_url: data.nodeConnectionString,
@@ -461,7 +456,6 @@ export const Component: React.FC = () => {
       defaultMakerUrl: nodeSettings.default_maker_url || '',
       fiatCurrency,
       indexerUrl: nodeSettings.indexer_url || '',
-      language: language || 'en',
       lspUrl:
         nodeSettings.default_lsp_url || nodeSettings.default_maker_url || '',
       makerUrls: Array.isArray(nodeSettings.maker_urls)
@@ -597,13 +591,13 @@ export const Component: React.FC = () => {
       >
         {tabs.map((x) => (
           <button
+            aria-selected={activeTab === x.id}
             className={`inline-flex flex-shrink-0 items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
               activeTab === x.id
                 ? 'bg-surface-high text-white shadow-sm'
                 : 'text-content-secondary hover:bg-surface-overlay hover:text-white'
             }`}
             key={x.id}
-            aria-selected={activeTab === x.id}
             onClick={() => setTab(x.id)}
             role="tab"
             type="button"
@@ -695,36 +689,9 @@ export const Component: React.FC = () => {
                 )}
               />
 
-              <Controller
-                control={control}
-                name="language"
-                render={({ field }) => (
-                  <SettingRow label={t('settings.language')}>
-                    <div className="relative">
-                      <select
-                        {...field}
-                        aria-label={t('settings.language')}
-                        className={selectCls}
-                        onChange={(e) => {
-                          // Applies right away; the language is an app-level
-                          // setting, not part of the account form.
-                          field.onChange(e.target.value)
-                          dispatch(setLanguage(e.target.value))
-                        }}
-                      >
-                        {Object.entries(LANGUAGES).map(
-                          ([code, { name, flag }]) => (
-                            <option key={code} value={code}>
-                              {flag} {name}
-                            </option>
-                          )
-                        )}
-                      </select>
-                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-content-secondary" />
-                    </div>
-                  </SettingRow>
-                )}
-              />
+              <SettingRow label={t('settings.language')}>
+                <LanguagePicker full />
+              </SettingRow>
             </SettingsCard>
 
             <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
