@@ -304,6 +304,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   useEffect(() => {
     if (network === 'on-chain' && assetId !== BTC_ASSET_ID) {
       setAddress(undefined)
+      setNoColorableUtxos(false)
     }
   }, [usePrivacy])
 

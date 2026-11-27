@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { useAppDispatch, useAppSelector } from '../../../../app/store/hooks'
+import { getWalletOverride } from '../../../../api/wallet-override'
 import { useSettings } from '../../../../hooks/useSettings'
 import { useUtxoErrorHandler } from '../../../../hooks/useUtxoErrorHandler'
 import { CreateUTXOModal } from '../../../../components/CreateUTXOModal'
@@ -1293,6 +1294,10 @@ export const WithdrawModalContent: React.FC<{
                     assignment,
                     recipient_id: decodedRgbInvoice.recipient_id,
                     transport_endpoints: decodedRgbInvoice.transport_endpoints,
+                    // p2pd reads encryption and expiry from the original RGB invoice.
+                    ...(getWalletOverride()
+                      ? { invoice: pendingData.address }
+                      : {}),
                     ...(witnessData ? { witness_data: witnessData } : {}),
                   },
                 ],

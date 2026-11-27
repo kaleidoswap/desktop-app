@@ -7,7 +7,11 @@
  * Lightning payments, swaps) answers with an empty list; anything else says it is not available.
  */
 
-import type { RlnClient } from 'kaleido-sdk/rln'
+import type {
+  DecodeRGBInvoiceRequest,
+  DecodeRGBInvoiceResponse,
+  RlnClient,
+} from 'kaleido-sdk/rln'
 
 import { NodeApiWrapper } from '../../../api/node-api-wrapper'
 
@@ -36,6 +40,7 @@ export function createP2pWalletClient(): RlnClient {
       asset_id?: string | null
       assignment?: { type?: string; value?: number } | null
       expiration_timestamp?: number
+      witness?: boolean
     }) => {
       const amount = body.assignment?.value ?? 0
       const now = Math.floor(Date.now() / 1000)
@@ -45,6 +50,7 @@ export function createP2pWalletClient(): RlnClient {
         expiration_timestamp: number
       }>('/api/rgb/invoice', {
         amount,
+        witness: body.witness ?? false,
         ...(body.asset_id ? { asset_id: body.asset_id } : {}),
         ...(body.expiration_timestamp
           ? { duration_secs: Math.max(60, body.expiration_timestamp - now) }
@@ -54,6 +60,9 @@ export function createP2pWalletClient(): RlnClient {
     },
 
     createUtxos: (body: unknown) => post('/api/rln/createutxos', body),
+
+    decodeRgbInvoice: (body: DecodeRGBInvoiceRequest) =>
+      post<DecodeRGBInvoiceResponse>('/api/rgb/decode', body),
 
     getAddress: async () => ({ address: (await marketApi.info()).address }),
 

@@ -118,6 +118,7 @@ const ALLOWED: &[(&str, &str)] = &[
     ("POST", "/api/orders"),
     ("POST", "/api/take"),
     ("POST", "/api/rgb/invoice"),
+    ("POST", "/api/rgb/decode"),
     ("POST", "/api/rgb/send"),
     ("POST", "/api/btc/send"),
     ("POST", "/api/refresh"),

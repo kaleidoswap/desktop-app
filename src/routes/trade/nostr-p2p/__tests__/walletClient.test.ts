@@ -86,10 +86,26 @@ describe('the trading wallet as a node client', () => {
       asset_id: 'rgb:abc',
       assignment: { type: 'Fungible', value: 42 },
       expiration_timestamp: soon,
+      witness: true,
     })
-    expect(calls[0]!.body).toMatchObject({ amount: 42, asset_id: 'rgb:abc' })
+    expect(calls[0]!.body).toMatchObject({
+      amount: 42,
+      asset_id: 'rgb:abc',
+      witness: true,
+    })
     expect((calls[0]!.body as any).duration_secs).toBeGreaterThanOrEqual(590)
     expect(out).toMatchObject({ batch_transfer_idx: 0, recipient_id: 'r' })
+  })
+
+  it('decodes the invoice in the daemon that owns the trading wallet', async () => {
+    const invoice = 'rgb:~/~/~'
+    const decoded = { recipient_id: 'r', recipient_type: 'Witness' }
+    const calls = fake({ '/api/rgb/decode': decoded })
+    const client = createP2pWalletClient()
+    expect(await client.decodeRgbInvoice({ invoice })).toEqual(decoded)
+    expect(calls).toEqual([
+      { body: { invoice }, method: 'POST', path: '/api/rgb/decode' },
+    ])
   })
 
   it('answers Lightning questions with nothing, and says so for anything else', async () => {
