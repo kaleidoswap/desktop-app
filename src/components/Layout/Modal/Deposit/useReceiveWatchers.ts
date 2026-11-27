@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { isBtcWalletTx } from '../../../../helpers/walletHistoryUtils'
 import { nodeApi } from '../../../../slices/nodeApi/nodeApi.slice'
 import { logger } from '../../../../utils/logger'
+import type { WalletRgbAsset } from '../../../../utils/rgbUtils'
 
 const POLL_MS = 8_000
 
@@ -74,17 +75,23 @@ export const useOnchainDepositWatcher = (
 export const useRgbReceiveWatcher = (
   assetId: string | undefined,
   recipientId: string | undefined,
-  enabled: boolean
-): DetectedDeposit | undefined => {
+  enabled: boolean,
+  assets: WalletRgbAsset[]
+): (DetectedDeposit & { asset?: WalletRgbAsset }) | undefined => {
   const [refresh] = nodeApi.useRefreshMutation()
-  const { data, refetch } = nodeApi.useListTransfersQuery(assetId ?? '', {
-    skip: !enabled || !assetId || !recipientId,
+  const { currentData, refetch } = nodeApi.useListTransfersQuery(assetId, {
+    refetchOnMountOrArgChange: true,
+    skip: !enabled || !recipientId,
   })
   const transfer = recipientId
-    ? data?.transfers?.find((t) => t.recipient_id === recipientId)
+    ? currentData?.transfers?.find(
+        (t) =>
+          t.recipient_id === recipientId &&
+          (t.status === 'WaitingConfirmations' || t.status === 'Settled')
+      )
     : undefined
   const isSettled = transfer?.status === 'Settled'
-  const active = enabled && !!assetId && !!recipientId && !isSettled
+  const active = enabled && !!recipientId && !isSettled
 
   useEffect(() => {
     if (!active) return
@@ -104,17 +111,32 @@ export const useRgbReceiveWatcher = (
     }
   }, [active, refresh, refetch])
 
-  if (
-    !enabled ||
-    !transfer ||
-    (transfer.status !== 'WaitingConfirmations' && !isSettled)
-  ) {
-    return undefined
-  }
-  const assigned = transfer.assignments?.find((a) => a.type === 'Fungible')
+  if (!enabled || !transfer) return undefined
+  // rgb-lib may omit the contract from an unfiltered receipt. Only a filtered query
+  // or an explicit contract ID links the transfer to its unit and precision.
+  const receivedId =
+    'asset_id' in transfer && typeof transfer.asset_id === 'string'
+      ? transfer.asset_id
+      : assetId
+  const matches =
+    receivedId && (!assetId || receivedId === assetId)
+      ? assets.filter((a) => a.asset_id === receivedId)
+      : []
+  const asset = matches.length === 1 ? matches[0] : undefined
+  const fungible =
+    transfer.assignments?.filter((a) => a.type === 'Fungible') ?? []
+  const total = fungible.reduce((sum, a) => sum + Number(a.value), 0)
+  const identified =
+    asset &&
+    Number.isInteger(asset.precision) &&
+    asset.precision >= 0 &&
+    asset.precision <= 18
   return {
     amount:
-      assigned && 'value' in assigned ? Number(assigned.value) : undefined,
+      identified && fungible.length > 0 && Number.isSafeInteger(total)
+        ? total
+        : undefined,
+    asset: identified ? asset : undefined,
     confirmed: isSettled,
     txid: transfer.txid ?? undefined,
   }

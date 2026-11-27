@@ -2324,6 +2324,7 @@
         "witnessNote": "Nota: Al recibir un asset RGB en un recibo witness, el remitente necesita agregar algunos sats para crear un nuevo UTXO para ti, donde se asignarán los assets RGB."
       },
       "networkInfo": {
+        "usdtFaucet": "Abrir la factura en el faucet de USDT",
         "using": "Usando la red {{network}}",
         "description": {
           "signet": "Obtén monedas de prueba del faucet de Mutinynet para probar la aplicación.",

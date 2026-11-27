@@ -244,8 +244,10 @@ export const nodeApi = createApi({
       queryFn: queryFn((w, _: void) => w.listTransactions()),
     }),
 
-    listTransfers: builder.query<ListTransfersResponse, string>({
-      queryFn: queryFn((w, assetId: string) => w.listTransfers(assetId)),
+    listTransfers: builder.query<ListTransfersResponse, string | undefined>({
+      queryFn: queryFn((w, assetId: string | undefined) =>
+        w.listTransfers(assetId)
+      ),
     }),
 
     listUnspents: builder.query<ListUnspentsResponse, void>({

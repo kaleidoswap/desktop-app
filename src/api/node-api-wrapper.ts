@@ -1,4 +1,4 @@
-import { AssetFilterIdType } from 'kaleido-sdk/rln'
+import { AssetFilterAnyOrNoneType, AssetFilterIdType } from 'kaleido-sdk/rln'
 import type {
   RlnClient,
   NetworkInfoResponse,
@@ -202,11 +202,13 @@ export class NodeApiWrapper {
   }
 
   async listTransfers(
-    assetId: string
+    assetId?: string
   ): Promise<ApiResult<ListTransfersResponse>> {
     return this.execute(() =>
       this.client.listTransfers({
-        asset_filter: { type: AssetFilterIdType.Id, value: assetId },
+        asset_filter: assetId
+          ? { type: AssetFilterIdType.Id, value: assetId }
+          : { type: AssetFilterAnyOrNoneType.AnyOrNone },
       })
     )
   }

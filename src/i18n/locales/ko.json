@@ -2318,6 +2318,7 @@
         "witnessNote": "참고: witness 방식으로 RGB 자산을 수신할 때, 송신자는 RGB 자산이 할당될 새 UTXO를 생성하기 위해 일부 sats를 추가해야 합니다."
       },
       "networkInfo": {
+        "usdtFaucet": "USDT 수도꼭지에서 인보이스 열기",
         "using": "{{network}} 네트워크 사용 중",
         "description": {
           "signet": "Mutinynet faucet에서 테스트 코인을 받아 애플리케이션을 사용해 보세요.",

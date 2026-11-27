@@ -2324,6 +2324,7 @@
         "witnessNote": "注: Witness方式でRGBアセットを受け取る場合、送信者はRGBアセットが割り当てられる新しいUTXOを作成するために、いくらかのサトシを追加する必要があります。"
       },
       "networkInfo": {
+        "usdtFaucet": "USDT フォーセットでインボイスを開く",
         "using": "{{network}}ネットワークを使用中",
         "description": {
           "signet": "Mutinynet Faucetからテストコインを取得して、アプリケーションをお試しください。",

@@ -2324,6 +2324,7 @@
         "witnessNote": "Remarque : Lors de la réception d'un actif RGB sur un témoin, l'expéditeur doit ajouter quelques sats pour créer un nouvel UTXO pour vous, où les actifs RGB seront alloués."
       },
       "networkInfo": {
+        "usdtFaucet": "Ouvrir la facture dans le faucet USDT",
         "using": "Utilisation du réseau {{network}}",
         "description": {
           "signet": "Obtenez des pièces de test depuis le faucet Mutinynet pour essayer l'application.",

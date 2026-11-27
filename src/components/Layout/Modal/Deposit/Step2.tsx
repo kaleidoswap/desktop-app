@@ -40,7 +40,7 @@ import {
 import { formatAssetAmount } from '../../../../helpers/walletHistoryUtils'
 import { SATS_PER_BTC, toMsat, toSats } from '../../../../helpers/btcUnits'
 import { useUtxoErrorHandler } from '../../../../hooks/useUtxoErrorHandler'
-import { getAllRgbAssets } from '../../../../utils/rgbUtils'
+import { getAllRgbAssets, onchainUsdtId } from '../../../../utils/rgbUtils'
 import {
   nodeApi,
   Network,
@@ -66,6 +66,8 @@ const MSATS_PER_SAT = 1000
 
 export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const isBtc = assetId === BTC_ASSET_ID
+  const p2pWallet = Boolean(getWalletOverride())
+  const defaultPrivacy = !(p2pWallet && !assetId)
 
   // Network toggle only used for RGB assets
   const [network, setNetwork] = useState<'on-chain' | 'lightning'>('on-chain')
@@ -81,7 +83,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const [amount, setAmount] = useState<string>('')
   const [noColorableUtxos, setNoColorableUtxos] = useState<boolean>(false)
   const [maxDepositAmount, setMaxDepositAmount] = useState<number>(0)
-  const [usePrivacy, setUsePrivacy] = useState<boolean>(true)
+  const [usePrivacy, setUsePrivacy] = useState(defaultPrivacy)
   const prevAmountRef = useRef<string>('')
 
   const { showUtxoModal, setShowUtxoModal, utxoModalProps, handleApiError } =
@@ -296,9 +298,9 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
       setAddress(undefined)
       setAmount('')
       setNoColorableUtxos(false)
-      setUsePrivacy(true)
+      setUsePrivacy(defaultPrivacy)
     }
-  }, [network, isBtc])
+  }, [network, isBtc, defaultPrivacy])
 
   // Reset address when switching privacy mode
   useEffect(() => {
@@ -335,9 +337,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const selectedRgbAsset = allRgbAssets.find((a) => a.asset_id === assetId)
   const assetTicker = isBtc ? 'BTC' : (selectedRgbAsset?.ticker ?? '')
 
-  // Add network info query
-  const { data: networkInfoData } = nodeApi.useNodeInfoQuery()
-  const networkInfo = networkInfoData as any
+  const { data: networkInfo } = nodeApi.useNetworkInfoQuery()
 
   // Format amount helper
   const formatAmount = useCallback(
@@ -591,7 +591,8 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const rgbDeposit = useRgbReceiveWatcher(
     assetId,
     recipientId,
-    !isBtc && network === 'on-chain' && !!address
+    !isBtc && network === 'on-chain' && !!address,
+    allRgbAssets
   )
 
   useEffect(() => {
@@ -628,13 +629,13 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         if (!detected) return undefined
         return {
           amountLabel:
-            detected.amount != null && (isBtc || selectedRgbAsset)
+            detected.amount != null && (isBtc || rgbDeposit?.asset)
               ? `${formatAssetAmount(
                   detected.amount,
                   isBtc,
                   bitcoinUnit,
-                  getAssetPrecision(amountAsset, bitcoinUnit, allRgbAssets)
-                )} ${displayTicker}`
+                  rgbDeposit?.asset?.precision ?? 0
+                )} ${isBtc ? btcUnitLabel : rgbDeposit?.asset?.ticker}`
               : undefined,
           confirmed: detected.confirmed,
           txid: detected.txid,
@@ -643,8 +644,15 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
 
   const networkKey = String(networkInfo?.network ?? '').toLowerCase()
   const isMainnet = networkKey === Network.Mainnet
+  const rgbFaucetInvoice =
+    p2pWallet &&
+    network === 'on-chain' &&
+    networkKey === Network.SignetCustom &&
+    (!assetId || assetId === onchainUsdtId('SignetCustom'))
+      ? address
+      : undefined
   const faucetKey =
-    networkKey === Network.Signet || networkKey === Network.SignetCustom
+    networkKey === Network.SignetCustom
       ? 'signet'
       : networkKey === Network.Regtest
         ? 'regtest'
@@ -652,7 +660,11 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const faucetLink =
     faucetKey === 'regtest'
       ? 'https://t.me/rgb_lightning_bot'
-      : 'https://faucet.mutinynet.com/'
+      : networkKey === Network.SignetCustom
+        ? 'https://faucet.mutinynet.com/'
+        : networkKey === Network.Signet
+          ? 'https://signetfaucet.com'
+          : undefined
 
   const waitingLabel = isBtc
     ? t('depositModal.step2.status.waitingAny', 'Waiting for payment')
@@ -1031,7 +1043,21 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                   generateAddress,
                   t('depositModal.step2.actions.generateAddress')
                 )}
-              {isBtc && networkInfo && !isMainnet && (
+              {rgbFaucetInvoice && (
+                <button
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
+                  onClick={() =>
+                    void openUrl(
+                      `https://faucet.mutinynet.kaleidoswap.com/?invoice=${encodeURIComponent(rgbFaucetInvoice)}`
+                    )
+                  }
+                  type="button"
+                >
+                  <Droplet className="w-3.5 h-3.5" />
+                  {t('depositModal.step2.networkInfo.usdtFaucet')}
+                </button>
+              )}
+              {isBtc && faucetLink && (
                 <button
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
                              text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"

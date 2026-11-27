@@ -2315,6 +2315,7 @@
         "witnessNote": "注意：在 witness 接收时接收 RGB 资产时，发送方需要添加一些 sats 来为您创建新的 UTXO，RGB 资产将在其中分配。"
       },
       "networkInfo": {
+        "usdtFaucet": "在 USDT 测试币水龙头中打开收款单",
         "using": "使用 {{network}} 网络",
         "description": {
           "signet": "从 Mutinynet 水龙头获取测试币以试用应用程序。",

@@ -2318,6 +2318,7 @@
         "witnessNote": "Hinweis: Beim Empfangen auf Witness muss der Sender einige Sats beilegen, um ein neues UTXO zu erstellen."
       },
       "networkInfo": {
+        "usdtFaucet": "Rechnung im USDT-Faucet öffnen",
         "using": "Netzwerk: {{network}}",
         "description": {
           "signet": "Hole dir Signet-Coins vom Mutinynet-Faucet, um die App zu testen.",

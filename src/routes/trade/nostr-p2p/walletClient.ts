@@ -105,10 +105,13 @@ export function createP2pWalletClient(): RlnClient {
 
     listTransactions: () => post('/api/rln/listtransactions'),
 
-    listTransfers: (body: {
+    listTransfers: (body?: {
       asset_filter?: { type?: string; value?: string }
     }) =>
-      post('/api/rln/listtransfers', { asset_id: body?.asset_filter?.value }),
+      post(
+        '/api/rln/listtransfers',
+        body?.asset_filter?.value ? { asset_id: body.asset_filter.value } : {}
+      ),
 
     listUnspents: () => post('/api/rln/listunspents'),
 
