@@ -2,6 +2,7 @@
 
 ### Wallet and navigation
 
+- Collapse the desktop sidebar to icons with the arrow next to the logo. The app remembers your preference.
 - New installations open the mainnet wallet. Create an offline RGB wallet with a 12-word recovery phrase, or restore an existing phrase. During backup verification, choose the requested word from three words in your phrase. Sending and receiving mainnet funds are planned for a future release.
 - A macOS 15 or later build provisioned for Desktop passkeys can also create a wallet using a passkey. Its 24-word backup restores the same wallet on supported Desktop platforms.
 - The on-chain wallet, Nostr P2P market, Activity and Lightning node share the same Kaleido-UI menu. Switch networks or choose one of eight interface languages from the header. Accounts, settings and help stay in the same place when you open a node.
@@ -10,6 +11,7 @@
 
 ### P2P trading on test networks
 
+- The Nostr market now opens on the order book. Compare bids and asks alongside market depth, select an order to review its terms, or open Simple swap from the market header. Your own orders appear below the book.
 - Large RGB swap messages can travel across multiple encrypted Nostr messages. Both participants need an updated daemon for these swaps. Verified with a confirmed 1 USDT on-chain swap on Mutinynet.
 - Create a separate trading wallet on Mutinynet or Signet. The 12-word recovery phrase restores bitcoin. Restoring RGB assets also requires the wallet data.
 - Browse offers from each Nostr relay, including older active offers on quieter relays. Inspect maker profiles and manage the relays used for discovery.
