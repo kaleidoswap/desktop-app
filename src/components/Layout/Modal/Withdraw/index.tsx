@@ -656,13 +656,13 @@ export const WithdrawModalContent: React.FC<{
                   // Format the amount as a string for the form field
                   const formattedAmountStr = formatAssetAmountWithPrecision(
                     assignmentAmount,
-                    ticker,
+                    decodedRgb.asset_id,
                     bitcoinUnit,
                     assets.data?.nia
                   )
                   const formattedBalanceStr = formatAssetAmountWithPrecision(
                     rgbBalance,
-                    ticker,
+                    decodedRgb.asset_id,
                     bitcoinUnit,
                     assets.data?.nia
                   )
@@ -823,7 +823,7 @@ export const WithdrawModalContent: React.FC<{
     )
     const ticker =
       assetInfo?.ticker || t('withdrawModal.main.labels.unknownAsset')
-    const precision = getAssetPrecision(ticker, bitcoinUnit, assets.data?.nia)
+    const precision = getAssetPrecision(assetId, bitcoinUnit, assets.data?.nia)
     const minAmount = 1 / Math.pow(10, precision)
     return t('withdrawModal.form.amount.minAssetAmount', {
       amount: minAmount,
@@ -1076,14 +1076,9 @@ export const WithdrawModalContent: React.FC<{
             pendingData.decodedInvoice?.asset_id &&
             !pendingData.decodedInvoice.asset_amount
           ) {
-            const assetInfo = (assets.data?.nia || []).find(
-              (a: any) => a.asset_id === pendingData.decodedInvoice!.asset_id
-            )
-            const ticker =
-              assetInfo?.ticker || t('withdrawModal.main.labels.unknownAsset')
             const rawAssetAmount = parseAssetAmountWithPrecision(
               String(pendingData.amount ?? ''),
-              ticker,
+              pendingData.decodedInvoice.asset_id,
               bitcoinUnit,
               assets.data?.nia
             )
@@ -1222,7 +1217,7 @@ export const WithdrawModalContent: React.FC<{
             assetInfo?.ticker || t('withdrawModal.main.labels.unknownAsset')
           const rawAmount = parseAssetAmountWithPrecision(
             (pendingData.amount || 0).toString(),
-            ticker,
+            pendingData.asset_id,
             bitcoinUnit,
             assets.data?.nia
           )

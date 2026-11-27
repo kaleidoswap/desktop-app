@@ -160,7 +160,13 @@ export const getAssetPrecision = (
     return 8 // Default precision
   }
 
-  // Normalize asset ticker to uppercase for case-insensitive comparison
+  // RGB contract IDs are case-sensitive. Multiple issuers can choose the same ticker.
+  if (asset.startsWith('rgb:')) {
+    return (
+      assets?.find((candidate) => candidate.asset_id === asset)?.precision ?? 8
+    )
+  }
+
   const normalizedAsset = asset.toUpperCase()
 
   // Handle Bitcoin precision based on unit

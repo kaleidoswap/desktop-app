@@ -19,9 +19,14 @@ import { BTC_ASSET_ID } from '../../../../constants'
 import { useAssetIcon } from '../../../../helpers/utils'
 import { nodeApi } from '../../../../slices/nodeApi/nodeApi.slice'
 import { DepositModal, uiSliceSeletors } from '../../../../slices/ui/ui.slice'
-import { getAllRgbAssets } from '../../../../utils/rgbUtils'
+import {
+  getAllRgbAssets,
+  onchainUsdtId,
+  rgbIconTicker,
+} from '../../../../utils/rgbUtils'
+import { useOptionalP2pSession } from '../../../../routes/trade/nostr-p2p/session'
 
-import { isUsdt, orderOtherAssets, type PickerAsset } from './assetOrder'
+import { orderOtherAssets, type PickerAsset } from './assetOrder'
 
 interface Props {
   onNext: (assetId?: string) => void
@@ -58,7 +63,10 @@ const rememberRecent = (assetId: string) => {
 
 const AssetIcon = ({ asset, size }: { asset: Asset; size: string }) => {
   const fallback = asset.asset_id === BTC_ASSET_ID ? btcLogo : rgbLogo
-  const [icon, setIcon] = useAssetIcon(asset.ticker, fallback)
+  const [icon, setIcon] = useAssetIcon(
+    asset.iconTicker ?? asset.ticker,
+    fallback
+  )
   return (
     <img
       alt={asset.ticker}
@@ -130,7 +138,7 @@ const AssetChip = ({
         : 'border-border-subtle bg-surface-overlay/50 hover:border-primary/40 hover:bg-surface-overlay'
     }`}
     onClick={onClick}
-    title={asset.name || asset.ticker}
+    title={[asset.name || asset.ticker, asset.asset_id].join(' · ')}
     type="button"
   >
     {selected && <SelectedMark />}
@@ -142,6 +150,9 @@ const AssetChip = ({
     </span>
     <span className="max-w-full truncate text-xs font-semibold text-white">
       {asset.ticker}
+    </span>
+    <span className="max-w-full truncate font-mono text-xs text-content-tertiary">
+      {asset.asset_id.slice(4, 8)}…{asset.asset_id.slice(-4)}
     </span>
   </button>
 )
@@ -156,8 +167,10 @@ export const Step1 = ({ onNext, onClose }: Props) => {
   const sliderRef = useRef<HTMLDivElement>(null)
 
   const assets = nodeApi.useListAssetsQuery()
+  const nodeNetwork = useAppSelector((s) => s.nodeSettings.data.network)
+  const session = useOptionalP2pSession()
+  const network = session ? session.config?.key : nodeNetwork
 
-  // Every RGB schema (NIA, CFA, UDA, IFA), so collectibles are selectable too.
   const rgbAssets: Asset[] = useMemo(
     () =>
       getAllRgbAssets(assets.data).map((a) => {
@@ -167,11 +180,12 @@ export const Step1 = ({ onNext, onClose }: Props) => {
           hasBalance:
             !!balance &&
             ((balance.future ?? 0) > 0 || (balance.offchain_outbound ?? 0) > 0),
+          iconTicker: rgbIconTicker(a.asset_id, a.ticker, network),
           name: a.name,
           ticker: a.ticker ?? '',
         }
       }),
-    [assets.data]
+    [assets.data, network]
   )
 
   const btc: Asset = {
@@ -180,7 +194,8 @@ export const Step1 = ({ onNext, onClose }: Props) => {
     name: 'Bitcoin',
     ticker: 'BTC',
   }
-  const usdt = rgbAssets.find(isUsdt)
+  const usdtId = onchainUsdtId(network)
+  const usdt = rgbAssets.find((asset) => asset.asset_id === usdtId)
 
   // Slider: everything except the pinned tiles, recent first, then assets the
   // wallet holds, then alphabetical.

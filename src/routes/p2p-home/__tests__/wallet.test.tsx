@@ -31,7 +31,9 @@ it('shows a test faucet only for verified empty funds and preserves the on-chain
     .mockResolvedValueOnce({ ...empty, btc_pending_sat: 25 })
     .mockResolvedValue({
       ...loaded,
-      assets: [{ ...asset, precision: 2, spendable: 800, total: 1250 }],
+      assets: [
+        { ...asset, precision: 2, schema: 'BFA', spendable: 800, total: 1250 },
+      ],
     })
   vi.spyOn(marketApi, 'info').mockResolvedValue(demoInfo())
   render(
@@ -71,6 +73,7 @@ it('shows a test faucet only for verified empty funds and preserves the on-chain
   expect(faucet()).toBeNull()
   fireEvent.click(refresh)
   const row = within(await screen.findByRole('row', { name: /DEMO/ }))
+  expect(row.getByText(/BFA/)).toBeVisible()
   expect(row.getByRole('cell', { name: '12.5' })).toBeVisible()
   expect(row.getByRole('cell', { name: '8' })).toBeVisible()
   expect(row.queryByRole('button', { name: /send/i })).toBeNull()

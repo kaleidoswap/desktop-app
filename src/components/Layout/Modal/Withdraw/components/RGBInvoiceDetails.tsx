@@ -25,7 +25,7 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
   const formattedBalance = assetInfo
     ? formatAssetAmountWithPrecision(
         assetInfo?.balance?.spendable || 0,
-        ticker,
+        decodedRgbInvoice.asset_id ?? '',
         bitcoinUnit,
         assets.data?.nia
       )
@@ -42,7 +42,7 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
   const formattedAmount = assignmentAmount
     ? formatAssetAmountWithPrecision(
         assignmentAmount,
-        ticker,
+        decodedRgbInvoice.asset_id ?? '',
         bitcoinUnit,
         assets.data?.nia
       )

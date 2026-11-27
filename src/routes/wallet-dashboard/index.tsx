@@ -45,11 +45,14 @@ import { CloseChannelModal } from '../../components/CloseChannelModal'
 import { InfoModal } from '../../components/ChannelCard'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
-import { getAllRgbAssets } from '../../utils/rgbUtils'
+import {
+  getAllRgbAssets,
+  rgbIconTicker,
+  type WalletRgbAsset,
+} from '../../utils/rgbUtils'
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice'
 import bitcoinIcon from '../../assets/bitcoin-logo.svg'
 import defaultRgbIcon from '../../assets/rgb-logo.svg'
-import type { AssetNIA as NiaAsset } from 'kaleido-sdk/rln'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 import { logger } from '../../utils/logger'
@@ -109,11 +112,12 @@ export const Component = () => {
   return (
     <NodeWallet
       key={JSON.stringify([account.network, account.name, account.node_url])}
+      network={account.network}
     />
   )
 }
 
-function NodeWallet() {
+function NodeWallet({ network }: { network: string }) {
   const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -131,7 +135,7 @@ function NodeWallet() {
       { offChain?: number; onChain?: number; incoming: number } | null
     >
   >({})
-  const [assetDetails, setAssetDetails] = useState<NiaAsset | null>(null)
+  const [assetDetails, setAssetDetails] = useState<WalletRgbAsset | null>(null)
   const { bitcoinUnit } = useSettings()
   const refreshRequest = useRef<symbol | null>(null)
   const isRefreshing =
@@ -307,8 +311,12 @@ function NodeWallet() {
         row?.offChain == null ? null : display(row.offChain),
         row?.onChain == null ? null : display(row.onChain),
       ],
-      description: asset.name,
-      icon: <AssetIcon ticker={asset.ticker} />,
+      description: [asset.name, asset.schema].filter(Boolean).join(' · '),
+      icon: (
+        <AssetIcon
+          ticker={rgbIconTicker(asset.asset_id, asset.ticker, network)}
+        />
+      ),
       id: asset.asset_id,
       loading: row === undefined,
       onDetails: () => setAssetDetails(asset),
@@ -393,6 +401,7 @@ function NodeWallet() {
       {assetDetails && (
         <AssetDetailsModal
           asset={assetDetails}
+          network={network}
           isOpen
           onClose={() => setAssetDetails(null)}
         />

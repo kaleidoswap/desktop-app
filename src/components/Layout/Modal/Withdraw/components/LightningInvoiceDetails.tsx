@@ -31,7 +31,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
     hasAssetAmount && decodedInvoice.asset_amount
       ? formatAssetAmountWithPrecision(
           decodedInvoice.asset_amount,
-          ticker,
+          decodedInvoice.asset_id ?? '',
           bitcoinUnit,
           assets.data?.nia
         )
@@ -41,7 +41,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
     hasAsset && assetInfo
       ? formatAssetAmountWithPrecision(
           assetInfo.balance.offchain_outbound || 0,
-          ticker,
+          decodedInvoice.asset_id ?? '',
           bitcoinUnit,
           assets.data?.nia
         )

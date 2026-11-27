@@ -61,6 +61,8 @@ export interface Info {
 }
 
 export interface AssetBalance {
+  /** Absent from daemons predating BFA support. */
+  schema?: string
   asset_id: string
   ticker: string
   name: string

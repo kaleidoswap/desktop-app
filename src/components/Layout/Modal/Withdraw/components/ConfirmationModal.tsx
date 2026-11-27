@@ -80,14 +80,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       )
     }
 
-    // For RGB assets, format with precision
-    const assetInfo = assets.data?.nia.find((a: any) => a.asset_id === assetId)
-    const ticker =
-      assetInfo?.ticker || t('withdrawModal.main.labels.unknownAsset')
-
     return formatAssetAmountWithPrecision(
       amount,
-      ticker,
+      assetId,
       bitcoinUnit,
       assets.data?.nia
     )

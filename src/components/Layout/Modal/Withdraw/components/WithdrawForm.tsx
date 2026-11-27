@@ -640,6 +640,11 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                       type="button"
                     >
                       {asset.label}
+                      {asset.value.startsWith('rgb:') && (
+                        <span className="ml-2 font-mono text-xs text-content-tertiary">
+                          {asset.value.slice(0, 10)}…{asset.value.slice(-6)}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -682,15 +687,9 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                   </div>
                   {/* Add max withdrawable info */}
                   {(() => {
-                    const currentAssetInfo = assets.data?.nia.find(
-                      (a: NiaAsset) => a.asset_id === assetId
-                    )
-                    const ticker =
-                      currentAssetInfo?.ticker ||
-                      (assetId === BTC_ASSET_ID ? 'BTC' : 'Unknown')
                     const maxAmount = calculateMaxWithdrawAmount(assetId)
                     const precision = getAssetPrecision(
-                      ticker,
+                      assetId,
                       bitcoinUnit,
                       assets.data?.nia
                     )
@@ -751,15 +750,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                 control={control}
                 name="amount"
                 render={({ field }) => {
-                  // Get asset info for precision
-                  const currentAssetInfo = assets.data?.nia.find(
-                    (a: NiaAsset) => a.asset_id === assetId
-                  )
-                  const ticker =
-                    currentAssetInfo?.ticker ||
-                    (assetId === BTC_ASSET_ID ? 'BTC' : 'Unknown')
                   const precision = getAssetPrecision(
-                    ticker,
+                    assetId,
                     bitcoinUnit,
                     assets.data?.nia
                   )
@@ -938,7 +930,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                           const maxWithdrawableDisplay =
                             calculateMaxWithdrawAmount(assetId)
                           const precision = getAssetPrecision(
-                            ticker,
+                            assetId,
                             bitcoinUnit,
                             assets.data?.nia
                           )

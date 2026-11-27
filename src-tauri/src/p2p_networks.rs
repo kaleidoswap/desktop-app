@@ -34,15 +34,13 @@ struct Network {
     fee_address: &'static str,
     fee_bps: u64,
     min_fee_sat: u64,
-    /// The assets KaleidoSwap lists on this network: (asset id, ticker, name). The daemon marks
-    /// their offers as listed, and offers that borrow one of these tickers as imitations.
-    listing: &'static [(&'static str, &'static str, &'static str)],
-    /// A curator (npub) whose listing on Nostr the daemon reads on top of `listing`. Unlike the
-    /// built-in list it reaches a daemon in Docker too, and changes without an app release.
+    /// A curator (npub) whose listing on Nostr supplements the built-in contract IDs.
     listing_curator: Option<&'static str>,
     /// Where to get free coins on a test network, for a wallet that has none yet.
     faucet_url: Option<&'static str>,
 }
+
+const RGB_PROXY_V1: &str = "https://proxy-v1.kaleidoswap.com/json-rpc";
 
 const NETWORKS: &[Network] = &[
     Network {
@@ -57,22 +55,10 @@ const NETWORKS: &[Network] = &[
             "wss://offchain.pub",
         ],
         indexer_url: "https://esplora.signet.kaleidoswap.com",
-        proxy_url: "https://proxy.iriswallet.com/0.2/json-rpc",
+        proxy_url: RGB_PROXY_V1,
         fee_address: "tb1qksue05dv7z57mezp3j74cr64lrah57vufhjktw",
         fee_bps: 100,
         min_fee_sat: 1_000,
-        listing: &[
-            (
-                "rgb:muAGMF3g-_jZC~RV-vn6bSzV-yHQhq_T-FAoMKhG-I3~EVcw",
-                "TESTUSD",
-                "Mosaik Demo Dollar",
-            ),
-            (
-                "rgb:9giqbeZi-Cs6oZhu-V9SoNP~-c90osSp-1Ebv0G5-Mv~4CY0",
-                "TESTXAU",
-                "Mosaik Demo Gold",
-            ),
-        ],
         listing_curator: None,
         faucet_url: Some("https://faucet.mutinynet.com"),
     },
@@ -88,11 +74,10 @@ const NETWORKS: &[Network] = &[
             "wss://offchain.pub",
         ],
         indexer_url: "https://esplora.signet-next.kaleidoswap.com",
-        proxy_url: "https://proxy.iriswallet.com/0.2/json-rpc",
+        proxy_url: RGB_PROXY_V1,
         fee_address: "tb1qksue05dv7z57mezp3j74cr64lrah57vufhjktw",
         fee_bps: 100,
         min_fee_sat: 1_000,
-        listing: &[],
         listing_curator: None,
         faucet_url: Some("https://signetfaucet.com"),
     },
@@ -108,7 +93,6 @@ const NETWORKS: &[Network] = &[
         fee_address: "bcrt1qw508d6qejxtdg4y5r3zarvary0c5xw7kygt080",
         fee_bps: 100,
         min_fee_sat: 1_000,
-        listing: &[],
         listing_curator: None,
         faucet_url: None,
     },
@@ -235,29 +219,21 @@ pub fn check_relays(list: &[String], local: bool) -> Result<Vec<String>, String>
     Ok(out)
 }
 
-#[derive(Serialize)]
-struct ListedAsset {
-    asset_id: &'static str,
-    ticker: &'static str,
-    name: &'static str,
+#[derive(Serialize, Deserialize)]
+struct ListedAsset<'a> {
+    asset_id: &'a str,
+    ticker: &'a str,
+    name: &'a str,
 }
 
-/// The network's listing in the daemon's `--verified-assets` format, or `None` when it lists nothing.
+/// The desktop wallet and both market launchers share the same per-network contract IDs.
+/// Only configured market networks can pass a listing to `--verified-assets`.
 pub fn listing_json(key: &str) -> Option<String> {
     let n = find(key).ok()?;
-    if n.listing.is_empty() {
-        return None;
-    }
-    let list: Vec<ListedAsset> = n
-        .listing
-        .iter()
-        .map(|&(asset_id, ticker, name)| ListedAsset {
-            asset_id,
-            ticker,
-            name,
-        })
-        .collect();
-    serde_json::to_string_pretty(&list).ok()
+    let listings: std::collections::HashMap<&str, Vec<ListedAsset<'_>>> =
+        serde_json::from_str(include_str!("../../src/constants/rgb-asset-listings.json"))
+            .expect("the bundled RGB asset listings must be valid");
+    serde_json::to_string_pretty(listings.get(n.key)?).ok()
 }
 
 /// The relays of a network: the app's defaults, and the user's own list if there is one.
@@ -402,21 +378,29 @@ mod tests {
         assert_eq!(signet.network, "signet");
         assert_eq!(mutiny.network, "signetcustom");
         assert_ne!(signet.indexer_url, mutiny.indexer_url);
+        assert_eq!(find("Signet").unwrap().proxy_url, RGB_PROXY_V1);
+        assert_eq!(find("SignetCustom").unwrap().proxy_url, RGB_PROXY_V1);
         assert!(list()
             .iter()
             .any(|n| n.key == "Signet" && n.label == "Signet"));
     }
 
     #[test]
-    fn mutinynet_lists_the_demo_assets_and_signet_nothing_yet() {
+    fn each_test_chain_lists_its_own_onchain_usdt_contract() {
         let json = listing_json("SignetCustom").unwrap();
         let list: Vec<serde_json::Value> = serde_json::from_str(&json).unwrap();
         let tickers: Vec<&str> = list.iter().map(|a| a["ticker"].as_str().unwrap()).collect();
-        assert_eq!(tickers, vec!["TESTUSD", "TESTXAU"]);
-        assert!(list
-            .iter()
-            .all(|a| a["asset_id"].as_str().unwrap().starts_with("rgb:")));
-        assert_eq!(listing_json("Signet"), None);
+        assert_eq!(tickers, vec!["TESTUSD", "TESTXAU", "USDT"]);
+        let mutiny_usdt = "rgb:2FB8lVZA-dnFf4ci-wdU9xin-Rjm72L1-LSOyAq3-KAICMoI";
+        let signet_usdt = "rgb:uVMNCuVU-U00Y_wv-6~7ZbW7-tEuUMcE-pB0wDzC-nt7Qsdc";
+        assert_eq!(list[2]["asset_id"], mutiny_usdt);
+        let signet: Vec<serde_json::Value> =
+            serde_json::from_str(&listing_json("Signet").unwrap()).unwrap();
+        assert_eq!(signet.len(), 1);
+        assert_eq!(signet[0]["ticker"], "USDT");
+        assert_eq!(signet[0]["asset_id"], signet_usdt);
+        assert_eq!(listing_json("Mainnet"), None);
+        assert_eq!(listing_json("LocalRegtest"), None);
         assert_eq!(listing_json("Moon"), None);
     }
 

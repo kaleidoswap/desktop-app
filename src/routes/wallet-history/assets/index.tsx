@@ -6,7 +6,7 @@ import {
   LayoutGrid,
   Calendar,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -25,7 +25,7 @@ import {
   Transfer,
   TransferKind,
 } from '../../../slices/nodeApi/nodeApi.slice'
-import { getAssignmentAmount } from '../../../utils/rgbUtils'
+import { getAllRgbAssets, getAssignmentAmount } from '../../../utils/rgbUtils'
 import { logger } from '../../../utils/logger'
 
 // Cap simultaneous listTransfers calls: the RGB node serializes these, so an
@@ -59,6 +59,10 @@ export const Component = () => {
   const urlAssetId = searchParams.get('assetId')
 
   const [assets, assetsResponse] = nodeApi.endpoints.listAssets.useLazyQuery()
+  const rgbAssets = useMemo(
+    () => getAllRgbAssets(assetsResponse.data),
+    [assetsResponse.data]
+  )
   const [getTransfers, transfersResponse] =
     nodeApi.endpoints.listTransfers.useLazyQuery()
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(
@@ -86,15 +90,15 @@ export const Component = () => {
   }, [assets])
 
   useEffect(() => {
-    if (urlAssetId && (assetsResponse?.data?.nia || []).length) {
-      const assetExists = (assetsResponse?.data?.nia || []).some(
+    if (urlAssetId && rgbAssets.length) {
+      const assetExists = rgbAssets.some(
         (asset: any) => asset.asset_id === urlAssetId
       )
       if (assetExists) {
         setSelectedAssetId(urlAssetId)
       }
     }
-  }, [assetsResponse.data, urlAssetId])
+  }, [rgbAssets, urlAssetId])
 
   useEffect(() => {
     const fetchTransfers = async () => {
@@ -104,7 +108,6 @@ export const Component = () => {
           setAllTransfers([])
           await getTransfers(selectedAssetId)
         } else {
-          const rgbAssets = assetsResponse.data?.nia || []
           if (rgbAssets.length > 0) {
             const results = await mapWithConcurrency(
               rgbAssets,
@@ -135,7 +138,7 @@ export const Component = () => {
     }
 
     fetchTransfers()
-  }, [selectedAssetId, getTransfers, assetsResponse.data])
+  }, [selectedAssetId, getTransfers, rgbAssets])
 
   const refreshData = async () => {
     setIsRefreshing(true)
@@ -144,10 +147,11 @@ export const Component = () => {
       if (selectedAssetId) {
         await getTransfers(selectedAssetId)
       } else {
-        const nia =
-          (refreshedAssets as any)?.data?.nia || assetsResponse.data?.nia || []
+        const refreshed = getAllRgbAssets(
+          refreshedAssets.data ?? assetsResponse.data
+        )
         const results = await mapWithConcurrency(
-          nia,
+          refreshed,
           TRANSFER_FETCH_CONCURRENCY,
           (asset: any) => getTransfers(asset.asset_id)
         )
@@ -158,7 +162,7 @@ export const Component = () => {
               count: failed,
               defaultValue:
                 'Could not load transfers for {{count}} of {{total}} assets',
-              total: nia.length,
+              total: refreshed.length,
             })
           )
         }
@@ -291,9 +295,7 @@ export const Component = () => {
     }) || []
 
   const getSelectedAsset = () => {
-    return (assetsResponse.data?.nia || []).find(
-      (asset: any) => asset.asset_id === selectedAssetId
-    )
+    return rgbAssets.find((asset: any) => asset.asset_id === selectedAssetId)
   }
 
   const formatAmount = (amount: number) => {
@@ -312,8 +314,6 @@ export const Component = () => {
   const uniqueStatuses = Array.from(
     new Set<string>(activeTransfers.map((t: any) => t.status))
   )
-
-  const rgbAssets = assetsResponse.data?.nia || []
 
   return (
     <Card className="bg-surface-overlay/50 border border-border-default/50">

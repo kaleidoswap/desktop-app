@@ -1,0 +1,33 @@
+{
+  "Mainnet": [
+    {
+      "asset_id": "rgb:A6Nr_ndv-Cx_t3_i-YfPXoL6-pT8ibp3-CR6LH5q-fQvTsp8",
+      "ticker": "USDT",
+      "name": "Utexo bridged USDT"
+    }
+  ],
+  "Signet": [
+    {
+      "asset_id": "rgb:uVMNCuVU-U00Y_wv-6~7ZbW7-tEuUMcE-pB0wDzC-nt7Qsdc",
+      "ticker": "USDT",
+      "name": "Utexo Signet USDT"
+    }
+  ],
+  "SignetCustom": [
+    {
+      "asset_id": "rgb:muAGMF3g-_jZC~RV-vn6bSzV-yHQhq_T-FAoMKhG-I3~EVcw",
+      "ticker": "TESTUSD",
+      "name": "Mosaik Demo Dollar"
+    },
+    {
+      "asset_id": "rgb:9giqbeZi-Cs6oZhu-V9SoNP~-c90osSp-1Ebv0G5-Mv~4CY0",
+      "ticker": "TESTXAU",
+      "name": "Mosaik Demo Gold"
+    },
+    {
+      "asset_id": "rgb:2FB8lVZA-dnFf4ci-wdU9xin-Rjm72L1-LSOyAq3-KAICMoI",
+      "ticker": "USDT",
+      "name": "Mutinynet faucet USDT"
+    }
+  ]
+}

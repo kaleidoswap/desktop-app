@@ -69,7 +69,7 @@ export const Component = () => {
             a.total == null ? null : fmtUnits(a.total, a.precision),
             a.spendable == null ? null : fmtUnits(a.spendable, a.precision),
           ],
-          description: [a.ticker && a.name, short(a.asset_id, 6)]
+          description: [a.ticker && a.name, a.schema, short(a.asset_id, 6)]
             .filter(Boolean)
             .join(' · '),
           id: a.asset_id,

@@ -330,13 +330,10 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const [recipientId, setRecipientId] = useState<string>()
 
   const { data: assetList } = nodeApi.endpoints.listAssets.useQuery()
-  // Every RGB schema (NIA, CFA, UDA, IFA), not only NIA, so tickers and
-  // precision resolve for collectibles and inflatable assets too.
+  const amountAsset = assetId ?? ''
   const allRgbAssets = useMemo(() => getAllRgbAssets(assetList), [assetList])
-  const assetTicker =
-    assetId === BTC_ASSET_ID
-      ? 'BTC'
-      : (allRgbAssets.find((a) => a.asset_id === assetId)?.ticker ?? '')
+  const selectedRgbAsset = allRgbAssets.find((a) => a.asset_id === assetId)
+  const assetTicker = isBtc ? 'BTC' : (selectedRgbAsset?.ticker ?? '')
 
   // Add network info query
   const { data: networkInfoData } = nodeApi.useNodeInfoQuery()
@@ -388,8 +385,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
       value = cleanValue
     }
 
-    const asset = isBtc ? 'BTC' : assetTicker
-    const precision = getAssetPrecision(asset, bitcoinUnit, allRgbAssets)
+    const precision = getAssetPrecision(amountAsset, bitcoinUnit, allRgbAssets)
 
     const decimalParts = value.split('.')
     if (decimalParts.length === 2 && decimalParts[1].length > precision) {
@@ -400,7 +396,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
     if (!isBtc && network === 'lightning' && maxDepositAmount > 0) {
       const numValue = parseFloat(value)
       if (!isNaN(numValue) && numValue > 0) {
-        const baseUnits = parseAmount(value, asset)
+        const baseUnits = parseAmount(value, amountAsset)
         const maxBaseUnits = maxDepositAmount
 
         if (baseUnits > maxBaseUnits) {
@@ -422,8 +418,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   // Handle setting max amount
   const handleSetMaxAmount = () => {
     if (maxDepositAmount > 0) {
-      const asset = isBtc ? 'BTC' : assetTicker
-      const formattedMax = formatAmount(maxDepositAmount, asset)
+      const formattedMax = formatAmount(maxDepositAmount, amountAsset)
       setAmount(formattedMax)
     }
   }
@@ -437,8 +432,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         const numericAmount = parseFloat(cleanAmount)
 
         if (!isNaN(numericAmount) && numericAmount > 0) {
-          const asset = isBtc ? 'BTC' : assetTicker
-          const rawAmount = parseAmount(cleanAmount, asset)
+          const rawAmount = parseAmount(cleanAmount, amountAsset)
           assignment = {
             type: 'Fungible',
             value: rawAmount,
@@ -515,7 +509,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                   amt_msat: toMsat(numericAmount, bitcoinUnit),
                 }
               : {
-                  asset_amount: parseAmount(cleanAmount, assetTicker),
+                  asset_amount: parseAmount(cleanAmount, amountAsset),
                   asset_id: assetId,
                 }
           )
@@ -634,12 +628,12 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         if (!detected) return undefined
         return {
           amountLabel:
-            detected.amount != null
+            detected.amount != null && (isBtc || selectedRgbAsset)
               ? `${formatAssetAmount(
                   detected.amount,
                   isBtc,
                   bitcoinUnit,
-                  getAssetPrecision(assetTicker, bitcoinUnit, allRgbAssets)
+                  getAssetPrecision(amountAsset, bitcoinUnit, allRgbAssets)
                 )} ${displayTicker}`
               : undefined,
           confirmed: detected.confirmed,
@@ -921,8 +915,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
           {!isBtc && (
             <>
               {network === 'on-chain' &&
-                assetId &&
-                assetId !== BTC_ASSET_ID &&
+                selectedRgbAsset &&
                 amountInput({
                   label: t('depositModal.step2.amount.optionalLabel'),
                   placeholder: t(
@@ -947,17 +940,17 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                   })}
                   {maxDepositAmount > 0 && (
                     <p className="-mt-2 text-xs text-content-tertiary">
-                      Max: {formatAmount(maxDepositAmount, assetTicker)}{' '}
+                      Max: {formatAmount(maxDepositAmount, amountAsset)}{' '}
                       {assetTicker}
                     </p>
                   )}
                   {maxDepositAmount > 0 &&
                     enteredAmount &&
-                    parseAmount(enteredAmount, assetTicker) >
+                    parseAmount(enteredAmount, amountAsset) >
                       maxDepositAmount && (
                       <p className="p-2 text-xs text-red-400 bg-red-500/10 rounded-lg border border-red-500/20">
                         {t('depositModal.step2.amount.exceeds', {
-                          amount: formatAmount(maxDepositAmount, assetTicker),
+                          amount: formatAmount(maxDepositAmount, amountAsset),
                           asset: getDisplayAsset(assetTicker, bitcoinUnit),
                         })}
                       </p>

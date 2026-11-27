@@ -3,21 +3,26 @@ import React from 'react'
 
 import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import { useAssetIcon } from '../../helpers/utils'
-import { NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
+import { rgbIconTicker, type WalletRgbAsset } from '../../utils/rgbUtils'
 import { Modal } from '../ui'
 
 interface AssetDetailsModalProps {
-  asset: NiaAsset
+  asset: WalletRgbAsset
+  network: string
   isOpen: boolean
   onClose: () => void
 }
 
 export const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
   asset,
+  network,
   isOpen,
   onClose,
 }) => {
-  const [imgSrc, setImgSrc] = useAssetIcon(asset.ticker, defaultRgbIcon)
+  const [imgSrc, setImgSrc] = useAssetIcon(
+    rgbIconTicker(asset.asset_id, asset.ticker, network),
+    defaultRgbIcon
+  )
 
   const formatAmount = (amount: number) => {
     const formattedAmount = amount / Math.pow(10, asset.precision)
@@ -42,7 +47,9 @@ export const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
           />
           <div>
             <h2 className="text-2xl font-bold text-white">{asset.ticker}</h2>
-            <p className="text-content-secondary">{asset.name}</p>
+            <p className="text-content-secondary">
+              {asset.name} · {asset.schema}
+            </p>
           </div>
         </div>
 
@@ -61,10 +68,14 @@ export const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
             <p className="text-white">{asset.precision}</p>
           </div>
 
-          <div className="bg-surface-elevated/50 p-4 rounded-lg">
-            <p className="text-content-secondary text-sm mb-1">Total Supply</p>
-            <p className="text-white">{formatAmount(asset.issued_supply)}</p>
-          </div>
+          {asset.issued_supply != null && (
+            <div className="bg-surface-elevated/50 p-4 rounded-lg">
+              <p className="text-content-secondary text-sm mb-1">
+                Total Supply
+              </p>
+              <p className="text-white">{formatAmount(asset.issued_supply)}</p>
+            </div>
+          )}
         </div>
 
         <h3 className="text-lg font-semibold text-white mb-4">Balances</h3>

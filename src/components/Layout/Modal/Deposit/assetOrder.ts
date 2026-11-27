@@ -3,10 +3,8 @@ export interface PickerAsset {
   ticker: string
   name?: string
   hasBalance: boolean
+  iconTicker?: string
 }
-
-export const isUsdt = (a: { ticker?: string | null; name?: string | null }) =>
-  a.ticker?.toUpperCase() === 'USDT' || /tether usd/i.test(a.name ?? '')
 
 /**
  * Order of the "other assets" slider: recently deposited first (most recent
