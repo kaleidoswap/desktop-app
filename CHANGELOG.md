@@ -2,7 +2,8 @@
 
 ### Wallet and navigation
 
-- New installations open the mainnet wallet preview. Sending and receiving mainnet funds require a future native wallet integration.
+- New installations open the mainnet wallet. Create an offline RGB wallet with a 12-word recovery phrase, or restore an existing phrase. During backup verification, choose the requested word from three words in your phrase. Sending and receiving mainnet funds are planned for a future release.
+- A macOS 15 or later build provisioned for Desktop passkeys can also create a wallet using a passkey. Its 24-word backup restores the same wallet on supported Desktop platforms.
 - The on-chain wallet, Nostr P2P market, Activity and Lightning node share the same Kaleido-UI menu. Switch networks or choose one of eight interface languages from the header. Accounts, settings and help stay in the same place when you open a node.
 - KaleidoSwap Beta uses its own profiles, credentials and node data alongside the stable app. Create a disposable test wallet in the beta.
 - Connect to a remote RGB Lightning node or run a local node on a supported test network. The bundled node and Docker image use RLN 0.10.3.

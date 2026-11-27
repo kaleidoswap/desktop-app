@@ -53,7 +53,7 @@ jobs:
             ' CHANGELOG.md > "$notes"
             test -s "$notes"
             printf '\nWindows installers are unsigned. [Windows verification](https://github.com/%s/blob/%s/docs/WINDOWS-BETA-VERIFICATION.md)\n\nBuild commit `%s`.\n' "$GITHUB_REPOSITORY" "$GITHUB_SHA" "$GITHUB_SHA" >> "$notes"
-            gh release create "$GITHUB_REF_NAME" --verify-tag --draft --prerelease --latest=false \
+            gh release create "$GITHUB_REF_NAME" --verify-tag --target "$GITHUB_SHA" --draft --prerelease --latest=false \
               --title "KaleidoSwap Desktop $version" --notes-file "$notes"
           fi
 
@@ -78,7 +78,7 @@ jobs:
             target: x86_64-pc-windows-msvc
             bundles: nsis,msi
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 120
+    timeout-minutes: ${{ matrix.os == 'macos-15-intel' && 210 || 120 }}
     defaults:
       run:
         shell: bash
@@ -115,6 +115,21 @@ jobs:
           python3 scripts/check-beta-signing.py
           xcrun notarytool history --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --output-format json > "$RUNNER_TEMP/beta-notary-auth.json"
           echo 'Notarization credentials accepted.'
+      - name: Prepare Associated Domains signing for the macOS beta
+        if: runner.os == 'macOS' && (github.ref_type == 'tag' || github.ref == 'refs/heads/dev')
+        id: passkeys
+        env:
+          APPLE_BETA_PASSKEY_PROFILE: ${{ secrets.APPLE_BETA_PASSKEY_PROFILE }}
+        run: |
+          if [[ -z "$APPLE_BETA_PASSKEY_PROFILE" ]]; then
+            echo 'Building the phrase-only beta because no Desktop passkey profile is configured.'
+            exit 0
+          fi
+          umask 077
+          profile="$RUNNER_TEMP/desktop-beta.provisionprofile"
+          printf '%s' "$APPLE_BETA_PASSKEY_PROFILE" | base64 --decode > "$profile"
+          python3 scripts/prepare-desktop-passkey-signing.py "$profile" com.kaleidoswap.beta
+          echo 'enabled=true' >> "$GITHUB_OUTPUT"
       - name: Verify private daemon access configuration
         if: runner.os != 'Windows'
         env:
@@ -123,6 +138,12 @@ jobs:
         run: |
           test -n "$P2PD_REPO" || { echo 'Missing P2PD_REPO'; exit 1; }
           test -n "$P2PD_REPO_TOKEN" || { echo 'Missing P2PD_REPO_TOKEN'; exit 1; }
+      - name: Check Desktop passkey identity on macOS
+        if: runner.os == 'macOS'
+        run: |
+          xcrun swiftc -swift-version 5 -parse-as-library src-tauri/macos/WalletPasskey.swift \
+            src-tauri/macos/tests/WalletPasskeyChecks.swift -o "$RUNNER_TEMP/passkey-checks"
+          "$RUNNER_TEMP/passkey-checks"
       - uses: pnpm/action-setup@v4
         with:
           version: 10
@@ -197,12 +218,26 @@ jobs:
         run: |
           extra=()
           if [[ "$RUNNER_OS" != Windows ]]; then extra+=(--config src-tauri/tauri.p2p.conf.json); fi
+          if [[ "${{ steps.passkeys.outputs.enabled }}" == true ]]; then extra+=(--config src-tauri/tauri.passkeys.conf.json); fi
           pnpm exec tauri build --target '${{ matrix.target }}' --bundles '${{ matrix.bundles }}' --config src-tauri/tauri.beta.conf.json "${extra[@]}"
       - name: Verify notarization and Gatekeeper
         if: runner.os == 'macOS'
         run: |
           app="src-tauri/target/${{ matrix.target }}/release/bundle/macos/KaleidoSwap Beta.app"
           codesign --verify --deep --strict "$app"
+          if [[ "${{ steps.passkeys.outputs.enabled }}" == true ]]; then
+            cmp "$RUNNER_TEMP/desktop-beta.provisionprofile" "$app/Contents/embedded.provisionprofile"
+            codesign -d --entitlements :- "$app" > "$RUNNER_TEMP/desktop-beta-entitlements.plist"
+            python3 - "$RUNNER_TEMP/desktop-beta-entitlements.plist" <<'PY'
+          import plistlib, sys
+          from pathlib import Path
+          expected = plistlib.loads(Path("src-tauri/target/passkey-signing/Entitlements.plist").read_bytes())
+          actual = plistlib.loads(Path(sys.argv[1]).read_bytes())
+          for key in ("com.apple.application-identifier", "com.apple.developer.team-identifier", "com.apple.developer.associated-domains"):
+              if actual.get(key) != expected[key]:
+                  raise SystemExit(f"Missing or unexpected signed entitlement {key}")
+          PY
+          fi
           xcrun stapler validate "$app"
           spctl --assess --type execute --verbose "$app"
       - name: Verify optimized glib iterator backport on Linux
@@ -235,6 +270,7 @@ jobs:
           if [[ "$RUNNER_OS" == macOS ]]; then
             security delete-keychain "$RUNNER_TEMP/beta-signing.keychain-db" || true
             rm -f "$RUNNER_TEMP/beta-certificate.p12" "$RUNNER_TEMP/beta-notary-auth.json"
+            rm -f "$RUNNER_TEMP/desktop-beta.provisionprofile" src-tauri/target/passkey-signing/{embedded.provisionprofile,Entitlements.plist}
           fi
 
   docker-linux-amd64:

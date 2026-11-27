@@ -792,6 +792,12 @@
     "goBack": "Revenir en arrière",
     "goHome": "Aller à l'accueil"
   },
+  "mnemonicCheck": {
+    "instruction": "Pour chaque position, choisissez le mot de la phrase de récupération que vous avez notée.",
+    "word": "Mot n° {{number}}",
+    "mismatch": "Un ou plusieurs mots sont incorrects. Vérifiez la phrase que vous avez notée et réessayez.",
+    "unavailable": "Cette vérification nécessite trois mots différents dans la phrase. Revenez à la phrase de récupération."
+  },
   "walletInit": {
     "steps": {
       "terms": "Conditions",
@@ -4365,6 +4371,34 @@
     "next": "Suivant",
     "done": "Commencer à échanger",
     "faucet": "Obtenez des pièces de test gratuites"
+  },
+  "onchainSetup": {
+    "title": "Portefeuille on-chain",
+    "choose": "Choisissez comment créer votre portefeuille sur le réseau principal",
+    "createPasskey": "Créer avec une clé d’accès",
+    "createPhrase": "Créer avec une phrase de récupération",
+    "confirmPasskey": "Utilisez à nouveau la même clé d’accès de l’application de bureau pour vérifier qu’elle permet de récupérer votre portefeuille.",
+    "usePasskey": "Vérifier la clé d’accès",
+    "resume": "Reprendre la configuration de la clé d’accès",
+    "recoverPasskey": "Récupérer avec une clé d’accès",
+    "restore": "Restaurer avec une phrase de récupération",
+    "forgetPending": "Abandonner la configuration en cours",
+    "finish": "Enregistrer le portefeuille",
+    "ready": "Portefeuille on-chain créé",
+    "fingerprint": "Empreinte du portefeuille",
+    "offline": "Ce portefeuille est hors ligne. Les paiements sur le réseau principal et l’historique des transactions ne sont pas disponibles dans cette version.",
+    "rgbBackup": "La phrase de récupération permet de retrouver vos clés. Pour restaurer vos actifs RGB, vous devez aussi disposer des données du portefeuille RGB.",
+    "export": "Afficher la phrase de récupération avec la clé d’accès",
+    "hide": "Masquer les mots",
+    "invalid": "Vérifiez les mots de la phrase de récupération et leur ordre.",
+    "exists": "Un autre portefeuille on-chain existe déjà.",
+    "cancelled": "La demande de clé d’accès a été annulée. Vous pouvez réessayer.",
+    "unsupported": "Ce gestionnaire de clés d’accès ne prend pas en charge la fonction PRF nécessaire à la dérivation des clés du portefeuille.",
+    "wrongKey": "Cette clé d’accès appartient à un autre portefeuille.",
+    "legacyKey": "Cette clé d’accès a peut-être servi lors d’un ancien test. Choisissez une clé d’accès de l’application de bureau ou restaurez votre portefeuille avec sa phrase de récupération.",
+    "busy": "Terminez d’abord la demande de clé d’accès déjà ouverte.",
+    "unavailable": "Cette version ne permet pas de créer de clé d’accès sur cet appareil. Vous pouvez créer ou restaurer un portefeuille avec une phrase de récupération.",
+    "failed": "La configuration du portefeuille a échoué. Veuillez réessayer."
   },
   "mainnetWallet": {
     "assets": "Bitcoin et actifs RGB",

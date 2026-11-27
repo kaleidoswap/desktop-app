@@ -57,7 +57,9 @@ it('preserves the custom name and translates the BTC/RGB recovery instructions a
     /bitcoin.*RGB/
   )
   fireEvent.click(screen.getByRole('button', { name: t('written') }))
-  expect(screen.getAllByRole('textbox', { name: /^Parola \d+$/ })).toHaveLength(
-    3
-  )
+  const groups = screen.getAllByRole('group', { name: /^Parola.*\d+/i })
+  expect(groups).toHaveLength(3)
+  for (const group of groups) {
+    expect(within(group).getAllByRole('radio')).toHaveLength(3)
+  }
 })
