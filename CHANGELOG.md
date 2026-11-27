@@ -10,6 +10,7 @@
 
 ### P2P trading on test networks
 
+- Large RGB swap messages can travel across multiple encrypted Nostr messages. Both participants need an updated daemon for these swaps. Verified with a confirmed 1 USDT on-chain swap on Mutinynet.
 - Create a separate trading wallet on Mutinynet or Signet. The 12-word recovery phrase restores bitcoin. Restoring RGB assets also requires the wallet data.
 - Browse offers from each Nostr relay, including older active offers on quieter relays. Inspect maker profiles and manage the relays used for discovery.
 - On Mutinynet, maker profiles show settled swaps over 30 days, distinct counterparties and volume when Mosaik supplies a current signed report. New reports depend on the Mutinynet preview indexer. A signed catalog also identifies issuers for individual assets.
