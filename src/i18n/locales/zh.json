@@ -127,7 +127,8 @@
     "helpSupport": "帮助与支持",
     "getHelpSupport": "获取帮助与支持",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "收起侧边栏",
+    "expandSidebar": "展开侧边栏",
     "nwc": "应用连接"
   },
   "channels": {
@@ -3446,6 +3447,7 @@
         "unverified": "未验证资产",
         "market": "市场",
         "noMarkets": "暂无市场",
+        "lastOwn": "你的最近一笔交易",
         "bestBuy": "最优买价",
         "bestSell": "最优卖价",
         "last": "最新成交",
@@ -3628,6 +3630,10 @@
         "background": "转入后台继续"
       },
       "book": {
+        "makersOnline": "{{all}} 位挂单者中有 {{on}} 位在线",
+        "presenceHelp": "近期更新过报价的挂单者会显示为在线。",
+        "sellOrders": "卖单",
+        "buyOrders": "买单",
         "yours": "你的订单",
         "away": "该做市商已有一段时间没有出现，回应可能较慢",
         "buyHere": "以此价格买入 {{ticker}}",
@@ -3828,6 +3834,7 @@
         "close": "关闭报价表单",
         "yourPrice": "你的价格",
         "makeHint": "报价有效期间，请保持应用开启。",
+        "moreTools": "更多工具",
         "advanced": "市场工具",
         "openMosaik": "打开 Mosaik",
         "mosaikAccess": "预览版需要连接测试版的 Tailscale VPN。扩展程序使用独立的钱包。",

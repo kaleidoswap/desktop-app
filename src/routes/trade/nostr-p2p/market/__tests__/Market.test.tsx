@@ -51,15 +51,17 @@ describe('P2P market', () => {
   it('shows the opposite side of the book and reviews the original terms before taking an offer', async () => {
     const { buy, take } = openMarket()
     const ask = await screen.findByRole('button', { name: /Alice/ })
-    expect(screen.queryByRole('button', { name: /my-maker|Bob/ })).toBeNull()
+    const book = within(screen.getByRole('region', { name: 'Order book' }))
+    expect(book.getByRole('heading', { name: /Sell orders/ })).toBeVisible()
+    expect(book.getByRole('heading', { name: /Buy orders/ })).toBeVisible()
+    expect(book.getByRole('button', { name: /Bob/ })).toBeVisible()
+    expect(book.getByTitle('Your order')).toBeDisabled()
     expect(screen.queryByRole('button', { name: 'Review swap' })).toBeNull()
     fireEvent.click(ask)
     expect(screen.getByText('14,000 sat')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))
     expect(screen.queryByRole('button', { name: 'Review swap' })).toBeNull()
     fireEvent.click(ask)
-    fireEvent.click(screen.getByRole('button', { name: 'Sell' }))
-    expect(screen.queryByRole('button', { name: 'Review swap' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: /Bob/ }))
     expect(screen.getByText('3,000 sat')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Review swap' }))
@@ -85,14 +87,16 @@ describe('P2P market', () => {
     )
     expect(await screen.findByText(npub)).toBeInTheDocument()
     expect(profiles).toHaveBeenCalledWith([npub])
-    fireEvent.click(screen.getByRole('button', { name: 'Sell' }))
+    fireEvent.click(screen.getByRole('button', { name: /Bob/ }))
     expect(screen.queryByText(npub)).not.toBeInTheDocument()
     expect(profiles).toHaveBeenCalledTimes(1)
   })
 
-  it('opens a real limit ticket from My offers without publishing on entry', async () => {
+  it('keeps wallet orders under the book and opens the limit ticket without publishing', async () => {
     const { place } = openMarket()
-    fireEvent.click(await screen.findByRole('button', { name: /My offers/ }))
+    expect(
+      await screen.findByRole('tab', { name: /Open orders/ })
+    ).toBeVisible()
     expect(
       screen.getByRole('button', { name: 'Cancel order' })
     ).toBeInTheDocument()

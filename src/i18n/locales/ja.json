@@ -127,7 +127,8 @@
     "helpSupport": "ヘルプ&サポート",
     "getHelpSupport": "ヘルプ&サポートを利用",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "サイドバーを折りたたむ",
+    "expandSidebar": "サイドバーを展開",
     "nwc": "アプリ接続"
   },
   "channels": {
@@ -3455,6 +3456,7 @@
         "unverified": "未検証アセット",
         "market": "マーケット",
         "noMarkets": "マーケットはまだありません",
+        "lastOwn": "前回の取引",
         "bestBuy": "最良買値",
         "bestSell": "最良売値",
         "last": "直近の取引",
@@ -3637,6 +3639,10 @@
         "background": "バックグラウンドで続行"
       },
       "book": {
+        "makersOnline": "メイカー {{all}} 人中 {{on}} 人がオンライン",
+        "presenceHelp": "最近注文を更新したメイカーはオンラインと表示されます。",
+        "sellOrders": "売り注文",
+        "buyOrders": "買い注文",
         "yours": "あなたの注文",
         "away": "メイカーはしばらく確認できておらず、応答が遅い可能性があります",
         "buyHere": "この価格で {{ticker}} を買う",
@@ -3837,6 +3843,7 @@
         "close": "オファーフォームを閉じる",
         "yourPrice": "希望価格",
         "makeHint": "オファーの掲載中はアプリを開いたままにしてください。",
+        "moreTools": "その他のツール",
         "advanced": "取引ツール",
         "openMosaik": "Mosaikを開く",
         "mosaikAccess": "プレビューにはベータ版のTailscale VPNへの接続が必要です。拡張機能は別のウォレットを使用します。",

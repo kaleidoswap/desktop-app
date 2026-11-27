@@ -127,6 +127,7 @@
     "helpSupport": "도움말 및 지원",
     "getHelpSupport": "도움말 및 지원 받기",
     "menu": "메뉴",
+    "collapseSidebar": "사이드바 접기",
     "expandSidebar": "사이드바 펼치기",
     "nwc": "앱 연결"
   },
@@ -3449,6 +3450,7 @@
         "unverified": "검증되지 않은 자산",
         "market": "마켓",
         "noMarkets": "아직 마켓이 없습니다",
+        "lastOwn": "내 최근 거래",
         "bestBuy": "최고 매수가",
         "bestSell": "최저 매도가",
         "last": "최근 거래",
@@ -3631,6 +3633,10 @@
         "background": "백그라운드에서 계속"
       },
       "book": {
+        "makersOnline": "메이커 {{all}}명 중 {{on}}명 온라인",
+        "presenceHelp": "최근 주문을 갱신한 메이커는 온라인으로 표시됩니다.",
+        "sellOrders": "매도 주문",
+        "buyOrders": "매수 주문",
         "yours": "내 주문",
         "away": "메이커가 한동안 접속하지 않아 응답이 느릴 수 있습니다",
         "buyHere": "이 가격에 {{ticker}} 매수",
@@ -3831,6 +3837,7 @@
         "close": "주문 양식 닫기",
         "yourPrice": "내 가격",
         "makeHint": "제안이 활성화되어 있는 동안 앱을 열어 두세요.",
+        "moreTools": "추가 도구",
         "advanced": "거래 도구",
         "openMosaik": "Mosaik 열기",
         "mosaikAccess": "미리보기를 이용하려면 베타용 Tailscale VPN에 연결하세요. 확장 프로그램은 별도 지갑을 사용합니다.",

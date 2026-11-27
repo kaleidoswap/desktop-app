@@ -4,13 +4,7 @@ import { useMemo, useRef, useState } from 'react'
 
 import { useTranslation } from 'react-i18next'
 
-import {
-  availableSats,
-  marketApi,
-  type Info,
-  type Order,
-  type Side,
-} from '../api'
+import { availableSats, marketApi, type Info, type Order } from '../api'
 import { NostrProfilesMenu } from '../NostrProfilesMenu'
 import { ORIGINAL_WALLET_LABEL } from '../wallets'
 import { ordersAwaitingRelay, ordersOnScreen, splitBook } from '../book'
@@ -26,7 +20,7 @@ import { DepthChart } from './DepthChart'
 import { useTr, usePoll } from './hooks'
 import { HowItWorks } from './HowItWorks'
 import { MosaikBridge } from './MosaikBridge'
-import { Offers, OfferSummary } from './Offers'
+import { OfferSummary } from './Offers'
 import { OrderBook } from './OrderBook'
 import { MarketStats, PairHeader, type MarketInfo } from './PairHeader'
 import { TakeSheet } from './TakeSheet'
@@ -120,8 +114,6 @@ function SignedMarket({
   const [selected, setSelected] = useState<string | null>(null)
   const [taking, setTaking] = useState<Order[] | null>(null)
 
-  const [tab, setTab] = useState<'offers' | 'mine'>('offers')
-  const [side, setSide] = useState<Side>('buy')
   const [offerId, setOfferId] = useState<string | null>(null)
   const [compose, setCompose] = useState(false)
   const [advanced, setAdvanced] = useState(false)
@@ -220,11 +212,9 @@ function SignedMarket({
 
   const market = markets.find((m) => m.asset_id === current)
   const marketOrders = orders.filter((o) => o.asset_id === current)
-  const { asks, bids } = splitBook(marketOrders.filter((o) => !o.mine))
-  const offers = side === 'buy' ? asks : bids
-  const activeOffer = offers.find((o) => o.order_id === offerId)
-  const liveOrders = (mine.data ?? []).filter(
-    (o) => o.state === 'open' || o.state === 'matching'
+  const { asks, bids } = splitBook(marketOrders)
+  const activeOffer = marketOrders.find(
+    (o) => !o.mine && o.order_id === offerId
   )
   const chooseMarket = (id: string) => {
     setSelected(id)
@@ -232,7 +222,7 @@ function SignedMarket({
     setCompose(false)
   }
   const lastTrade = (trades.data ?? []).find(
-    (t) => t.asset_id === current && t.status !== 'failed'
+    (t) => t.asset_id === current && t.status === 'settled'
   )
 
   const deposit = onOpenFunds ? () => onOpenFunds('toTrading') : undefined
@@ -246,6 +236,27 @@ function SignedMarket({
       <PageHeader
         action={
           <div className="flex flex-wrap items-center gap-2">
+            {onSimpleSwap && (
+              <Button onClick={onSimpleSwap} size="sm" type="button">
+                <ArrowLeftRight aria-hidden size={15} />
+                {tr('offers.simpleSwap', 'Simple swap')}
+              </Button>
+            )}
+            {market && (
+              <Button
+                onClick={(event) => {
+                  setOfferId(null)
+                  setCompose(true)
+                  focusTicket(event.currentTarget)
+                }}
+                size="sm"
+                type="button"
+                variant="surface"
+              >
+                <Plus aria-hidden size={16} />
+                {tr('offers.publish', 'Publish offer')}
+              </Button>
+            )}
             {showNetwork && (
               <Pill tone={inf.network === 'mainnet' ? 'success' : 'warning'}>
                 {networkLabel(inf.network)}
@@ -271,22 +282,9 @@ function SignedMarket({
                 })}
               </Button>
             )}
-            {market && (
-              <Button
-                onClick={(event) => {
-                  setOfferId(null)
-                  setCompose(true)
-                  focusTicket(event.currentTarget)
-                }}
-                size="sm"
-                type="button"
-              >
-                <Plus aria-hidden size={16} />
-                {tr('offers.publish', 'Publish offer')}
-              </Button>
-            )}
           </div>
         }
+        className="[&_[data-slot=page-header-actions]]:max-w-full"
         title={t('unified.market', { defaultValue: 'Nostr P2P market' })}
         variant="page"
       />
@@ -299,101 +297,58 @@ function SignedMarket({
         </p>
       )}
 
+      {market && (
+        <section
+          className={cx(
+            cardSurface.secondary,
+            'flex flex-wrap items-center justify-between gap-x-8 gap-y-4 p-4'
+          )}
+        >
+          <PairHeader
+            markets={markets}
+            onSelect={chooseMarket}
+            registry={
+              marketOrders.find((o) => o.registry?.ticker_differs)?.registry ??
+              marketOrders[0]?.registry
+            }
+            selected={current}
+          />
+          <MarketStats
+            bestAsk={asks[0]?.unit_price}
+            bestBid={bids[0]?.unit_price}
+            last={
+              lastTrade ? tradeUnitPrice(lastTrade, knownPrecision) : undefined
+            }
+            open={marketOrders.length}
+          />
+        </section>
+      )}
       <div
         className={cx(
           'grid min-w-0 items-start gap-4',
-          (compose || !!activeOffer) &&
-            'lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]'
+          market && 'lg:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)]'
         )}
       >
         <section className={cx(cardSurface.secondary, 'min-w-0')}>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-divider/20 px-3 sm:px-5">
-            {(['offers', 'mine'] as const).map((key) => (
-              <button
-                aria-pressed={tab === key}
-                className={cx(
-                  'border-b-2 py-3 text-sm font-semibold transition-colors',
-                  tab === key
-                    ? 'border-status-success text-content-primary'
-                    : 'border-transparent text-content-secondary hover:text-content-primary'
-                )}
-                key={key}
-                onClick={() => {
-                  setTab(key)
-                  setOfferId(null)
-                  setCompose(false)
-                }}
-                type="button"
-              >
-                {key === 'offers'
-                  ? tr('offers.available', 'Offers')
-                  : tr('offers.mine', 'My offers')}
-                {key === 'mine' && liveOrders.length > 0 && (
-                  <span className="ml-1.5 text-content-tertiary">
-                    {liveOrders.length}
-                  </span>
-                )}
-              </button>
-            ))}
-            {onSimpleSwap && (
-              <Button
-                className="ml-auto"
-                onClick={onSimpleSwap}
-                size="sm"
-                type="button"
-                variant="quiet"
-              >
-                <ArrowLeftRight aria-hidden size={15} />
-                {tr('offers.simpleSwap', 'Simple swap')}
-              </Button>
-            )}
-          </div>
-          {tab === 'mine' ? (
-            <Activity
-              balance={balance.data}
-              expectedNpub={inf.nostr_profiles ? inf.npub : undefined}
-              knownPrecision={knownPrecision}
-              onChanged={refreshAll}
-              onOpenFunds={deposit}
-              orders={mine.data ?? []}
-              ordersLoading={mine.data === undefined && !mine.error}
-              trades={trades.data ?? []}
-              tradesLoading={trades.data === undefined && !trades.error}
-            />
-          ) : book.data === undefined && book.error ? (
+          {book.data === undefined && book.error ? (
             <div className="flex justify-center p-5">
               <Button onClick={refreshAll} type="button" variant="outline">
                 {t('p2pMarket.retry', { defaultValue: 'Try again' })}
               </Button>
             </div>
           ) : market ? (
-            <Offers
+            <OrderBook
               loading={book.data === undefined && !book.error}
-              offers={offers}
-              onSelect={(o, trigger) => {
-                setOfferId(o.order_id)
+              onPick={(order, trigger) => {
+                setOfferId(order.order_id)
                 setCompose(false)
                 focusTicket(trigger)
               }}
-              onSide={(next) => {
-                setSide(next)
-                setOfferId(null)
-                setCompose(false)
-              }}
-              selected={activeOffer}
-              side={side}
+              orders={marketOrders}
+              pendingRelay={awaitingRelay}
+              selectedId={activeOffer?.order_id}
               ticker={market.ticker}
-            >
-              <PairHeader
-                markets={markets}
-                onSelect={chooseMarket}
-                registry={
-                  marketOrders.find((o) => o.registry?.ticker_differs)
-                    ?.registry ?? marketOrders[0]?.registry
-                }
-                selected={current}
-              />
-            </Offers>
+            />
           ) : book.data === undefined ||
             (balance.data === undefined && !balance.error) ? (
             <EmptyState title={tr('book.loading', 'Loading the order book…')} />
@@ -414,7 +369,7 @@ function SignedMarket({
             />
           )}
         </section>
-        {((compose && market) || activeOffer) && (
+        {(compose && market) || activeOffer ? (
           <section
             aria-label={
               compose
@@ -448,13 +403,11 @@ function SignedMarket({
                   balance={balance.data}
                   info={inf}
                   initialMode="limit"
-                  initialSide={side}
                   key={market.asset_id}
                   limitOnly
                   onOpenFunds={deposit}
                   onPlaced={() => {
                     setCompose(false)
-                    setTab('mine')
                     refreshAll()
                   }}
                   onReview={setTaking}
@@ -473,50 +426,41 @@ function SignedMarket({
               )
             )}
           </section>
-        )}
+        ) : market ? (
+          <Panel label={tr('market.depth', 'Market depth')}>
+            <h2 className="mb-2 text-sm font-medium">
+              {tr('market.depthTitle', '{{ticker}} depth', {
+                ticker: market.ticker,
+              })}
+            </h2>
+            <DepthChart
+              loading={book.data === undefined && !book.error}
+              orders={marketOrders}
+              ticker={market.ticker}
+            />
+          </Panel>
+        ) : null}
       </div>
+      <Activity
+        balance={balance.data}
+        expectedNpub={inf.nostr_profiles ? inf.npub : undefined}
+        knownPrecision={knownPrecision}
+        onChanged={refreshAll}
+        onOpenFunds={deposit}
+        orders={mine.data ?? []}
+        ordersLoading={mine.data === undefined && !mine.error}
+        trades={trades.data ?? []}
+        tradesLoading={trades.data === undefined && !trades.error}
+      />
       <details
         className="rounded-xl border border-divider/15 bg-surface-card p-4 text-content-primary"
         onToggle={(e) => setAdvanced(e.currentTarget.open)}
       >
         <summary className="cursor-pointer text-sm font-medium">
-          {tr('offers.advanced', 'Market tools')}
+          {tr('offers.moreTools', 'More tools')}
         </summary>
         {advanced && (
           <div className="mt-3 grid items-start gap-3 lg:grid-cols-2">
-            {market && (
-              <MarketStats
-                bestAsk={asks[0]?.unit_price}
-                bestBid={bids[0]?.unit_price}
-                last={
-                  lastTrade
-                    ? tradeUnitPrice(lastTrade, knownPrecision)
-                    : undefined
-                }
-                open={marketOrders.length}
-              />
-            )}
-            {market && (
-              <OrderBook
-                loading={book.data === undefined && !book.error}
-                onPick={(o) => !o.mine && setTaking([o])}
-                orders={marketOrders}
-                pendingRelay={awaitingRelay}
-                ticker={market.ticker}
-              />
-            )}
-            <Panel label={tr('market.depth', 'Market depth')}>
-              <h2 className="mb-2 text-sm font-medium">
-                {tr('market.depthTitle', '{{ticker}} depth', {
-                  ticker: market?.ticker ?? '',
-                })}
-              </h2>
-              <DepthChart
-                loading={book.data === undefined && !book.error}
-                orders={marketOrders}
-                ticker={market?.ticker ?? ''}
-              />
-            </Panel>
             <WalletCard
               balance={balance.data}
               info={inf}

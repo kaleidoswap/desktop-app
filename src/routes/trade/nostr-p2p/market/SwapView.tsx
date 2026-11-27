@@ -81,7 +81,9 @@ function SwapSession({
                 variant="surface"
               >
                 <ArrowLeft aria-hidden size={16} />
-                {t('p2pMarket.market.offers.available')}
+                {t('p2pMarket.market.book.title', {
+                  defaultValue: 'Order book',
+                })}
               </Button>
             )}
           </div>

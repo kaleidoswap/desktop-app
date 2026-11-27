@@ -107,15 +107,15 @@ export function MarketStats({
   const rows = [
     [
       tr('header.bestBuy', 'Best buy'),
-      bestBid === undefined ? '–' : fmtPrice(bestBid),
+      bestBid === undefined ? '–' : `${fmtPrice(bestBid)} sat`,
     ],
     [
       tr('header.bestSell', 'Best sell'),
-      bestAsk === undefined ? '–' : fmtPrice(bestAsk),
+      bestAsk === undefined ? '–' : `${fmtPrice(bestAsk)} sat`,
     ],
     [
-      tr('header.last', 'Last trade'),
-      last === undefined ? '–' : fmtPrice(last),
+      tr('header.lastOwn', 'Your last trade'),
+      last === undefined ? '–' : `${fmtPrice(last)} sat`,
     ],
     [tr('header.openOrders', 'Open orders'), String(open)],
   ]

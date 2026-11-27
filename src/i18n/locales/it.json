@@ -127,7 +127,8 @@
     "helpSupport": "Aiuto e Supporto",
     "getHelpSupport": "Ottieni Aiuto e Supporto",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Comprimi barra laterale",
+    "expandSidebar": "Espandi barra laterale",
     "nwc": "Connessioni app"
   },
   "channels": {
@@ -3449,6 +3450,7 @@
         "unverified": "Asset non verificato",
         "market": "Mercato",
         "noMarkets": "Ancora nessun mercato",
+        "lastOwn": "Il tuo ultimo scambio",
         "bestBuy": "Miglior acquisto",
         "bestSell": "Miglior vendita",
         "last": "Ultimo scambio",
@@ -3631,6 +3633,10 @@
         "background": "Continua in background"
       },
       "book": {
+        "makersOnline": "{{on}} maker online su {{all}}",
+        "presenceHelp": "Un maker è online quando le sue offerte sono state aggiornate di recente.",
+        "sellOrders": "Ordini di vendita",
+        "buyOrders": "Ordini di acquisto",
         "yours": "Il tuo ordine",
         "away": "Il maker non si fa vedere da un po' e potrebbe rispondere lentamente",
         "buyHere": "Compra {{ticker}} a questo prezzo",
@@ -3831,6 +3837,7 @@
         "close": "Chiudi modulo offerta",
         "yourPrice": "Il tuo prezzo",
         "makeHint": "Tieni aperta l’app finché l’offerta è attiva.",
+        "moreTools": "Altri strumenti",
         "advanced": "Strumenti di mercato",
         "openMosaik": "Apri Mosaik",
         "mosaikAccess": "La preview richiede la VPN Tailscale della beta. Il wallet dell’estensione è separato.",

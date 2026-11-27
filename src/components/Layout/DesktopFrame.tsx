@@ -7,6 +7,7 @@ import {
   IconButton,
   KaleidoswapLogo,
   ToneBadge,
+  useMediaQuery,
   type IconName,
 } from 'kaleido-ui'
 import { useRef, useState, type ReactNode } from 'react'
@@ -85,6 +86,23 @@ export function DesktopFrame({
   const location = useLocation()
   const [openAt, setOpenAt] = useState<string | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
+  const desktop = useMediaQuery('(min-width: 48rem)')
+  const [rail, setRail] = useState(() => {
+    try {
+      return localStorage.getItem('sidebarCollapsed') === 'true'
+    } catch {
+      return false
+    }
+  })
+  const collapsed = desktop && rail
+  const toggleRail = (value: boolean) => {
+    setRail(value)
+    try {
+      localStorage.setItem('sidebarCollapsed', String(value))
+    } catch {
+      /* The rail still works when storage is unavailable. */
+    }
+  }
   const menuButton = useRef<HTMLButtonElement>(null)
   const mobileOpen = !navigationLocked && openAt === location.key
   const account = useAppSelector((state) => state.nodeSettings.data)
@@ -203,10 +221,26 @@ export function DesktopFrame({
     </DrawerNavItem>
   )
 
+  const logo = (
+    <Link
+      aria-label={t('p2pShell.home')}
+      className="rounded-md text-foreground focus-visible:outline-ring"
+      onClick={() => follow(true)}
+      to={walletPath}
+    >
+      <KaleidoswapLogo className="h-7 w-auto" title="" />
+    </Link>
+  )
+
   return (
     <div className="flex h-dvh min-w-0 flex-col overflow-hidden bg-background md:flex-row">
       <DrawerSidebar
-        className="z-40 h-auto w-full border-b md:h-full md:w-60 md:border-b-0"
+        className={`z-40 h-auto w-full border-b md:h-full md:border-b-0 ${collapsed ? 'md:w-20' : 'md:w-60'}`}
+        collapseLabel={t('navigation.collapseSidebar')}
+        collapsed={collapsed}
+        expandLabel={t('navigation.expandSidebar')}
+        header={desktop ? logo : undefined}
+        onCollapsedChange={desktop ? toggleRail : undefined}
         onKeyDown={(event) => {
           if (mobileOpen && event.key === 'Escape') {
             setOpenAt(null)
@@ -217,15 +251,8 @@ export function DesktopFrame({
           if (element) element.inert = navigationLocked
         }}
       >
-        <div className="flex items-center justify-between gap-2 px-4 py-2 md:px-6 md:py-6">
-          <Link
-            aria-label={t('p2pShell.home')}
-            className="rounded-md text-foreground focus-visible:outline-ring"
-            onClick={() => follow(true)}
-            to={walletPath}
-          >
-            <KaleidoswapLogo className="h-7 w-auto" title="" />
-          </Link>
+        <div className="flex items-center justify-between gap-2 px-4 py-2 md:hidden">
+          {logo}
           <IconButton
             aria-controls="desktop-navigation"
             aria-expanded={mobileOpen}
@@ -247,7 +274,13 @@ export function DesktopFrame({
             <div aria-label={node.label} role="group">
               {renderEntry(node)}
               {savedAccounts.length > 0 && (
-                <ul className="ml-6 mt-1 space-y-0.5 border-l border-divider/40 pl-2">
+                <ul
+                  className={
+                    collapsed
+                      ? 'mt-1 space-y-1'
+                      : 'ml-6 mt-1 space-y-0.5 border-l border-divider/40 pl-2'
+                  }
+                >
                   {savedAccounts.map(({ name }) => {
                     const connected = reachable && name === account.name
                     return (
@@ -259,9 +292,15 @@ export function DesktopFrame({
                           asChild
                           className={`${drawerLabelClass} gap-2 rounded-lg px-3 py-2 [&>span:last-child]:text-caption [&>span:last-child]:font-medium`}
                           icon={
-                            <span
-                              className={`size-2 rounded-full ${connected ? 'bg-status-success' : 'border border-content-tertiary'}`}
-                            />
+                            collapsed ? (
+                              <span className="text-caption font-semibold">
+                                {Array.from(name).slice(0, 2).join('')}
+                              </span>
+                            ) : (
+                              <span
+                                className={`size-2 rounded-full ${connected ? 'bg-status-success' : 'border border-content-tertiary'}`}
+                              />
+                            )
                           }
                           label={name}
                           title={name}
@@ -303,7 +342,9 @@ export function DesktopFrame({
                 type="button"
               />
             </DrawerNavItem>
-            <AppVersion className="relative mx-auto mt-2 hidden w-fit md:block" />
+            {!collapsed && (
+              <AppVersion className="relative mx-auto mt-2 hidden w-fit md:block" />
+            )}
           </DrawerFooter>
         </nav>
       </DrawerSidebar>

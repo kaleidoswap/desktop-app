@@ -127,6 +127,7 @@
     "helpSupport": "Help & Support",
     "getHelpSupport": "Get Help & Support",
     "menu": "Menu",
+    "collapseSidebar": "Collapse sidebar",
     "expandSidebar": "Expand sidebar",
     "nwc": "App Connections"
   },
@@ -3449,6 +3450,7 @@
         "unverified": "Unverified asset",
         "market": "Market",
         "noMarkets": "No markets yet",
+        "lastOwn": "Your last trade",
         "bestBuy": "Best buy",
         "bestSell": "Best sell",
         "last": "Last trade",
@@ -3631,6 +3633,10 @@
         "background": "Keep going in the background"
       },
       "book": {
+        "makersOnline": "{{on}} of {{all}} makers online",
+        "presenceHelp": "Makers are shown as online when their offers were refreshed recently.",
+        "sellOrders": "Sell orders",
+        "buyOrders": "Buy orders",
         "yours": "Your order",
         "away": "The maker has not been seen for a while and may be slow to answer",
         "buyHere": "Buy {{ticker}} at this price",
@@ -3831,6 +3837,7 @@
         "close": "Close offer form",
         "yourPrice": "Your price",
         "makeHint": "Keep the app open while your offer is live.",
+        "moreTools": "More tools",
         "advanced": "Market tools",
         "openMosaik": "Open Mosaik",
         "mosaikAccess": "The preview requires the beta Tailscale VPN. The extension uses a separate wallet.",

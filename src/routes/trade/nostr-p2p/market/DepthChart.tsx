@@ -65,48 +65,44 @@ export function DepthChart({
       : undefined
 
   return (
-    <svg
-      aria-label={tr('depth.label', 'Depth chart for {{ticker}}', { ticker })}
-      className="h-full min-h-40 w-full"
-      preserveAspectRatio="none"
-      role="img"
-      viewBox={`0 0 ${W} ${H + 20}`}
-    >
-      <path
-        className="fill-status-success/20 stroke-status-success"
-        d={area(B, 0)}
-        strokeWidth={1.5}
-        vectorEffect="non-scaling-stroke"
-      />
-      <path
-        className="fill-status-danger/20 stroke-status-danger"
-        d={area(A, W)}
-        strokeWidth={1.5}
-        vectorEffect="non-scaling-stroke"
-      />
-      {mid !== undefined && (
-        <line
-          className="stroke-content-tertiary"
-          strokeDasharray="3 4"
-          strokeWidth={1}
-          vectorEffect="non-scaling-stroke"
-          x1={X(mid)}
-          x2={X(mid)}
-          y1={0}
-          y2={H}
-        />
-      )}
-      <text className="fill-content-tertiary text-tiny" x={4} y={H + 15}>
-        {fmtPrice(lo)}
-      </text>
-      <text
-        className="fill-content-tertiary text-tiny"
-        textAnchor="end"
-        x={W - 4}
-        y={H + 15}
+    <div className="flex flex-col gap-2">
+      <svg
+        aria-label={tr('depth.label', 'Depth chart for {{ticker}}', { ticker })}
+        className="h-36 w-full"
+        preserveAspectRatio="none"
+        role="img"
+        viewBox={`0 0 ${W} ${H}`}
       >
-        {fmtPrice(hi)}
-      </text>
-    </svg>
+        <path
+          className="fill-status-success/20 stroke-status-success"
+          d={area(B, 0)}
+          strokeWidth={1.5}
+          vectorEffect="non-scaling-stroke"
+        />
+        <path
+          className="fill-status-danger/20 stroke-status-danger"
+          d={area(A, W)}
+          strokeWidth={1.5}
+          vectorEffect="non-scaling-stroke"
+        />
+        {mid !== undefined && (
+          <line
+            className="stroke-content-tertiary"
+            strokeDasharray="3 4"
+            strokeWidth={1}
+            vectorEffect="non-scaling-stroke"
+            x1={X(mid)}
+            x2={X(mid)}
+            y1={0}
+            y2={H}
+          />
+        )}
+      </svg>
+      <div className="flex items-baseline justify-between gap-2 text-caption tabular-nums text-content-secondary">
+        <span>{fmtPrice(lo)}</span>
+        <span>{tr('ticket.perUnit', 'sats / {{ticker}}', { ticker })}</span>
+        <span>{fmtPrice(hi)}</span>
+      </div>
+    </div>
   )
 }

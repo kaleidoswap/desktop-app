@@ -127,7 +127,8 @@
     "helpSupport": "Hilfe & Support",
     "getHelpSupport": "Hilfe & Support erhalten",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Seitenleiste einklappen",
+    "expandSidebar": "Seitenleiste ausklappen",
     "nwc": "App-Verbindungen"
   },
   "channels": {
@@ -3449,6 +3450,7 @@
         "unverified": "Nicht verifiziertes Asset",
         "market": "Markt",
         "noMarkets": "Noch keine Märkte",
+        "lastOwn": "Dein letzter Handel",
         "bestBuy": "Bester Kauf",
         "bestSell": "Bester Verkauf",
         "last": "Letzter Trade",
@@ -3631,6 +3633,10 @@
         "background": "Im Hintergrund weiterlaufen lassen"
       },
       "book": {
+        "makersOnline": "{{on}} von {{all}} Makern online",
+        "presenceHelp": "Maker sind online, wenn ihre Angebote kürzlich aktualisiert wurden.",
+        "sellOrders": "Verkaufsorders",
+        "buyOrders": "Kauforders",
         "yours": "Dein Angebot",
         "away": "Der Maker wurde länger nicht gesehen und antwortet vielleicht langsam",
         "buyHere": "{{ticker}} zu diesem Preis kaufen",
@@ -3831,6 +3837,7 @@
         "close": "Angebotsformular schließen",
         "yourPrice": "Dein Preis",
         "makeHint": "Lass die App geöffnet, solange dein Angebot aktiv ist.",
+        "moreTools": "Weitere Werkzeuge",
         "advanced": "Marktwerkzeuge",
         "openMosaik": "Mosaik öffnen",
         "mosaikAccess": "Für die Vorschau brauchst du das Tailscale-VPN der Beta. Die Erweiterung verwendet eine separate Wallet.",

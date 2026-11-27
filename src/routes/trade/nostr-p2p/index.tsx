@@ -21,6 +21,7 @@ import { nodeWalletNetworkKey } from '../../p2p-home/networks'
 
 import { DepositModal } from './DepositModal'
 import { FundsModal, type Direction } from './FundsModal'
+import { SwapView } from './market/SwapView'
 import { Market } from './market/Market'
 import { Picker } from './market/Picker'
 import { p2pGenerateSeed } from './p2p'
@@ -35,6 +36,18 @@ import {
 import { WalletSetup } from './WalletSetup'
 import { WalletSwitch } from './WalletSwitch'
 import { WithdrawModal } from './WithdrawModal'
+
+type View = 'swap' | 'book'
+
+const VIEW_KEY = 'p2p-trade.view'
+
+const savedView = (): View => {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'swap' ? 'swap' : 'book'
+  } catch {
+    return 'book'
+  }
+}
 
 type Tab = 'market' | 'assets' | 'deposits' | 'withdrawals'
 
@@ -152,12 +165,10 @@ export function P2pGate({
 function MarketView({
   session,
   showNav,
-  onSimpleSwap,
   inShell,
 }: {
   session: P2pWalletSession
   showNav: boolean
-  onSimpleSwap?: () => void
   inShell: boolean
 }) {
   const { t } = useTranslation()
@@ -177,6 +188,16 @@ function MarketView({
   const standalone = !showNav
   const dispatch = useAppDispatch()
   const [tab, setTab] = useState<Tab>('market')
+
+  const [view, setView] = useState<View>(savedView)
+  const choose = (v: View) => {
+    setView(v)
+    try {
+      localStorage.setItem(VIEW_KEY, v)
+    } catch {
+      // The view preference is optional.
+    }
+  }
 
   // a node is optional: when one is connected, funds can also move to and from it
   const nodeBtc = nodeApi.endpoints.btcBalance.useQuery(undefined, {
@@ -298,35 +319,38 @@ function MarketView({
       {standalone && tab === 'assets' && <AssetsHistory />}
       {standalone && tab === 'deposits' && <DepositsHistory />}
       {standalone && tab === 'withdrawals' && <WithdrawalsHistory />}
-      {(!standalone || tab === 'market') && (
-        <Market
-          node={
-            nodeConnected
-              ? { btc: nodeBtc.data?.vanilla.spendable ?? 0, connected: true }
-              : undefined
-          }
-          onIssueAsset={standalone ? () => setIssue(true) : undefined}
-          onManageCoins={standalone ? () => setCoins(true) : undefined}
-          onManageRelays={() => setRelays(true)}
-          onOpenFunds={(d) =>
-            d === 'toNode'
-              ? setWithdraw(true)
-              : standalone
-                ? // the app's own deposit screen, which reads the trading wallet while this page is open
-                  dispatch(
-                    uiSliceActions.setModal({
-                      assetId: undefined,
-                      type: 'deposit',
-                    })
-                  )
-                : setDeposit(true)
-          }
-          onRescan={rescan}
-          onSimpleSwap={onSimpleSwap}
-          showNetwork={!inShell}
-          walletLabel={walletLabel}
-        />
-      )}
+      {(!standalone || tab === 'market') &&
+        (view === 'swap' ? (
+          <SwapView onShowOffers={() => choose('book')} />
+        ) : (
+          <Market
+            node={
+              nodeConnected
+                ? { btc: nodeBtc.data?.vanilla.spendable ?? 0, connected: true }
+                : undefined
+            }
+            onIssueAsset={standalone ? () => setIssue(true) : undefined}
+            onManageCoins={standalone ? () => setCoins(true) : undefined}
+            onManageRelays={() => setRelays(true)}
+            onOpenFunds={(d) =>
+              d === 'toNode'
+                ? setWithdraw(true)
+                : standalone
+                  ? // the app's own deposit screen, which reads the trading wallet while this page is open
+                    dispatch(
+                      uiSliceActions.setModal({
+                        assetId: undefined,
+                        type: 'deposit',
+                      })
+                    )
+                  : setDeposit(true)
+            }
+            onRescan={rescan}
+            onSimpleSwap={() => choose('swap')}
+            showNetwork={!inShell}
+            walletLabel={walletLabel}
+          />
+        ))}
       {coins && (
         <UTXOManagementModal
           bitcoinUnit={bitcoinUnit}
@@ -432,21 +456,10 @@ function NodeTransfers() {
  * needs no node: a node only adds a way to move funds in and out. Inside the P2P app it uses the
  * app's session; elsewhere it holds its own.
  */
-export const P2pMarketPage = ({
-  showNav = true,
-  onSimpleSwap,
-}: {
-  showNav?: boolean
-  onSimpleSwap?: () => void
-}) => {
+export const P2pMarketPage = ({ showNav = true }: { showNav?: boolean }) => {
   const shared = useOptionalP2pSession()
   return shared ? (
-    <MarketView
-      inShell
-      onSimpleSwap={onSimpleSwap}
-      session={shared}
-      showNav={false}
-    />
+    <MarketView inShell session={shared} showNav={false} />
   ) : (
     <OwnSession showNav={showNav} />
   )

@@ -1,158 +1,18 @@
 import { Button } from 'kaleido-ui'
-import { AlertTriangle, ArrowRight, ChevronRight, X } from 'lucide-react'
+import { ArrowRight, X } from 'lucide-react'
 
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 
 import { useTranslation } from 'react-i18next'
 
 import { NostrAvatar, NostrParticipants } from '../NostrParticipants'
-import type { Order, Side } from '../api'
+import type { Order } from '../api'
 import { takerSettlement } from '../costs'
-import {
-  fmtPrice,
-  fmtSats,
-  fmtUnits,
-  short,
-  tickerOf,
-  timeLeft,
-} from '../format'
+import { fmtSats, fmtUnits, short, tickerOf } from '../format'
 
 import { useTr } from './hooks'
 import { MakerList } from './MakerList'
-import { EmptyState, SummaryRows, cx } from './ui'
-
-interface OffersProps {
-  loading: boolean
-  offers: Order[]
-  side: Side
-  ticker: string
-  selected?: Order
-  children: ReactNode
-  onSelect: (order: Order, trigger: HTMLButtonElement) => void
-  onSide: (side: Side) => void
-}
-
-export function Offers({
-  children,
-  loading,
-  offers,
-  side,
-  ticker,
-  selected,
-  onSelect,
-  onSide,
-}: OffersProps) {
-  const tr = useTr()
-  return (
-    <div className="@container min-w-0 pb-2">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-        {children}
-        <div className="inline-flex rounded-lg bg-surface-inset p-1">
-          {(['buy', 'sell'] as const).map((s) => (
-            <button
-              aria-pressed={side === s}
-              className={cx(
-                'rounded-md px-5 py-1.5 text-sm font-semibold transition-colors',
-                side === s
-                  ? 'bg-status-success-subtle text-status-success'
-                  : 'text-content-secondary hover:bg-surface-raised'
-              )}
-              key={s}
-              onClick={() => onSide(s)}
-              type="button"
-            >
-              {s === 'buy'
-                ? tr('ticket.buy', 'Buy')
-                : tr('ticket.sell', 'Sell')}
-            </button>
-          ))}
-        </div>
-      </div>
-      {loading ? (
-        <EmptyState title={tr('book.loading', 'Loading the order book…')} />
-      ) : !offers.length ? (
-        <EmptyState
-          title={
-            side === 'buy'
-              ? tr('book.noSellers', 'No sellers yet')
-              : tr('book.noBuyers', 'No buyers yet')
-          }
-        />
-      ) : (
-        <>
-          <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-3 border-y border-divider/15 px-5 py-2 text-caption text-content-secondary @lg:grid-cols-[1fr_1fr_1fr_5rem]">
-            <span>{tr('offers.pricePerUnit', 'Price / unit')}</span>
-            <span>{tr('offers.quantity', 'Quantity')}</span>
-            <span className="hidden @lg:block">
-              {tr('glyph.maker', 'Maker')}
-            </span>
-            <span className="text-right">
-              {tr('offers.expires', 'Expires in')}
-            </span>
-          </div>
-          <ul className="max-h-[29rem] overflow-y-auto px-2 pt-1">
-            {offers.map((o) => (
-              <li key={o.order_id}>
-                <button
-                  aria-pressed={selected?.order_id === o.order_id}
-                  className={cx(
-                    'grid w-full grid-cols-[1fr_1fr_auto] @lg:grid-cols-[1fr_1fr_1fr_5rem] items-center gap-3 rounded-lg border px-3 py-3 text-left text-sm tabular-nums transition-colors focus-visible:ring-2 focus-visible:ring-primary',
-                    selected?.order_id === o.order_id
-                      ? 'border-status-success/35 bg-status-success-subtle'
-                      : 'border-transparent hover:bg-surface-raised'
-                  )}
-                  onClick={(event) => onSelect(o, event.currentTarget)}
-                  type="button"
-                >
-                  <span className="min-w-0">
-                    <strong className="text-content-primary">
-                      {fmtPrice(o.unit_price)} sat
-                    </strong>
-                  </span>
-                  <span className="min-w-0 break-words text-content-primary">
-                    {fmtUnits(o.amount, o.precision)}{' '}
-                    <small className="text-content-secondary">{ticker}</small>
-                    {o.impersonates && (
-                      <AlertTriangle
-                        aria-label={tr(
-                          'book.imitation',
-                          'Possible imitation of a verified asset'
-                        )}
-                        className="ml-1 inline h-3 w-3 text-status-danger"
-                      />
-                    )}
-                  </span>
-                  <span
-                    className="col-start-1 row-start-2 -mt-2 flex min-w-0 items-center gap-1 font-mono text-tiny text-content-secondary @lg:col-start-auto @lg:row-start-auto @lg:mt-0 @lg:text-caption"
-                    title={o.maker_npub ?? o.maker}
-                  >
-                    <span
-                      aria-label={
-                        o.away
-                          ? tr('book.makerAway', 'Maker away')
-                          : tr('book.makerOnline', 'Maker online')
-                      }
-                      className={cx(
-                        'size-1.5 shrink-0 rounded-full',
-                        o.away ? 'bg-content-tertiary' : 'bg-status-success'
-                      )}
-                    />
-                    <NostrAvatar npub={o.maker_npub ?? o.maker} size={22} />
-                    {short(o.maker_npub ?? o.maker, 5)}
-                  </span>
-                  <span className="col-start-3 row-start-1 flex items-center justify-end gap-1 text-content-secondary @lg:col-start-auto @lg:row-start-auto">
-                    {timeLeft(o.expiry)}
-                    <ChevronRight aria-hidden size={14} />
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
-  )
-}
+import { SummaryRows } from './ui'
 
 function MakerIdentity({ offer, network }: { offer: Order; network?: string }) {
   const tr = useTr()
