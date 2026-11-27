@@ -1,9 +1,10 @@
 import { KeyRound, RadioTower, RefreshCw } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
-import { useAppDispatch } from '../../../app/store/hooks'
+import { TRADE_MARKET_MAKER_PATH } from '../../../app/router/paths'
+import { useAppDispatch, useAppSelector } from '../../../app/store/hooks'
 import { uiSliceActions } from '../../../slices/ui/ui.slice'
 import { IssueAssetModal } from '../../../components/IssueAssetModal'
 import { UTXOManagementModal } from '../../../components/UTXOManagementModal'
@@ -16,6 +17,7 @@ import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 import { Component as AssetsHistory } from '../../wallet-history/assets'
 import { Component as DepositsHistory } from '../../wallet-history/deposits'
 import { Component as WithdrawalsHistory } from '../../wallet-history/withdrawals'
+import { nodeWalletNetworkKey } from '../../p2p-home/networks'
 
 import { DepositModal } from './DepositModal'
 import { FundsModal, type Direction } from './FundsModal'
@@ -181,7 +183,11 @@ function MarketView({
     pollingInterval: 15_000,
     skip: standalone,
   })
-  const nodeConnected = !standalone && nodeBtc.data !== undefined
+  const nodeNetwork = useAppSelector((state) => state.nodeSettings.data.network)
+  const nodeConnected =
+    !standalone &&
+    nodeBtc.data !== undefined &&
+    config?.key === nodeWalletNetworkKey(nodeNetwork)
 
   const [deposit, setDeposit] = useState(false)
   const [withdraw, setWithdraw] = useState(false)
@@ -257,14 +263,16 @@ function MarketView({
               variant="pill"
             />
           )}
-          <Button
-            icon={<RadioTower size={14} />}
-            onClick={() => setRelays(true)}
-            size="sm"
-            variant="outline"
-          >
-            {t('p2pMarket.relays', { defaultValue: 'Relays' })}
-          </Button>
+          {standalone && tab !== 'market' && (
+            <Button
+              icon={<RadioTower size={14} />}
+              onClick={() => setRelays(true)}
+              size="sm"
+              variant="outline"
+            >
+              {t('p2pMarket.relays', { defaultValue: 'Relays' })}
+            </Button>
+          )}
           <Button
             icon={<KeyRound size={14} />}
             onClick={() => setRecovery(true)}
@@ -315,6 +323,7 @@ function MarketView({
           }
           onRescan={rescan}
           onSimpleSwap={onSimpleSwap}
+          showNetwork={!inShell}
           walletLabel={walletLabel}
         />
       )}
@@ -393,6 +402,31 @@ function OwnSession({ showNav }: { showNav: boolean }) {
   return <MarketView inShell={false} session={session} showNav={showNav} />
 }
 
+function NodeTransfers() {
+  const node = useAppSelector((state) => state.nodeSettings.data)
+  const session = useP2pWalletSession(
+    false,
+    node.name ? nodeWalletNetworkKey(node.network) : ''
+  )
+  const location = useLocation()
+  const navigate = useNavigate()
+  return (
+    <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
+      <TradeNav />
+      <P2pGate session={session}>
+        <FundsModal
+          isOpen
+          onClose={() => {
+            if (location.key === 'default')
+              navigate(TRADE_MARKET_MAKER_PATH, { replace: true })
+            else navigate(-1)
+          }}
+        />
+      </P2pGate>
+    </div>
+  )
+}
+
 /**
  * The P2P market. It has a wallet of its own, made here and kept with a recovery phrase, so it
  * needs no node: a node only adds a way to move funds in and out. Inside the P2P app it uses the
@@ -418,4 +452,7 @@ export const P2pMarketPage = ({
   )
 }
 
-export const Component = () => <P2pMarketPage />
+export function Component() {
+  const [params] = useSearchParams()
+  return params.get('funds') === '1' ? <NodeTransfers /> : <P2pMarketPage />
+}

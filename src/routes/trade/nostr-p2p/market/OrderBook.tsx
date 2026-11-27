@@ -1,6 +1,7 @@
 import { AlertTriangle } from 'lucide-react'
 import { useMemo } from 'react'
 
+import { NostrAvatar } from '../NostrParticipants'
 import type { Order } from '../api'
 import { splitBook, withDepth } from '../book'
 import { fmtPrice, fmtSats, fmtUnits } from '../format'
@@ -111,6 +112,7 @@ export function OrderBook({
                 )}
               />
             )}
+            <NostrAvatar npub={o.maker_npub ?? o.maker} size={18} />
             {fmtPrice(o.unit_price)}
             {o.mine && (
               <span className="rounded-full bg-primary/15 px-1.5 text-tiny text-primary">

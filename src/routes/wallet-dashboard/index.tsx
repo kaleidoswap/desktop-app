@@ -1,12 +1,10 @@
+import { Button as KaleidoButton } from 'kaleido-ui'
 import {
-  RefreshCw,
+  Server,
   Zap,
   ArrowUpRight,
   ArrowDownRight,
-  ArrowLeftRight,
   Plus,
-  Loader as LoaderIcon,
-  Database,
   Users,
   TrendingUp,
   Copy,
@@ -14,17 +12,12 @@ import {
   ShoppingCart,
   ExternalLink,
   Lock,
-  Download,
-  Upload,
-  History,
-  Brain,
-  ArrowRight,
   ZapOff,
   Info,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import {
   CHANNELS_PATH,
@@ -32,16 +25,21 @@ import {
   ORDER_CHANNEL_PATH,
   TRADE_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
-  KALEIDO_MIND_PATH,
+  WALLET_HISTORY_ASSETS_PATH,
+  WALLET_SETUP_PATH,
 } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
-import { setAppMode, isMindEnabled } from '../../slices/settings/settings.slice'
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
 import { useSettings } from '../../hooks/useSettings'
-import { AssetRow } from '../../components/AssetRow'
+import { AssetDetailsModal } from '../../components/AssetDetailsModal'
+import {
+  WalletOverview,
+  WalletPage,
+  type WalletAsset,
+} from '../../components/Wallet/WalletOverview'
+import { BTC_ASSET_ID } from '../../constants'
 import { IssueAssetModal } from '../../components/IssueAssetModal'
 import { PeerManagementModal } from '../../components/PeerManagementModal'
-import { Button, LoadingPlaceholder } from '../../components/ui'
 import { UTXOManagementModal } from '../../components/UTXOManagementModal'
 import { CloseChannelModal } from '../../components/CloseChannelModal'
 import { InfoModal } from '../../components/ChannelCard'
@@ -49,19 +47,22 @@ import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
 import { getAllRgbAssets } from '../../utils/rgbUtils'
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice'
+import bitcoinIcon from '../../assets/bitcoin-logo.svg'
 import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import type { AssetNIA as NiaAsset } from 'kaleido-sdk/rln'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 import { logger } from '../../utils/logger'
+import { fmtUnits as formatAssetUnits } from '../trade/nostr-p2p/format'
 
-const BtcIcon: React.FC<{ className?: string }> = ({
-  className = 'h-6 w-6',
+const AssetIcon: React.FC<{ className?: string; ticker: string }> = ({
+  className = 'h-6 w-6 shrink-0',
+  ticker,
 }) => {
-  const [imgSrc, setImgSrc] = useAssetIcon('BTC', defaultRgbIcon)
+  const [imgSrc, setImgSrc] = useAssetIcon(ticker, defaultRgbIcon)
   return (
     <img
-      alt="BTC icon"
+      alt=""
       className={className}
       onError={() => setImgSrc(defaultRgbIcon)}
       src={imgSrc}
@@ -70,7 +71,6 @@ const BtcIcon: React.FC<{ className?: string }> = ({
 }
 
 const ChannelAssetBadge: React.FC<{ ticker: string }> = ({ ticker }) => {
-  const [imgSrc, setImgSrc] = useAssetIcon(ticker, defaultRgbIcon)
   const isUsdt = ticker === 'USDT'
   return (
     <span
@@ -81,11 +81,9 @@ const ChannelAssetBadge: React.FC<{ ticker: string }> = ({ ticker }) => {
       }`}
       style={isUsdt ? { color: '#26A17B' } : {}}
     >
-      <img
-        alt={ticker}
-        className="w-3 h-3 rounded-full object-contain"
-        onError={() => setImgSrc(defaultRgbIcon)}
-        src={imgSrc}
+      <AssetIcon
+        className="size-3 rounded-full object-contain"
+        ticker={ticker}
       />
       {ticker}
     </span>
@@ -106,39 +104,41 @@ const BarAssetLabel: React.FC<{ ticker: string }> = ({ ticker }) => {
   )
 }
 
-// Format an RGB asset base amount into display units using its precision
-// (amounts from the node are integers scaled by 10^precision).
-const formatAssetUnits = (amount: number, precision: number): string => {
-  const factor = Math.pow(10, precision)
-  return (amount / factor).toLocaleString(undefined, {
-    maximumFractionDigits: precision,
-    minimumFractionDigits: 0,
-  })
+export const Component = () => {
+  const account = useAppSelector((state) => state.nodeSettings.data)
+  return (
+    <NodeWallet
+      key={JSON.stringify([account.network, account.name, account.node_url])}
+    />
+  )
 }
 
-export const Component = () => {
+function NodeWallet() {
   const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
-  const appMode = useAppSelector((state) => state.settings.appMode)
-  const mindActive = isMindEnabled(appMode)
-  const activateMind = () => {
-    dispatch(setAppMode('both'))
-    navigate(KALEIDO_MIND_PATH)
-  }
   const [assets, assetsResponse] = nodeApi.endpoints.listAssets.useLazyQuery()
   const [btcBalance, btcBalanceResponse] =
     nodeApi.endpoints.btcBalance.useLazyQuery()
   const [listChannels, listChannelsResponse] =
     nodeApi.endpoints.listChannels.useLazyQuery()
   const [assetBalance] = nodeApi.endpoints.assetBalance.useLazyQuery()
-  const [refreshTransfers] = nodeApi.endpoints.refresh.useMutation()
+  const [refreshTransfers, transfersResponse] =
+    nodeApi.endpoints.refresh.useMutation()
   const [assetBalances, setAssetBalances] = useState<
-    Record<string, { offChain: number; onChain: number; incoming: number }>
+    Record<
+      string,
+      { offChain?: number; onChain?: number; incoming: number } | null
+    >
   >({})
-  const [assetsMap, setAssetsMap] = useState<Record<string, NiaAsset>>({})
+  const [assetDetails, setAssetDetails] = useState<NiaAsset | null>(null)
   const { bitcoinUnit } = useSettings()
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const refreshRequest = useRef<symbol | null>(null)
+  const isRefreshing =
+    transfersResponse.isLoading ||
+    assetsResponse.isFetching ||
+    btcBalanceResponse.isFetching ||
+    listChannelsResponse.isFetching
   const [getNodeInfo, nodeInfoResponse] =
     nodeApi.endpoints.nodeInfo.useLazyQuery()
   const [getNetworkInfo] = nodeApi.endpoints.networkInfo.useLazyQuery()
@@ -153,34 +153,26 @@ export const Component = () => {
   const { copied: pubkeyCopied, copy: copyPubkey } = useCopyToClipboard()
 
   const refreshData = useCallback(async () => {
-    setIsRefreshing(true)
+    const request = Symbol()
+    refreshRequest.current = request
+    // Refresh registers incoming RGB transfers before the asset list is read.
     try {
-      // Settle any incoming RGB transfers BEFORE reading the asset list.
-      // refreshtransfers is what registers a newly received asset and moves its
-      // balance from "incoming" to spendable; running it concurrently with
-      // listAssets meant the dashboard read the pre-refresh state and only
-      // surfaced received assets a poll (or never) later. Errors are logged
-      // rather than swallowed so a failing refresh is visible.
-      try {
-        await refreshTransfers({}).unwrap()
-      } catch (err) {
-        logger.error('refreshTransfers failed during dashboard refresh:', err)
-      }
-      await Promise.all([assets(), listChannels(), btcBalance()])
-    } finally {
-      setIsRefreshing(false)
+      await refreshTransfers({}).unwrap()
+    } catch (err) {
+      logger.error('refreshTransfers failed during dashboard refresh:', err)
     }
+    if (request === refreshRequest.current)
+      await Promise.all([assets(), listChannels(), btcBalance()])
   }, [assets, btcBalance, listChannels, refreshTransfers])
 
-  useEffect(() => {
-    if (assetsResponse.data) {
-      const newAssetsMap: Record<string, NiaAsset> = {}
-      getAllRgbAssets(assetsResponse.data).forEach((asset) => {
-        if (asset.asset_id) newAssetsMap[asset.asset_id] = asset
-      })
-      setAssetsMap(newAssetsMap)
-    }
-  }, [assetsResponse.data])
+  const niaAssets = useMemo(
+    () => getAllRgbAssets(assetsResponse.data),
+    [assetsResponse.data]
+  )
+  const assetsMap = useMemo(
+    () => Object.fromEntries(niaAssets.map((asset) => [asset.asset_id, asset])),
+    [niaAssets]
+  )
 
   // Fetch nodeInfo and networkInfo once on mount (they rarely change)
   useEffect(() => {
@@ -191,34 +183,45 @@ export const Component = () => {
   useEffect(() => {
     refreshData()
     const intervalId = setInterval(refreshData, 30_000)
-    return () => clearInterval(intervalId)
+    return () => {
+      refreshRequest.current = null
+      clearInterval(intervalId)
+    }
   }, [refreshData])
 
   useEffect(() => {
-    const fetchAssetBalances = async () => {
-      const newBalances: Record<
-        string,
-        { offChain: number; onChain: number; incoming: number }
-      > = {}
-      for (const asset of getAllRgbAssets(assetsResponse.data)) {
-        if (asset.asset_id) {
-          const balance = await assetBalance({ asset_id: asset.asset_id })
-          const spendable = balance.data?.spendable || 0
-          const future = balance.data?.future || 0
-          newBalances[asset.asset_id] = {
-            incoming: Math.max(0, future - spendable),
-            offChain: balance.data?.offchain_outbound || 0,
-            onChain: spendable,
-          }
-        }
-      }
-      setAssetBalances(newBalances)
+    let current = true
+    const readAssetBalances = async () => {
+      const entries = await Promise.all(
+        niaAssets.map(async (asset) => {
+          const { data, isError } = await assetBalance({
+            asset_id: asset.asset_id,
+          })
+          const balance =
+            data && !isError
+              ? {
+                  incoming:
+                    data.future != null && data.spendable != null
+                      ? Math.max(0, data.future - data.spendable)
+                      : 0,
+                  offChain: data.offchain_outbound,
+                  onChain: data.spendable,
+                }
+              : null
+          return [asset.asset_id, balance] as const
+        })
+      )
+      if (current) setAssetBalances(Object.fromEntries(entries))
     }
-    if (assetsResponse.data) fetchAssetBalances()
+    if (niaAssets.length) void readAssetBalances()
+    return () => {
+      current = false
+    }
   }, [
-    assetsResponse.data,
-    btcBalanceResponse.data,
-    listChannelsResponse.data,
+    niaAssets,
+    assetsResponse.fulfilledTimeStamp,
+    btcBalanceResponse.fulfilledTimeStamp,
+    listChannelsResponse.fulfilledTimeStamp,
     assetBalance,
   ])
 
@@ -265,11 +268,14 @@ export const Component = () => {
   )
 
   const balanceUnavailable =
-    !btcBalanceResponse.data || !listChannelsResponse.data
+    btcBalanceResponse.data?.vanilla?.spendable == null ||
+    btcBalanceResponse.data?.colored?.spendable == null ||
+    !listChannelsResponse.data
   const dataUnavailable =
     btcBalanceResponse.isError ||
     listChannelsResponse.isError ||
-    assetsResponse.isError
+    assetsResponse.isError ||
+    niaAssets.some((asset) => assetBalances[asset.asset_id] === null)
 
   const isAssetsLoading =
     assetsResponse.isUninitialized ||
@@ -282,7 +288,6 @@ export const Component = () => {
     liquidityTotal > 0 ? (totalInboundLiquidity / liquidityTotal) * 100 : 50
 
   const pubkey = nodeInfoResponse.data?.pubkey || ''
-  const niaAssets = getAllRgbAssets(assetsResponse.data)
 
   const handleCopyPubkey = () => {
     if (!pubkey) return
@@ -291,37 +296,44 @@ export const Component = () => {
 
   const btcOnChain = onChainSpendableBalance + onChainColoredSpendableBalance
 
-  const renderBalanceWithIncoming = (
-    balance: number,
-    incoming: number,
-    formatFn: (val: number) => React.ReactNode
-  ) => {
-    if (incoming > 0) {
-      return (
-        <div className="flex flex-col">
-          <span className="font-bold">{formatFn(balance)}</span>
-          <span className="text-xs text-content-tertiary font-medium">
-            +{formatFn(incoming)} incoming
-          </span>
-        </div>
-      )
+  const btcUnit = bitcoinUnit === 'SAT' ? 'sats' : bitcoinUnit
+  const displayBtc = (value: number) => formatBitcoinAmount(value, bitcoinUnit)
+  const rows: WalletAsset[] = niaAssets.map((asset) => {
+    const row = assetBalances[asset.asset_id]
+    const display = (amount: number) =>
+      formatAssetUnits(amount, asset.precision ?? 0)
+    return {
+      amounts: [
+        row?.offChain == null ? null : display(row.offChain),
+        row?.onChain == null ? null : display(row.onChain),
+      ],
+      description: asset.name,
+      icon: <AssetIcon ticker={asset.ticker} />,
+      id: asset.asset_id,
+      loading: row === undefined,
+      onDetails: () => setAssetDetails(asset),
+      pending: row?.incoming
+        ? `+${display(row.incoming)} · ${t('btcHistory.pending')}`
+        : undefined,
+      ticker: asset.ticker,
     }
-    return <div className="font-bold">{formatFn(balance)}</div>
-  }
+  })
+  const openReceive = (assetId?: string) =>
+    dispatch(uiSliceActions.setModal({ assetId, type: 'deposit' }))
+  const openSend = (assetId?: string) =>
+    dispatch(uiSliceActions.setModal({ assetId, type: 'withdraw' }))
 
   return (
-    <div className="w-full h-full flex flex-col animate-in fade-in duration-500">
-      {dataUnavailable && (
-        <div
-          className="mb-3 p-3 rounded-lg border border-amber-500/40 text-sm text-amber-200"
-          role="alert"
-        >
-          {t('ux.dataUnavailable')}{' '}
-          <button className="underline ml-2" onClick={refreshData}>
-            {t('trade.connectionIssues.retryConnection')}
-          </button>
-        </div>
-      )}
+    <WalletPage
+      action={
+        <KaleidoButton asChild size="sm" variant="quiet">
+          <Link to={WALLET_SETUP_PATH}>
+            <Server aria-hidden size={16} />
+            {t('unified.manageNodes')}
+          </Link>
+        </KaleidoButton>
+      }
+    >
       {!isLoading && !dataUnavailable && !balanceUnavailable && (
         <section className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-default bg-surface-overlay p-4">
           <div className="min-w-0 flex-1">
@@ -359,7 +371,7 @@ export const Component = () => {
               else
                 dispatch(
                   uiSliceActions.setModal({
-                    assetId: undefined,
+                    assetId: BTC_ASSET_ID,
                     type: 'deposit',
                   })
                 )
@@ -377,6 +389,13 @@ export const Component = () => {
             )}
           </button>
         </section>
+      )}
+      {assetDetails && (
+        <AssetDetailsModal
+          asset={assetDetails}
+          isOpen
+          onClose={() => setAssetDetails(null)}
+        />
       )}
       {/* Modals */}
       {showIssueAssetModal && (
@@ -417,293 +436,83 @@ export const Component = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
-        {/* ── LEFT COLUMN: Balance + Assets ── */}
-        <div className="lg:col-span-7 flex flex-col gap-5 min-h-0">
-          {/* Balance Card */}
-          <div className="relative overflow-hidden bg-surface-overlay rounded-2xl border border-border-default/60 shadow-xl p-6 group">
-            {/* Refresh icon — top right */}
-            <div className="absolute top-4 right-4 z-20">
-              <button
-                aria-label={
-                  isRefreshing
-                    ? t('dashboard.refreshing')
-                    : t('dashboard.refresh')
-                }
-                className="p-1.5 rounded-md bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                disabled={isRefreshing}
-                onClick={refreshData}
-                title={
-                  isRefreshing
-                    ? t('dashboard.refreshing')
-                    : t('dashboard.refresh')
-                }
-              >
-                {isRefreshing ? (
-                  <LoaderIcon className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-3.5 h-3.5" />
-                )}
-              </button>
-            </div>
-            <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-48 h-48 bg-secondary/5 rounded-full blur-3xl pointer-events-none" />
-
-            {/* Total balance */}
-            <div className="relative z-10 mb-5">
-              <div className="mb-1.5">
-                <p className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
-                  {t('dashboard.totalBalance')} · BTC
-                </p>
-              </div>
-              <div className="flex items-baseline gap-2.5 mb-1.5">
-                <span className="text-3xl font-bold text-content-primary leading-none">
-                  {isLoading ? (
-                    <LoadingPlaceholder width="w-48" />
-                  ) : balanceUnavailable ? (
-                    '—'
-                  ) : (
-                    formatBitcoinAmount(totalBalance, bitcoinUnit)
-                  )}
-                </span>
-                <span className="text-xl font-semibold text-white">
-                  {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
-                </span>
-              </div>
-              <div className="flex items-center gap-4 text-sm flex-wrap">
+        <div className="min-w-0 lg:col-span-7">
+          <WalletOverview
+            assets={rows}
+            assetsState={
+              isAssetsLoading
+                ? 'loading'
+                : !assetsResponse.data
+                  ? 'unavailable'
+                  : 'ready'
+            }
+            balance={
+              balanceUnavailable
+                ? null
+                : displayBtc(totalBalance) + ' ' + btcUnit
+            }
+            balanceDetails={
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-content-secondary">
                 {!isLoading &&
                   !balanceUnavailable &&
                   formatFiat(totalBalance) && (
-                    <span className="text-content-secondary">
-                      ≈ {formatFiat(totalBalance)}
-                    </span>
+                    <span>≈ {formatFiat(totalBalance)}</span>
                   )}
                 {btcPrice !== undefined && (
                   <span className="flex items-center gap-1 text-xs text-content-tertiary">
-                    <TrendingUp className="w-3 h-3 text-primary" />
-                    {t('dashboard.btcPrice')}:{' '}
-                    <span className="text-content-secondary ml-0.5">
-                      {formatFiat(100_000_000)}
-                    </span>
+                    <TrendingUp aria-hidden size={13} />
+                    {t('dashboard.btcPrice')} · {formatFiat(100_000_000)}
                   </span>
                 )}
               </div>
-            </div>
-
-            {/* Actions — compact 3-button row */}
-            <div className="relative z-10 grid grid-cols-3 gap-2">
-              <button
-                className="flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-status-success/15 hover:bg-status-success/25 border border-status-success/30 hover:border-status-success/50 text-status-success text-xs font-semibold transition-all overflow-hidden"
-                onClick={() =>
-                  dispatch(
-                    uiSliceActions.setModal({
-                      assetId: niaAssets[0]?.asset_id,
-                      type: 'deposit',
-                    })
-                  )
-                }
-              >
-                <Download className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate">{t('dashboard.deposit')}</span>
-              </button>
-              <button
-                className="flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/30 text-white text-xs font-semibold transition-all overflow-hidden"
-                onClick={() => navigate(TRADE_PATH)}
-              >
-                <ArrowLeftRight className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate">{t('dashboard.swap', 'Swap')}</span>
-              </button>
-              <button
-                className="flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 hover:border-violet-500/50 text-violet-400 text-xs font-semibold transition-all overflow-hidden"
-                onClick={() =>
-                  dispatch(
-                    uiSliceActions.setModal({
-                      assetId: niaAssets[0]?.asset_id,
-                      type: 'withdraw',
-                    })
-                  )
-                }
-              >
-                <Upload className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate">{t('dashboard.withdraw')}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Assets Card */}
-          <div className="flex-1 min-h-0 flex flex-col bg-surface-overlay rounded-2xl border border-border-default/60 shadow-xl overflow-hidden">
-            {/* Card header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border-default/40">
-              <h3 className="text-base font-bold text-content-primary">
-                {t('dashboard.assets')}
-              </h3>
-              <div className="flex items-center gap-2">
-                <Button
-                  className="border-white/30 hover:border-white/50"
-                  icon={<Database className="w-4 h-4" />}
-                  onClick={() => setShowUTXOModal(true)}
-                  size="sm"
-                  variant="outline"
-                >
-                  {t('dashboard.manageUTXOs')}
-                </Button>
-                <Button
-                  icon={<Plus className="w-4 h-4" />}
-                  onClick={() => setShowIssueAssetModal(true)}
-                  size="sm"
-                >
-                  {t('dashboard.issueAsset')}
-                </Button>
-              </div>
-            </div>
-
-            {/* Column headers */}
-            <div className="grid grid-cols-4 gap-1 text-xs font-semibold uppercase tracking-wider text-gray-400 border-b border-border-default/30">
-              <div className="px-4 py-2.5">{t('dashboard.asset')}</div>
-              <div className="px-4 py-2.5">
-                {t('dashboard.offChainBalance')}
-              </div>
-              <div className="px-4 py-2.5">{t('dashboard.onChainBalance')}</div>
-              <div className="px-4 py-2.5 text-center">
-                {t('dashboard.actions')}
-              </div>
-            </div>
-
-            {/* Bitcoin row — always first */}
-            <div className="group grid grid-cols-4 gap-1 items-center bg-surface-elevated/40 hover:bg-surface-elevated/70 transition-colors border-b border-border-default/20">
-              {/* Asset cell */}
-              <div className="py-3 px-4 text-sm truncate flex items-center">
-                <BtcIcon className="h-6 w-6 mr-2 flex-shrink-0" />
-                <div>
-                  <div className="font-bold">BTC</div>
-                  <div>Bitcoin</div>
-                </div>
-              </div>
-              {/* Off-chain */}
-              <div className="text-sm py-3 px-4">
-                {isLoading ? (
-                  <LoadingPlaceholder />
-                ) : (
-                  <div className="font-bold">
-                    {balanceUnavailable
-                      ? '—'
-                      : formatBitcoinAmount(offChainBalance, bitcoinUnit)}
-                  </div>
-                )}
-              </div>
-              {/* On-chain */}
-              <div className="text-sm py-3 px-4">
-                {isLoading ? (
-                  <LoadingPlaceholder />
-                ) : balanceUnavailable ? (
-                  '—'
-                ) : (
-                  renderBalanceWithIncoming(btcOnChain, btcIncoming, (val) =>
-                    formatBitcoinAmount(val, bitcoinUnit)
-                  )
-                )}
-              </div>
-              {/* Actions */}
-              <div className="py-3 px-2 flex justify-center">
-                <div className="flex items-center gap-0.5">
-                  {[
-                    {
-                      color: 'text-status-success hover:bg-status-success/15',
-                      icon: <Download className="w-3.5 h-3.5" />,
-                      label: t('dashboard.deposit'),
-                      onClick: () =>
-                        dispatch(
-                          uiSliceActions.setModal({
-                            assetId: niaAssets[0]?.asset_id,
-                            type: 'deposit',
-                          })
-                        ),
-                    },
-                    {
-                      color: 'text-violet-400 hover:bg-violet-500/15',
-                      icon: <Upload className="w-3.5 h-3.5" />,
-                      label: t('dashboard.withdraw'),
-                      onClick: () =>
-                        dispatch(
-                          uiSliceActions.setModal({
-                            assetId: niaAssets[0]?.asset_id,
-                            type: 'withdraw',
-                          })
-                        ),
-                    },
-                    {
-                      color: 'text-white hover:bg-white/10',
-                      icon: <History className="w-3.5 h-3.5" />,
-                      label: t('dashboard.history'),
-                      onClick: () => navigate(WALLET_HISTORY_DEPOSITS_PATH),
-                    },
-                  ].map(({ icon, label, color, onClick }) => (
-                    <div className="relative group/btn" key={label}>
-                      <button
-                        className={`p-1.5 rounded-md transition-colors duration-150 ${color}`}
-                        onClick={onClick}
-                        title={label}
-                      >
-                        {icon}
-                      </button>
-                      <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-surface-high text-content-primary text-xs rounded-md py-0.5 px-1.5 opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
-                        {label}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* RGB asset rows — scrollable */}
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-              {isAssetsLoading ? (
-                <div className="space-y-0">
-                  {[0, 1, 2].map((i) => (
-                    <div
-                      className="grid grid-cols-4 gap-1 items-center border-b border-border-default/20 px-4 py-3"
-                      key={i}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-surface-elevated/50 animate-pulse flex-shrink-0" />
-                        <LoadingPlaceholder width="w-16" />
-                      </div>
-                      <LoadingPlaceholder />
-                      <LoadingPlaceholder />
-                      <div className="flex justify-center gap-1">
-                        <div className="w-6 h-6 rounded-lg bg-surface-elevated/50 animate-pulse" />
-                        <div className="w-6 h-6 rounded-lg bg-surface-elevated/50 animate-pulse" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : niaAssets.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-content-tertiary">
-                  <Database className="w-10 h-10 mb-3 opacity-40" />
-                  <p className="text-sm font-medium">No RGB assets found.</p>
-                  <p className="text-xs mt-1 opacity-70">
-                    Issue an asset or deposit to get started.
-                  </p>
-                </div>
-              ) : (
-                niaAssets.map((asset: any) => (
-                  <AssetRow
-                    asset={asset as NiaAsset}
-                    incomingBalance={
-                      (assetBalances[asset.asset_id || ''] || {}).incoming || 0
-                    }
-                    isLoading={!(asset.asset_id in assetBalances)}
-                    key={asset.asset_id}
-                    offChainBalance={
-                      (assetBalances[asset.asset_id || ''] || {}).offChain || 0
-                    }
-                    onChainBalance={
-                      (assetBalances[asset.asset_id || ''] || {}).onChain || 0
-                    }
-                  />
-                ))
-              )}
-            </div>
-          </div>
+            }
+            balanceLabel={t('dashboard.totalBalance') + ' · BTC'}
+            balanceLoading={isLoading}
+            bitcoinRow={{
+              amounts: [
+                listChannelsResponse.data ? displayBtc(offChainBalance) : null,
+                btcBalanceResponse.data?.vanilla?.spendable != null &&
+                btcBalanceResponse.data?.colored?.spendable != null
+                  ? displayBtc(btcOnChain)
+                  : null,
+              ],
+              description: 'Bitcoin',
+              icon: (
+                <img alt="" className="size-6 shrink-0" src={bitcoinIcon} />
+              ),
+              id: BTC_ASSET_ID,
+              loading: isLoading,
+              pending:
+                btcIncoming > 0
+                  ? `+${displayBtc(btcIncoming)} · ${t('btcHistory.pending')}`
+                  : undefined,
+              ticker: 'BTC',
+            }}
+            columns={[
+              t('dashboard.offChainBalance'),
+              t('dashboard.onChainBalance'),
+            ]}
+            emptyMessage={t('trade.assetModal.noAssetsFound')}
+            error={dataUnavailable ? t('ux.dataUnavailable') : undefined}
+            marketAction={{
+              label: t('dashboard.swap'),
+              onClick: () => navigate(TRADE_PATH),
+            }}
+            onAssetHistory={(id) =>
+              navigate(
+                id === BTC_ASSET_ID
+                  ? WALLET_HISTORY_DEPOSITS_PATH
+                  : `${WALLET_HISTORY_ASSETS_PATH}?assetId=${encodeURIComponent(id)}`
+              )
+            }
+            onAssetSend={openSend}
+            onIssue={() => setShowIssueAssetModal(true)}
+            onManageCoins={() => setShowUTXOModal(true)}
+            onReceive={openReceive}
+            onRefresh={refreshData}
+            onSend={openSend}
+            refreshing={isRefreshing}
+          />
         </div>
 
         {/* ── RIGHT COLUMN: Node + Channels ── */}
@@ -765,6 +574,10 @@ export const Component = () => {
                     />
                   ))}
                 </div>
+              ) : !listChannelsResponse.data ? (
+                <p className="text-sm text-content-tertiary">
+                  {t('p2pMarket.market.cost.unavailable')}
+                </p>
               ) : channels.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-6 text-center h-full">
                   <Zap className="w-7 h-7 text-content-tertiary mb-2 opacity-50" />
@@ -840,7 +653,11 @@ export const Component = () => {
                               )}
                             </span>
                             <span className="flex items-center justify-center gap-1 text-content-secondary font-medium">
-                              <BtcIcon className="w-3 h-3" />
+                              <img
+                                alt=""
+                                className="size-3"
+                                src={bitcoinIcon}
+                              />
                               BTC
                             </span>
                             <span className="flex items-center gap-0.5 text-[#C4B5FD] justify-end">
@@ -1011,32 +828,6 @@ export const Component = () => {
           </div>
         </div>
       </div>
-      {/* KaleidoMind not active in this mode — offer a way to activate it */}
-      {!mindActive && (
-        <button
-          className="group mt-5 flex w-full items-center gap-4 rounded-xl border border-purple/30 bg-gradient-to-r from-purple/10 to-transparent px-5 py-4 text-left transition-all duration-300 hover:border-purple/50 hover:from-purple/15"
-          onClick={activateMind}
-          type="button"
-        >
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-purple/15 text-purple">
-            <Brain className="h-6 w-6" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-bold text-white">
-              {t('dashboard.activateMindTitle', {
-                defaultValue: 'Add KaleidoMind',
-              })}
-            </div>
-            <div className="text-xs text-content-secondary">
-              {t('dashboard.activateMindDesc', {
-                defaultValue:
-                  'Run a local AI brain alongside your node — chat, models and skills.',
-              })}
-            </div>
-          </div>
-          <ArrowRight className="h-5 w-5 flex-shrink-0 text-purple transition-transform duration-300 group-hover:translate-x-1" />
-        </button>
-      )}
-    </div>
+    </WalletPage>
   )
 }

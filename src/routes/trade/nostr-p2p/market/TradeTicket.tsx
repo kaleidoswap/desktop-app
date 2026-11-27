@@ -1,3 +1,5 @@
+import { NostrParticipants } from '../NostrParticipants'
+import { Button } from 'kaleido-ui'
 import { useMemo, useState } from 'react'
 import { Picker } from './Picker'
 import { toast } from 'react-toastify'
@@ -17,7 +19,7 @@ import { fmtBtc, fmtPrice, fmtSats, fmtUnits, toBase } from '../format'
 import { CostBreakdown } from './CostBreakdown'
 import { Field } from './Field'
 import { useTr } from './hooks'
-import { Pill, Slider, cx } from './ui'
+import { Slider, cx } from './ui'
 
 interface Asset {
   asset_id: string
@@ -64,6 +66,9 @@ export function TradeTicket({
   limitOnly = false,
 }: Props) {
   const tr = useTr()
+  const [reviewedNpub] = useState(() =>
+    info.nostr_profiles ? info.npub : undefined
+  )
   const [side, setSide] = useState<Side>(initialSide)
   const [mode, setMode] = useState<Mode>(limitOnly ? 'limit' : initialMode)
   const [amount, setAmount] = useState(initialAmount)
@@ -196,6 +201,7 @@ export function TradeTicket({
     setBusy(true)
     try {
       await marketApi.placeOrder({
+        ...(reviewedNpub ? { expected_npub: reviewedNpub } : {}),
         amount: amountBase,
         asset_id: asset.asset_id,
         price_sat: total,
@@ -280,28 +286,6 @@ export function TradeTicket({
           ))}
         </div>
       )}
-
-      <p className="-mt-1 text-caption text-content-tertiary">
-        {mode === 'market'
-          ? side === 'buy'
-            ? tr(
-                'ticket.marketHelpBuy',
-                'Buy now from the cheapest open orders. You see the exact cost before anything is signed.'
-              )
-            : tr(
-                'ticket.marketHelpSell',
-                'Sell now to the highest open buy orders. You see exactly what you receive before anything is signed.'
-              )
-          : limitOnly
-            ? tr(
-                'offers.makeHint',
-                'Choose your price and keep your desktop online to answer other traders.'
-              )
-            : tr(
-                'ticket.limitHelp',
-                'Post an order at your own price. It waits in the book until someone takes it.'
-              )}
-      </p>
 
       <div className="flex items-center justify-between text-caption text-content-tertiary">
         <span>{tr('ticket.available', 'Available')}</span>
@@ -518,54 +502,50 @@ export function TradeTicket({
         </>
       )}
 
-      <div className="flex flex-col gap-2 text-caption">
-        <div className="flex items-center justify-between">
-          <span className="text-content-secondary">
-            {tr('ticket.payWith', 'Pay with')}
-          </span>
-          <span className="flex gap-1.5">
-            <Pill tone="primary">
-              {tr('ticket.onchain', 'Bitcoin on-chain')}
-            </Pill>
-            <span title={tr('ticket.soonHint', 'Not available yet')}>
-              <Pill className="opacity-60" tone="muted">
-                {tr('ticket.lightning', 'Lightning · soon')}
-              </Pill>
-            </span>
-          </span>
-        </div>
-        {limitQuote && (
-          <CostBreakdown
-            asset={`${amount || '0'} ${asset.ticker}`}
-            estimates={limitQuote.estimates}
-            priceHint={`${fmtPrice(unitPrice)} sats / ${asset.ticker}`}
-            settlement={limitQuote.settlement}
+      {(mode === 'limit' ? limitQuote : taken) && (
+        <div className="flex flex-col gap-2 text-caption">
+          <NostrParticipants
+            makers={
+              mode === 'limit'
+                ? [info.npub]
+                : plan.picks.map((order) => order.maker_npub ?? order.maker)
+            }
+            taker={mode === 'market' ? info.npub : undefined}
           />
-        )}
-        {limitQuote && limitQuote.settlement.reserveSat === null && (
-          <p className="text-caption text-content-secondary">
-            {tr(
-              'ticket.reserveUnknown',
-              'The reserved bitcoin is unavailable until the RGB output is known. It is not zero, and it is not the taker’s fees.'
-            )}
+          {limitQuote && (
+            <CostBreakdown
+              asset={`${amount || '0'} ${asset.ticker}`}
+              estimates={limitQuote.estimates}
+              priceHint={`${fmtPrice(unitPrice)} sats / ${asset.ticker}`}
+              settlement={limitQuote.settlement}
+            />
+          )}
+          {limitQuote && limitQuote.settlement.reserveSat === null && (
+            <p className="text-caption text-content-secondary">
+              {tr(
+                'ticket.reserveUnknown',
+                'The reserve depends on the final RGB output.'
+              )}
+            </p>
+          )}
+          <p className="text-content-tertiary">
+            {tr('ticket.onchain', 'Bitcoin on-chain')} · {settleNote}
           </p>
-        )}
-        <p className="text-content-tertiary">{settleNote}</p>
-      </div>
+        </div>
+      )}
 
-      {problem && (
+      {problem && amount.trim() && (
         <p className="rounded-xl bg-status-warning-subtle p-3 text-caption text-content-primary">
           {problem}
         </p>
       )}
 
-      <button
-        className={cx(
-          'rounded-xl py-3 text-body font-bold transition-opacity disabled:cursor-not-allowed disabled:opacity-40',
-          side === 'buy'
-            ? 'bg-status-success text-text-on-accent'
-            : 'bg-status-danger text-white'
-        )}
+      {mode === 'limit' && (
+        <p className="text-caption text-content-secondary">
+          {tr('offers.makeHint', 'Keep the app open while your offer is live.')}
+        </p>
+      )}
+      <Button
         disabled={!!problem || busy}
         onClick={() =>
           mode === 'market' ? onReview(plan.picks) : void place()
@@ -581,18 +561,7 @@ export function TradeTicket({
             : tr('ticket.place', 'Place {{side}} order', {
                 side: sideWord.toLowerCase(),
               })}
-      </button>
-      <p className="text-tiny text-content-tertiary">
-        {mode === 'limit'
-          ? tr(
-              'ticket.limitNote',
-              'Your order rests in the book until someone takes it in full. Your coins stay in your wallet until the swap is signed.'
-            )
-          : tr(
-              'ticket.marketNote',
-              'You see exactly what you pay before anything is signed.'
-            )}
-      </p>
+      </Button>
     </section>
   )
 }

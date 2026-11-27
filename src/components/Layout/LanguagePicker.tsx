@@ -12,7 +12,7 @@ import { useAppDispatch } from '../../app/store/hooks'
 import { LANGUAGES, type LanguageCode } from '../../i18n'
 import { setLanguage } from '../../slices/settings/settings.slice'
 
-export function LanguagePicker({ full = false }: { full?: boolean }) {
+export function LanguagePicker() {
   const { i18n, t } = useTranslation()
   const dispatch = useAppDispatch()
   const resolved = i18n.resolvedLanguage as LanguageCode | undefined
@@ -32,16 +32,10 @@ export function LanguagePicker({ full = false }: { full?: boolean }) {
       >
         <Icon name="language" size="sm" />
         <SelectValue>
-          {full ? (
-            <span lang={language}>{LANGUAGES[language].name}</span>
-          ) : (
-            <>
-              <span aria-hidden>{language.toUpperCase()}</span>
-              <span className="sr-only" lang={language}>
-                {LANGUAGES[language].name}
-              </span>
-            </>
-          )}
+          <span aria-hidden>{language.toUpperCase()}</span>
+          <span className="sr-only" lang={language}>
+            {LANGUAGES[language].name}
+          </span>
         </SelectValue>
       </SelectTrigger>
       <SelectContent

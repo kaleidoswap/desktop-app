@@ -1,87 +1,51 @@
 import { openUrl } from '@tauri-apps/plugin-opener'
-import { ArrowUpRight, Monitor, Globe } from 'lucide-react'
+import { Button } from 'kaleido-ui'
+import { ArrowUpRight } from 'lucide-react'
 import { useState } from 'react'
+
+import { useTr } from './hooks'
 
 const PREVIEW = 'https://kaleido-edge.mole-pangolin.ts.net:8444/'
 
-/** The private preview is a separate wallet and origin, never a wallet export. */
 export function MosaikBridge({ network }: { network: string }) {
-  const [error, setError] = useState('')
+  const tr = useTr()
+  const [failed, setFailed] = useState(false)
   if (network !== 'signetcustom') return null
+
   async function openMarket() {
     try {
       await openUrl(PREVIEW)
-      setError('')
+      setFailed(false)
     } catch {
-      setError(
-        'Could not open your browser. Connect to the beta Tailscale VPN and try again.'
-      )
+      setFailed(true)
     }
   }
+
   return (
-    <section
-      aria-label="Desktop and Mosaik"
-      className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 to-surface-card p-5"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-caption font-semibold uppercase tracking-widest text-primary">
-            One market · two ways to trade
-          </p>
-          <h2 className="mt-1 text-xl font-semibold text-content-primary">
-            Your offers, on Mosaik.
-          </h2>
-        </div>
-        <button
-          className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-text-on-accent"
-          onClick={() => void openMarket()}
-          type="button"
-        >
-          Open Mosaik <ArrowUpRight aria-hidden size={16} />
-        </button>
-      </div>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <div className="flex gap-3">
-          <Monitor aria-hidden className="shrink-0 text-primary" size={20} />
-          <div>
-            <h3 className="text-sm font-semibold text-content-primary">
-              Make an offer here
-            </h3>
-            <p className="mt-1 text-caption text-content-secondary">
-              Fund your trading wallet → choose Limit → set your price. Keep
-              desktop online until the swap completes.
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <Globe aria-hidden className="shrink-0 text-primary" size={20} />
-          <div>
-            <h3 className="text-sm font-semibold text-content-primary">
-              Explore in your browser
-            </h3>
-            <p className="mt-1 text-caption text-content-secondary">
-              Mosaik shows offers on the same network. Accept one with the
-              KaleidoSwap extension.
-            </p>
-          </div>
-        </div>
-      </div>
-      <details className="mt-4 text-caption text-content-secondary">
-        <summary className="cursor-pointer">
-          Wallets & private preview access
-        </summary>
-        <p className="mt-2">
-          Desktop and the browser extension use separate wallets. Balances do
-          not sync between them. Fund each using its own receive address; never
-          copy a recovery phrase into Mosaik. The Signet preview needs the beta
-          Tailscale VPN. Test coins only.
-        </p>
-      </details>
-      {error && (
-        <p className="mt-3 text-caption text-status-warning" role="alert">
-          {error}
+    <div className="flex flex-wrap items-center gap-2 lg:col-span-2">
+      <Button
+        onClick={() => void openMarket()}
+        size="sm"
+        type="button"
+        variant="outline"
+      >
+        {tr('offers.openMosaik', 'Open Mosaik')}
+        <ArrowUpRight aria-hidden size={15} />
+      </Button>
+      <p className="text-caption text-content-secondary">
+        {tr(
+          'offers.mosaikAccess',
+          'The preview requires the beta Tailscale VPN and uses a separate extension wallet.'
+        )}
+      </p>
+      {failed && (
+        <p className="text-caption text-status-warning" role="alert">
+          {tr(
+            'offers.mosaikOpenError',
+            'Connect to the beta Tailscale VPN and try opening Mosaik again.'
+          )}
         </p>
       )}
-    </section>
+    </div>
   )
 }

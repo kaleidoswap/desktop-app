@@ -22,6 +22,7 @@ import {
   WALLET_DASHBOARD_PATH,
   WALLET_SETUP_PATH,
 } from '../../app/router/paths'
+import { invalidateNodeAccounts } from '../../slices/nodeAccounts'
 import { useAppDispatch } from '../../app/store/hooks'
 import { Layout } from '../../components/Layout'
 import { NetworkSelector } from '../../components/NetworkSelector'
@@ -358,6 +359,7 @@ export const Component = () => {
             proxyEndpoint: data.proxy_endpoint,
             rpcConnectionUrl: data.rpc_connection_url,
           })
+          dispatch(invalidateNodeAccounts())
 
           await invoke('set_current_account', {
             accountName: data.name,

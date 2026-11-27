@@ -7,11 +7,16 @@ import {
   TRADE_NOSTR_P2P_PATH,
 } from '../../app/router/paths'
 import { RouteTabs, type RouteTab } from '../Layout/RouteTabs'
+import { useAppSelector } from '../../app/store/hooks'
+import {
+  nodeWalletNetworkKey,
+  useDesktopTestNetworks,
+} from '../../routes/p2p-home/networks'
 
 const tabs: RouteTab[] = [
   {
     icon: 'apps',
-    labelKey: 'navigation.marketMaker',
+    labelKey: 'p2pMarket.market.swap.title',
     to: TRADE_MARKET_MAKER_PATH,
   },
   {
@@ -21,10 +26,25 @@ const tabs: RouteTab[] = [
   },
   { icon: 'trending_up', labelKey: 'navigation.dca', to: TRADE_DCA_PATH },
   { icon: 'tune', labelKey: 'navigation.limitOrders', to: TRADE_LIMIT_PATH },
-  { icon: 'hub', labelKey: 'navigation.nostrP2P', to: TRADE_NOSTR_P2P_PATH },
 ]
+
+const transfers: RouteTab = {
+  icon: 'swap_horiz',
+  labelKey: 'navigation.p2pTransfers',
+  to: `${TRADE_NOSTR_P2P_PATH}?funds=1`,
+}
 
 export function TradeNav() {
   const { t } = useTranslation()
-  return <RouteTabs label={t('navigation.trade')} tabs={tabs} />
+  const node = useAppSelector((state) => state.nodeSettings.data)
+  const networks = useDesktopTestNetworks()
+  const canTransfer =
+    node.name &&
+    networks.some(({ key }) => key === nodeWalletNetworkKey(node.network))
+  return (
+    <RouteTabs
+      label={t('navigation.trade')}
+      tabs={canTransfer ? [...tabs, transfers] : tabs}
+    />
+  )
 }

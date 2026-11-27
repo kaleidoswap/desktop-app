@@ -1,3 +1,4 @@
+import { NostrParticipants } from '../NostrParticipants'
 import { Trash2, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
@@ -25,6 +26,7 @@ import { EmptyState, Panel, Pill, cx, type Tone } from './ui'
 type Tab = 'orders' | 'trades' | 'balances'
 
 interface Props {
+  expectedNpub?: string
   orders: Order[]
   trades: Trade[]
   balance: Balance | undefined
@@ -39,6 +41,7 @@ interface Props {
 }
 
 export function Activity({
+  expectedNpub,
   orders,
   trades,
   balance,
@@ -57,7 +60,7 @@ export function Activity({
 
   const cancel = async (id: string) => {
     try {
-      await marketApi.cancel(id)
+      await marketApi.cancel(id, expectedNpub)
       toast.success(tr('activity.cancelled', 'Order cancelled'))
       onChanged()
     } catch (e) {
@@ -202,6 +205,7 @@ export function Activity({
                       <span className="w-7" />
                     )}
                   </div>
+                  <NostrParticipants makers={[o.maker_npub ?? o.maker]} />
                   <CostBreakdown
                     asset={`${fmtUnits(o.amount, o.precision)} ${tickerOf(o)}`}
                     priceHint={`${fmtPrice(o.unit_price)} sats`}
@@ -270,6 +274,10 @@ export function Activity({
                       </span>
                     </span>
                   </div>
+                  <NostrParticipants
+                    makers={[t.maker_npub]}
+                    taker={t.taker_npub}
+                  />
                   <SwapSteps trade={t} />
                   <CostBreakdown
                     asset={amount.text}

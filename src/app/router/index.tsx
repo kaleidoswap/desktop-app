@@ -1,4 +1,9 @@
-import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+  useLocation,
+} from 'react-router-dom'
 
 import { RootRoute } from '../../routes/root'
 
@@ -14,6 +19,7 @@ import {
   TRADE_MARKET_MAKER_PATH,
   TRADE_MANUAL_PATH,
   P2P_WALLET_PATH,
+  P2P_BALANCE_PATH,
   MAINNET_PATH,
   MAINNET_WALLET_PATH,
   TRADE_NOSTR_P2P_PATH,
@@ -39,6 +45,11 @@ import {
   KALEIDO_MIND_AGENT_PATH,
 } from './paths'
 
+function WalletRedirect({ to }: { to: string }) {
+  const { search, hash, state } = useLocation()
+  return <Navigate replace state={state} to={{ hash, pathname: to, search }} />
+}
+
 export const router = createBrowserRouter([
   {
     lazy: () => import('../../routes/wallet-setup'),
@@ -46,7 +57,7 @@ export const router = createBrowserRouter([
   },
   {
     children: [
-      { element: <Navigate replace to={MAINNET_WALLET_PATH} />, index: true },
+      { element: <WalletRedirect to={MAINNET_WALLET_PATH} />, index: true },
       {
         lazy: async () => ({
           Component: (await import('../../routes/mainnet-wallet')).Component,
@@ -85,20 +96,27 @@ export const router = createBrowserRouter([
   },
   {
     children: [
-      { index: true, lazy: () => import('../../routes/p2p-home/home') },
-      { lazy: () => import('../../routes/p2p-home/trade'), path: 'trade' },
-      { lazy: () => import('../../routes/p2p-home/wallet'), path: 'wallet' },
+      { element: <WalletRedirect to={P2P_BALANCE_PATH} />, index: true },
       {
-        lazy: () => import('../../routes/p2p-home/activity'),
-        path: 'activity',
-      },
-      { lazy: () => import('../../routes/p2p-home/node'), path: 'node' },
-      {
-        lazy: () => import('../../routes/p2p-home/settings'),
-        path: 'settings',
+        children: [
+          { lazy: () => import('../../routes/p2p-home/trade'), path: 'trade' },
+          {
+            lazy: () => import('../../routes/p2p-home/wallet'),
+            path: 'wallet',
+          },
+          {
+            lazy: () => import('../../routes/p2p-home/activity'),
+            path: 'activity',
+          },
+          { lazy: () => import('../../routes/p2p-home/node'), path: 'node' },
+          {
+            lazy: () => import('../../routes/p2p-home/settings'),
+            path: 'settings',
+          },
+        ],
+        lazy: () => import('../../routes/p2p-home'),
       },
     ],
-    lazy: () => import('../../routes/p2p-home'),
     path: P2P_WALLET_PATH,
   },
   {

@@ -17,9 +17,17 @@ import {
 } from 'lucide-react'
 import { Input, AdvancedSettings, BitcoindRpcField, Button } from '../ui'
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { createPortal } from 'react-dom'
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from 'kaleido-ui'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import {
@@ -27,16 +35,18 @@ import {
   WALLET_SETUP_PATH,
   WALLET_UNLOCK_PATH,
 } from '../../app/router/paths'
-import { useAppDispatch } from '../../app/store/hooks'
+import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
+import {
+  invalidateNodeAccounts,
+  type SavedNodeAccount,
+  useSavedNodeAccountsQuery,
+} from '../../slices/nodeAccounts'
+import { setAppMode } from '../../slices/settings/settings.slice'
 import { buildLocalNodeUrl, normalizeNodeUrl } from '../../api/client'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { MinidenticonImg } from '../../components/MinidenticonImg'
 import { Spinner } from '../../components/Spinner'
 import { BitcoinNetwork, getNetworkDisplayName } from '../../constants'
-import {
-  getModalPortalTarget,
-  getModalPositionClass,
-} from '../../helpers/modalPortal'
 import {
   nodeSettingsActions,
   setSettingsAsync,
@@ -67,51 +77,29 @@ interface ModalProps {
 }
 
 interface NodeCardProps {
-  account: Account
+  account: SavedNodeAccount
   isCollapsed: boolean
-  onSelect: (account: Account) => void
-  onEdit: (account: Account) => void
-  onDelete: (account: Account) => void
+  onSelect: (account: SavedNodeAccount) => void
+  onEdit: (account: SavedNodeAccount) => void
+  onDelete: (account: SavedNodeAccount) => void
 }
 
-const Modal: React.FC<ModalProps> = ({ onClose, children }) => {
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose()
-      }
-    }
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [onClose])
-
-  // Prevent scrolling of the body when modal is open
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = 'auto'
-    }
-  }, [])
-
-  const pos = getModalPositionClass()
-
-  return createPortal(
-    <div
-      aria-modal="true"
-      className={`${pos} left-72 top-16 right-0 bottom-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn`}
-      onClick={onClose}
-      role="dialog"
+const Modal: React.FC<ModalProps> = ({ onClose, children }) => (
+  <Dialog
+    onOpenChange={(open) => {
+      if (!open) onClose()
+    }}
+    open
+  >
+    <DialogContent
+      aria-describedby={undefined}
+      className="w-[calc(100%-2rem)] max-w-lg max-h-[85dvh] overflow-y-auto p-6 sm:p-8"
+      showClose={false}
     >
-      <div
-        className="bg-surface-base text-white rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 max-w-lg w-full mx-4 overflow-hidden animate-scaleIn"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="max-h-[85vh] overflow-y-auto px-8 py-8">{children}</div>
-      </div>
-    </div>,
-    getModalPortalTarget()
-  )
-}
+      {children}
+    </DialogContent>
+  </Dialog>
+)
 
 const withTimeout = <T,>(
   promise: Promise<T>,
@@ -146,51 +134,22 @@ const NodeCard: React.FC<NodeCardProps> = ({
   onDelete,
 }) => {
   const { t } = useTranslation()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [menuPos, setMenuPos] = useState({ left: 0, top: 0 })
-  const btnRef = useRef<HTMLButtonElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const NodeIcon = account.datapath ? Server : Cloud
-  const nodeType = account.datapath
+  const NodeIcon = account.local ? Server : Cloud
+  const nodeType = account.local
     ? t('toolbar.nodeCard.local')
     : t('toolbar.nodeCard.remote')
-  const nodeColor = account.datapath ? 'text-green-400' : 'text-primary'
-
-  useEffect(() => {
-    if (!isMenuOpen) return
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node) &&
-        btnRef.current &&
-        !btnRef.current.contains(e.target as Node)
-      ) {
-        setIsMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isMenuOpen])
-
-  const openMenu = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!btnRef.current) return
-    const rect = btnRef.current.getBoundingClientRect()
-    setMenuPos({ left: rect.right - 144, top: rect.bottom + 4 })
-    setIsMenuOpen((prev) => !prev)
-  }
+  const nodeColor = account.local ? 'text-green-400' : 'text-primary'
 
   return (
-    <div
-      className={`group bg-surface-overlay/50 rounded-xl transition-all duration-300
-        hover:bg-surface-overlay relative border overflow-hidden cursor-pointer
-        border-divider/5 hover:border-divider/20 hover:shadow-lg hover:shadow-primary/5
-        ${isMenuOpen ? '' : 'hover:-translate-y-0.5'}`}
-      onClick={() => onSelect(account)}
-    >
-      <div className={`flex items-center gap-4 ${isCollapsed ? 'p-2' : 'p-4'}`}>
+    <div className="group relative overflow-hidden rounded-xl border border-divider/5 bg-surface-overlay/50 transition-colors hover:border-divider/20 hover:bg-surface-overlay">
+      <button
+        aria-label={isCollapsed ? account.name : undefined}
+        className={`flex w-full items-center gap-4 rounded-xl text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary ${isCollapsed ? 'p-2' : 'p-4 pr-12'}`}
+        onClick={() => onSelect(account)}
+        type="button"
+      >
         {/* Avatar */}
-        <div className="relative">
+        <span className="relative">
           <MinidenticonImg
             className="rounded-lg flex-shrink-0"
             height="40"
@@ -199,19 +158,19 @@ const NodeCard: React.FC<NodeCardProps> = ({
             width="40"
           />
           {isCollapsed && (
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-surface-base flex items-center justify-center shadow-sm">
+            <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-surface-base flex items-center justify-center shadow-sm">
               <NodeIcon className={`w-3 h-3 ${nodeColor}`} />
-            </div>
+            </span>
           )}
-        </div>
+        </span>
 
         {/* Node details */}
         {!isCollapsed && (
-          <div className="min-w-0 flex-grow">
-            <div className="font-medium text-white truncate">
+          <span className="min-w-0 flex-grow">
+            <span className="block font-medium text-white truncate">
               {account.name}
-            </div>
-            <div className="flex items-center gap-2 mt-1">
+            </span>
+            <span className="flex items-center gap-2 mt-1">
               <span
                 className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium border ${getNetworkChipColor(account.network)}`}
               >
@@ -221,55 +180,38 @@ const NodeCard: React.FC<NodeCardProps> = ({
                 <NodeIcon className="w-3 h-3 mr-1" />
                 {nodeType}
               </span>
-            </div>
-          </div>
+            </span>
+          </span>
         )}
-      </div>
+      </button>
 
-      {/* 3-dots button — absolutely anchored to top-right of card */}
       {!isCollapsed && (
-        <button
-          aria-label={`Options for ${account.name}`}
-          className={`absolute top-2 right-2 p-1.5 rounded-lg text-content-tertiary hover:text-white
-            hover:bg-surface-high/60 transition-colors duration-200
-            ${isMenuOpen ? 'opacity-100 bg-surface-high/60 text-white' : 'opacity-0 group-hover:opacity-100'}`}
-          onClick={openMenu}
-          ref={btnRef}
-        >
-          <MoreVertical size={16} />
-        </button>
-      )}
-
-      {/* Dropdown — fixed so it escapes overflow clipping */}
-      {isMenuOpen && !isCollapsed && (
-        <div
-          className="fixed w-36 bg-surface-overlay border border-border-default/40 rounded-lg shadow-xl py-1"
-          onClick={(e) => e.stopPropagation()}
-          ref={menuRef}
-          style={{ left: menuPos.left, top: menuPos.top, zIndex: 9999 }}
-        >
-          <button
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-content-primary hover:bg-surface-high/60 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsMenuOpen(false)
-              onEdit(account)
-            }}
-          >
-            Edit
-          </button>
-          <button
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsMenuOpen(false)
-              onDelete(account)
-            }}
-          >
-            <Trash2 size={14} />
-            Delete
-          </button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              aria-label={t('unified.accountOptions', {
+                defaultValue: 'Options for {{name}}',
+                name: account.name,
+              })}
+              className="absolute top-2 right-2 rounded-lg p-1.5 text-content-tertiary hover:bg-surface-high/60 hover:text-white sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 data-[state=open]:opacity-100"
+              type="button"
+            >
+              <MoreVertical size={16} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => onEdit(account)}>
+              {t('common.edit')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              destructive
+              icon={<Trash2 size={14} />}
+              onSelect={() => onDelete(account)}
+            >
+              {t('common.delete')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   )
@@ -278,84 +220,67 @@ const NodeCard: React.FC<NodeCardProps> = ({
 // Custom Hooks
 const useAccounts = () => {
   const { t } = useTranslation()
-  const [accounts, setAccounts] = useState<Account[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+  const dispatch = useAppDispatch()
+  const { data: accounts = [], error, isLoading } = useSavedNodeAccountsQuery()
 
-  useEffect(() => {
-    const fetchAccounts = async () => {
+  const updateAccount = useCallback(
+    async (updatedAccount: Account) => {
       try {
-        const fetchedAccounts = (await invoke('get_accounts')) as Account[]
-        setAccounts(fetchedAccounts)
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err
-            : new Error(t('toolbar.accounts.fetchFailed'))
+        // Convert maker_urls to string if it's an array
+        const makerUrlsString = Array.isArray(updatedAccount.maker_urls)
+          ? updatedAccount.maker_urls.join(',')
+          : updatedAccount.maker_urls
+
+        // Use camelCase parameter names for Tauri command
+        const params = {
+          daemonListeningPort: updatedAccount.daemon_listening_port,
+          datapath: updatedAccount.datapath,
+          defaultLspUrl: updatedAccount.default_lsp_url,
+          defaultMakerUrl: updatedAccount.default_maker_url,
+          indexerUrl: updatedAccount.indexer_url,
+          ldkPeerListeningPort: updatedAccount.ldk_peer_listening_port,
+          makerUrls: makerUrlsString,
+          name: updatedAccount.name,
+          network: updatedAccount.network,
+          nodeUrl: updatedAccount.node_url,
+          proxyEndpoint: updatedAccount.proxy_endpoint,
+          rpcConnectionUrl: updatedAccount.rpc_connection_url,
+        }
+
+        await invoke('update_account', params)
+
+        dispatch(invalidateNodeAccounts())
+
+        toast.success(
+          t('toolbar.accounts.updateSuccess', { name: updatedAccount.name })
         )
-        toast.error(t('toolbar.accounts.fetchFailed'))
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchAccounts()
-  }, [])
-
-  const updateAccount = useCallback(async (updatedAccount: Account) => {
-    try {
-      // Convert maker_urls to string if it's an array
-      const makerUrlsString = Array.isArray(updatedAccount.maker_urls)
-        ? updatedAccount.maker_urls.join(',')
-        : updatedAccount.maker_urls
-
-      // Use camelCase parameter names for Tauri command
-      const params = {
-        daemonListeningPort: updatedAccount.daemon_listening_port,
-        datapath: updatedAccount.datapath,
-        defaultLspUrl: updatedAccount.default_lsp_url,
-        defaultMakerUrl: updatedAccount.default_maker_url,
-        indexerUrl: updatedAccount.indexer_url,
-        ldkPeerListeningPort: updatedAccount.ldk_peer_listening_port,
-        makerUrls: makerUrlsString,
-        name: updatedAccount.name,
-        network: updatedAccount.network,
-        nodeUrl: updatedAccount.node_url,
-        proxyEndpoint: updatedAccount.proxy_endpoint,
-        rpcConnectionUrl: updatedAccount.rpc_connection_url,
-      }
-
-      await invoke('update_account', params)
-
-      setAccounts((prev) =>
-        prev.map((acc) =>
-          acc.name === updatedAccount.name ? updatedAccount : acc
+      } catch (error) {
+        toast.error(
+          t('toolbar.accounts.updateFailed', {
+            error: error instanceof Error ? error.message : String(error),
+          })
         )
-      )
+        throw error
+      }
+    },
+    [dispatch, t]
+  )
 
-      toast.success(
-        t('toolbar.accounts.updateSuccess', { name: updatedAccount.name })
-      )
-    } catch (error) {
-      toast.error(
-        t('toolbar.accounts.updateFailed', {
-          error: error instanceof Error ? error.message : String(error),
-        })
-      )
-      throw error
-    }
-  }, [])
-
-  const deleteAccount = useCallback(async (account: Account) => {
-    try {
-      await invoke('delete_account', { name: account.name })
-      setAccounts((prev) => prev.filter((a) => a.name !== account.name))
-      toast.success(t('toolbar.accounts.deleteSuccess', { name: account.name }))
-    } catch (error) {
-      toast.error(t('toolbar.accounts.deleteFailed', { name: account.name }))
-      throw error
-    }
-  }, [])
+  const deleteAccount = useCallback(
+    async (account: Account) => {
+      try {
+        await invoke('delete_account', { name: account.name })
+        dispatch(invalidateNodeAccounts())
+        toast.success(
+          t('toolbar.accounts.deleteSuccess', { name: account.name })
+        )
+      } catch (error) {
+        toast.error(t('toolbar.accounts.deleteFailed', { name: account.name }))
+        throw error
+      }
+    },
+    [dispatch, t]
+  )
 
   return {
     accounts,
@@ -383,6 +308,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const location = useLocation()
+  const currentNode = useAppSelector((state) => state.nodeSettings.data)
+  const appMode = useAppSelector((state) => state.settings.appMode)
 
   useEffect(() => {
     let isToastActive = false
@@ -470,6 +398,92 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
     [getNodeInfo, navigate]
   )
 
+  const selectionRequest = useRef(0)
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
+
+  const openAccount = useCallback(
+    async (name: string, action: 'select' | 'edit' | 'delete') => {
+      const request = ++selectionRequest.current
+      setSelectedNode(null)
+      setEditingNode(null)
+      setNodeToDelete(null)
+      try {
+        if (
+          action === 'select' &&
+          name === currentNode.name &&
+          currentNode.node_url
+        ) {
+          // A read-only probe handles already-unlocked remote and local sessions.
+          const result = await withTimeout(
+            getNodeInfo(),
+            5000,
+            'Checking active node'
+          )
+          if (!mounted.current || request !== selectionRequest.current) return
+          if (result.isSuccess) {
+            if (appMode === 'mind') dispatch(setAppMode('both'))
+            navigate(WALLET_DASHBOARD_PATH)
+            return
+          }
+        }
+      } catch {
+        // Offline or locked sessions can be reopened through the switch dialog.
+      }
+      if (!mounted.current || request !== selectionRequest.current) return
+      try {
+        const account = await invoke<Account | null>('get_account_by_name', {
+          name,
+        })
+        if (!mounted.current || request !== selectionRequest.current) return
+        if (!account) {
+          dispatch(invalidateNodeAccounts())
+          return
+        }
+        if (action === 'edit') setEditingNode(account)
+        else if (action === 'delete') setNodeToDelete(account)
+        else setSelectedNode(account)
+      } catch {
+        if (mounted.current && request === selectionRequest.current)
+          toast.error(t('toolbar.accounts.fetchFailed'))
+      }
+    },
+    [
+      appMode,
+      currentNode.name,
+      currentNode.node_url,
+      dispatch,
+      getNodeInfo,
+      navigate,
+      t,
+    ]
+  )
+
+  const handledLocation = useRef<string | null>(null)
+  useEffect(() => {
+    const name = location.state?.selectNodeAccount
+    if (
+      typeof name !== 'string' ||
+      isLoading ||
+      location.key === handledLocation.current
+    )
+      return
+    handledLocation.current = location.key
+    const state = { ...location.state }
+    delete state.selectNodeAccount
+    navigate(location.pathname, {
+      replace: true,
+      state: Object.keys(state).length ? state : null,
+    })
+    if (accounts.some((account) => account.name === name))
+      void openAccount(name, 'select')
+  }, [accounts, isLoading, location, navigate, openAccount])
+
   const waitForNodeStopped = useCallback(
     (timeoutMs = 15000): Promise<void> =>
       new Promise((resolve, reject) => {
@@ -516,6 +530,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
   const handleNodeChange = async (node: Account) => {
     try {
       setIsSwitching(true)
+      if (appMode === 'mind') dispatch(setAppMode('both'))
 
       const currentNode = await invokeWithTimeout<Account | null>(
         'get_current_account',
@@ -940,7 +955,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        {t('toolbar.main.errorLoading', { error: error.message })}
+        {t('toolbar.main.errorLoading', {
+          error:
+            typeof error === 'object' && 'message' in error
+              ? String(error.message)
+              : t('toolbar.accounts.fetchFailed'),
+        })}
       </div>
     )
   }
@@ -956,17 +976,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
   return (
     <>
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <div
-          className={`flex items-center justify-between ${isCollapsed ? 'p-2' : 'px-4 pt-4 pb-1'} flex-shrink-0`}
-        >
-          {/* Title - completely hidden in collapsed state, no hover effect */}
-          {!isCollapsed && (
-            <h2 className="text-xs font-semibold text-content-tertiary uppercase tracking-wider">
-              {t('toolbar.main.title')}
-            </h2>
-          )}
-        </div>
-
         <div
           className={`flex-1 overflow-y-auto custom-scrollbar min-h-0 ${isCollapsed ? 'p-2' : 'p-4'} space-y-2`}
         >
@@ -991,9 +1000,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
                 account={account}
                 isCollapsed={isCollapsed}
                 key={account.name}
-                onDelete={setNodeToDelete}
-                onEdit={setEditingNode}
-                onSelect={setSelectedNode}
+                onDelete={({ name }) => void openAccount(name, 'delete')}
+                onEdit={({ name }) => void openAccount(name, 'edit')}
+                onSelect={({ name }) => void openAccount(name, 'select')}
               />
             ))
           )}
@@ -1244,10 +1253,11 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
     <div>
       <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
         <NodeIcon className={`w-6 h-6 ${nodeColor}`} />
-        <h3 className="text-xl font-bold text-white flex-1">
+        <DialogTitle className="text-xl font-bold text-white flex-1">
           {t('toolbar.modal.switchNode')}
-        </h3>
+        </DialogTitle>
         <button
+          aria-label={t('common.close')}
           className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
           onClick={onCancel}
           type="button"
@@ -1441,11 +1451,12 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-divider/10 shrink-0 -mx-8 -mt-8 mb-5 px-8 pt-8 pb-4">
         <div className="flex items-center gap-3">
           <AlertTriangle className="w-5 h-5 text-status-danger" />
-          <h3 className="text-lg font-semibold text-white">
+          <DialogTitle className="text-lg font-semibold text-white">
             {t('toolbar.delete.title')}
-          </h3>
+          </DialogTitle>
         </div>
         <button
+          aria-label={t('common.close')}
           className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
           onClick={onCancel}
           type="button"
@@ -1600,11 +1611,12 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-divider/10 shrink-0 -mx-6 -mt-6 mb-4 px-6 pt-6 pb-4">
         <div className="flex items-center gap-3">
           <Settings className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold text-white">
+          <DialogTitle className="text-lg font-semibold text-white">
             {t('toolbar.edit.title')}
-          </h3>
+          </DialogTitle>
         </div>
         <button
+          aria-label={t('common.close')}
           className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
           onClick={onClose}
           type="button"

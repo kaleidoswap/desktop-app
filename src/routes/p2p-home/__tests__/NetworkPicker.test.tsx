@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BitcoinNetwork } from '../../../constants'
 import { memoryWalletStore } from '../../trade/nostr-p2p/__tests__/memoryWalletStore'
 import { saveNetwork, savedNetwork } from '../../trade/nostr-p2p/wallets'
+import { WalletNodeSources } from '../WalletNodeSources'
 import { NetworkPicker } from '../NetworkPicker'
 import { lastWalletContext } from '../navigation'
 import {
@@ -33,11 +34,13 @@ const networks = [
   { key: 'Signet', label: 'Signet', network: 'signet' },
 ]
 
-function Accounts() {
-  const { state } = useLocation()
+function WalletContextPage() {
+  const { pathname, search, hash, state } = useLocation()
   return (
     <>
-      <h1>Accounts</h1>
+      <h1>
+        {pathname === '/wallet-setup' ? 'Accounts' : pathname + search + hash}
+      </h1>
       <NetworkPicker context={state?.walletContext ?? 'mainnet'} />
     </>
   )
@@ -58,8 +61,36 @@ function renderNode(
     <Provider store={store}>
       <MemoryRouter initialEntries={[initialPath]}>
         <Routes>
-          <Route element={<Accounts />} path="/wallet-setup" />
-          <Route element={<NetworkPicker context="node" />} path="/channels" />
+          <Route element={<WalletContextPage />} path="/wallet-setup" />
+          <Route element={<WalletContextPage />} path="/kaleido-mind/*" />
+          <Route
+            element={
+              <>
+                <h1>Channels</h1>
+                <NetworkPicker context="node" />
+              </>
+            }
+            path="/channels"
+          />
+          <Route
+            element={
+              <>
+                <NetworkPicker context="node" />
+                <WalletNodeSources section="activity" source="node" />
+              </>
+            }
+            path="/wallet-history/*"
+          />
+          <Route
+            element={<h1>Trading wallet activity</h1>}
+            path="/p2p/activity"
+          />
+          <Route
+            element={<WalletNodeSources section="activity" source="mainnet" />}
+            path="/mainnet/activity"
+          />
+          <Route element={<NetworkPicker context="node" />} path="/settings" />
+          <Route element={<h1>Test wallet settings</h1>} path="/p2p/settings" />
           <Route
             element={<NetworkPicker context="test" />}
             path="/wallet-unlock"
@@ -70,7 +101,20 @@ function renderNode(
             }
             path="/wallet-config"
           />
-          <Route element={<h1>Dashboard</h1>} path="/wallet-dashboard" />
+          <Route
+            element={
+              <>
+                <NetworkPicker context="node" />
+                <WalletNodeSources section="wallet" source="node" />
+              </>
+            }
+            path="/wallet-dashboard"
+          />
+          <Route element={<h1>Test on-chain wallet</h1>} path="/p2p/wallet" />
+          <Route
+            element={<WalletNodeSources section="wallet" source="mainnet" />}
+            path="/mainnet/wallet"
+          />
           <Route element={<h1>Mainnet node entry</h1>} path="/mainnet/node" />
           <Route
             element={
@@ -127,7 +171,7 @@ describe('network selection on a Lightning node', () => {
     expect(savedNetwork()).toBe('Signet')
     fireEvent.click(screen.getByRole('link', { name: 'Open Alice · Signet' }))
     expect(
-      screen.getByRole('heading', { name: 'Dashboard' })
+      screen.getByRole('heading', { name: 'Channels' })
     ).toBeInTheDocument()
     expect(store.getState().nodeSettings.data.network).toBe('Signet')
     expect(
@@ -147,6 +191,81 @@ describe('network selection on a Lightning node', () => {
     expect(savedNetwork()).toBeNull()
   })
 
+  it('opens the on-chain wallet on the node network from its legacy dashboard URL', async () => {
+    saveNetwork('SignetCustom')
+    renderNode('Signet', '/wallet-dashboard')
+    const sources = within(
+      await screen.findByRole('navigation', { name: 'unified.walletSource' })
+    )
+    expect(sources.getByText('unified.nodeWallet')).toHaveAttribute(
+      'aria-current',
+      'page'
+    )
+    fireEvent.click(
+      sources.getByRole('link', { name: 'unified.onchainWallet' })
+    )
+    expect(savedNetwork()).toBe('Signet')
+    expect(
+      screen.getByRole('heading', { name: 'Test on-chain wallet' })
+    ).toBeVisible()
+  })
+
+  it('keeps Wallet when the user switches from a node wallet to another network', async () => {
+    renderNode('Signet', '/wallet-dashboard')
+    await chooseNetwork('Mutinynet · test')
+    expect(savedNetwork()).toBe('SignetCustom')
+    expect(
+      screen.getByRole('heading', { name: 'Test on-chain wallet' })
+    ).toBeVisible()
+  })
+
+  it('never offers a node on another network as the mainnet wallet source', async () => {
+    renderNode('Signet', '/wallet-dashboard')
+    await chooseNetwork('Bitcoin Mainnet')
+    expect(
+      screen.queryByRole('navigation', { name: 'unified.walletSource' })
+    ).toBeNull()
+    expect(screen.queryByRole('combobox')).toBeNull()
+  })
+
+  it('keeps a node-only wallet accessible without offering an unsupported on-chain wallet', async () => {
+    renderNode('Testnet', '/wallet-dashboard')
+    expect(
+      await screen.findByRole('combobox', { name: 'Network' })
+    ).toHaveTextContent('Testnet · test')
+    expect(
+      screen.queryByRole('navigation', { name: 'unified.walletSource' })
+    ).toBeNull()
+  })
+
+  it('opens the trading wallet’s activity on the node’s chain when a different wallet network was saved', async () => {
+    saveNetwork('SignetCustom')
+    renderNode('Signet', '/wallet-history/withdrawals')
+    fireEvent.click(
+      await screen.findByRole('link', { name: 'p2pMarket.funds.tradingTitle' })
+    )
+    expect(savedNetwork()).toBe('Signet')
+    expect(
+      screen.getByRole('heading', { name: 'Trading wallet activity' })
+    ).toBeVisible()
+  })
+
+  it('keeps the Activity section when changing networks and excludes a node on another chain', async () => {
+    renderNode('Signet', '/wallet-history/deposits')
+    await chooseNetwork('Bitcoin Mainnet')
+    expect(screen.queryByRole('link', { name: 'unified.node' })).toBeNull()
+    expect(screen.queryByRole('combobox')).toBeNull()
+  })
+
+  it('keeps the Settings section when changing networks from node settings', async () => {
+    renderNode('Signet', '/settings')
+    await chooseNetwork('Mutinynet · test')
+    expect(
+      screen.getByRole('heading', { name: 'Test wallet settings' })
+    ).toBeVisible()
+    expect(savedNetwork()).toBe('SignetCustom')
+  })
+
   it('switches wallet context inside Accounts while keeping the chooser open', async () => {
     renderNode('Signet', '/wallet-setup')
     await chooseNetwork('Signet · test')
@@ -160,6 +279,16 @@ describe('network selection on a Lightning node', () => {
     expect(
       vi.mocked(invoke).mock.calls.every(([cmd]) => cmd === 'p2p_networks')
     ).toBe(true)
+  })
+
+  it('keeps the current KaleidoMind page and its query when switching wallet networks', async () => {
+    const path = '/kaleido-mind/models?tab=local#list'
+    renderNode('SignetCustom', path)
+    await chooseNetwork('Signet · test')
+    expect(screen.getByRole('heading', { name: path })).toBeVisible()
+    expect(lastWalletContext()).toBe('test')
+    expect(savedNetwork()).toBe('Signet')
+    expect(screen.getByRole('combobox')).toHaveTextContent('Signet · test')
   })
 
   it('labels unlock with the selected account even when its wallet preference differs', async () => {

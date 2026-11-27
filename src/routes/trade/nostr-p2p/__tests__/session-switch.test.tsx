@@ -95,6 +95,31 @@ it('does not start a daemon after leaving its profile during discovery', async (
   expect(setWalletOverride).not.toHaveBeenCalled()
 })
 
+it('only opens the node chain for a transfer even when another trading network is preferred', async () => {
+  vi.mocked(invoke).mockImplementation(async (cmd) => {
+    if (cmd === 'p2p_networks') return networks
+    if (cmd === 'p2p_available') return { backend: 'native' }
+    if (cmd === 'p2p_status') return { running: false }
+    if (cmd === 'p2p_stop' || cmd === 'p2p_profile_get') return null
+    throw new Error(cmd)
+  })
+  const { result, rerender } = renderHook(
+    (key: string) => useP2pWalletSession(false, key),
+    { initialProps: 'LocalRegtest' }
+  )
+  await waitFor(() => expect(result.current.phase).toBe('setup'))
+  expect(result.current.config?.key).toBe('LocalRegtest')
+  expect(invoke).toHaveBeenCalledWith('p2p_profile_get', {
+    account: 'wallet-regtest',
+  })
+  rerender('Mainnet')
+  expect(result.current.config).toBeUndefined()
+  expect(invoke).not.toHaveBeenCalledWith('p2p_profile_get', {
+    account: 'wallet-signetcustom',
+  })
+  expect(setWalletOverride).not.toHaveBeenCalled()
+})
+
 it('revalidates the native identity when returning to a remembered running wallet', async () => {
   let nativeChanged = false
   const requested: string[] = []

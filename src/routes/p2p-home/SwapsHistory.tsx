@@ -1,3 +1,4 @@
+import { NostrParticipants } from '../trade/nostr-p2p/NostrParticipants'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { ExternalLink } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -126,6 +127,10 @@ export function SwapsHistory() {
                             defaultValue: 'You took an offer',
                           })}
                     </span>
+                    <NostrParticipants
+                      makers={[tr.maker_npub]}
+                      taker={tr.taker_npub}
+                    />
                     {tr.error && (
                       <span className="text-xs text-status-danger">
                         {tr.error}

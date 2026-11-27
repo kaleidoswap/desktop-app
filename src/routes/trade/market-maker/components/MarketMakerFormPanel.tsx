@@ -312,7 +312,7 @@ export const MarketMakerFormPanel = ({
                   formatAmount={formatAmount}
                   getDisplayAsset={displayAsset}
                   isLoading={isFromAmountLoading}
-                  label={t('tradeMarketMaker.form.youSend')}
+                  label={t('p2pMarket.market.swap.youPay')}
                   maxAmount={maxFromAmount}
                   maxHtlcAmount={maxOutboundHtlcSat}
                   minAmount={minFromAmount}
@@ -331,6 +331,7 @@ export const MarketMakerFormPanel = ({
 
               <div className="flex justify-center my-1 relative z-10">
                 <button
+                  aria-label={t('p2pMarket.market.swap.flip')}
                   className={`p-2 rounded-xl border transition-all duration-300 ${
                     hasChannels && hasTradablePairs && !isSwapInProgress
                       ? 'bg-status-success/15 hover:bg-status-success/25 border-status-success/30 hover:border-status-success/50 text-status-success hover:scale-110 cursor-pointer'
@@ -368,7 +369,7 @@ export const MarketMakerFormPanel = ({
                   formatAmount={formatAmount}
                   getDisplayAsset={displayAsset}
                   isLoading={isToAmountLoading}
-                  label={t('tradeMarketMaker.form.youReceive')}
+                  label={t('p2pMarket.market.swap.youGet')}
                   maxAmount={maxToAmount}
                   onAmountChange={onToAmountChange}
                   onAssetChange={(value) => onAssetChange('toAsset', value)}

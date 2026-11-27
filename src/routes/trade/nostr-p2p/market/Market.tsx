@@ -1,10 +1,25 @@
 import { Button, PageHeader, cardSurface } from 'kaleido-ui'
-import { ArrowLeftRight, Plus, X } from 'lucide-react'
+import { ArrowLeftRight, Plus, RadioTower, X } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 
-import { availableSats, marketApi, type Order, type Side } from '../api'
+import { useTranslation } from 'react-i18next'
+
+import {
+  availableSats,
+  marketApi,
+  type Info,
+  type Order,
+  type Side,
+} from '../api'
+import { NostrProfilesMenu } from '../NostrProfilesMenu'
+import { ORIGINAL_WALLET_LABEL } from '../wallets'
 import { ordersAwaitingRelay, ordersOnScreen, splitBook } from '../book'
-import { tickerOf, tradeUnitPrice, type PrecisionSource } from '../format'
+import {
+  networkLabel,
+  tickerOf,
+  tradeUnitPrice,
+  type PrecisionSource,
+} from '../format'
 
 import { Activity } from './Activity'
 import { DepthChart } from './DepthChart'
@@ -13,13 +28,14 @@ import { HowItWorks } from './HowItWorks'
 import { MosaikBridge } from './MosaikBridge'
 import { Offers, OfferSummary } from './Offers'
 import { OrderBook } from './OrderBook'
-import { PairHeader, type MarketInfo } from './PairHeader'
+import { MarketStats, PairHeader, type MarketInfo } from './PairHeader'
 import { TakeSheet } from './TakeSheet'
 import { TradeTicket } from './TradeTicket'
-import { cx, EmptyState, Panel } from './ui'
+import { cx, EmptyState, Panel, Pill } from './ui'
 import { WalletCard, type FundsDirection, type NodeSummary } from './WalletCard'
 
 interface Props {
+  showNetwork?: boolean
   onSimpleSwap?: () => void
   onManageRelays?: () => void
   /** Opens the dialog that moves funds between the node and the trading wallet. */
@@ -37,7 +53,54 @@ interface Props {
 }
 
 /** The market: order book, depth, a ticket for market and limit orders, and the user's activity. */
-export function Market({
+export function Market(props: Props) {
+  const [session, setSession] = useState(0)
+  // A new signer owns separate offers and swaps. Drop every previous poll and open ticket.
+  return (
+    <MarketSession
+      key={session}
+      {...props}
+      onProfileSwitched={() => setSession((current) => current + 1)}
+    />
+  )
+}
+
+type SessionProps = Props & { onProfileSwitched: () => void }
+
+function MarketSession(props: SessionProps) {
+  const tr = useTr()
+  const info = usePoll(marketApi.info, 30_000)
+  if (info.error && !info.data) {
+    return (
+      <Panel>
+        <EmptyState
+          description={info.error}
+          title={tr('market.unreachable', 'Can’t reach the market daemon')}
+        />
+      </Panel>
+    )
+  }
+  if (!info.data) {
+    return (
+      <Panel>
+        <EmptyState
+          description={tr(
+            'market.loadingBody',
+            'Connecting to your trading wallet.'
+          )}
+          title={tr('market.loading', 'Loading the market…')}
+        />
+      </Panel>
+    )
+  }
+
+  return <SignedMarket key={info.data.npub} {...props} inf={info.data} />
+}
+
+function SignedMarket({
+  inf,
+  onProfileSwitched,
+  showNetwork = true,
   onSimpleSwap,
   onManageRelays,
   onIssueAsset,
@@ -46,9 +109,9 @@ export function Market({
   node,
   onRescan,
   walletLabel,
-}: Props) {
+}: SessionProps & { inf: Info }) {
   const tr = useTr()
-  const info = usePoll(marketApi.info, 30_000)
+  const { t } = useTranslation()
   const balance = usePoll(marketApi.balance, 4_000)
   const book = usePoll(marketApi.book, 2_500)
   const mine = usePoll(marketApi.orders, 2_500)
@@ -64,17 +127,22 @@ export function Market({
   const [advanced, setAdvanced] = useState(false)
   const ticketPanel = useRef<HTMLElement>(null)
 
-  const focusStackedTicket = () => {
-    if (window.matchMedia?.('(min-width: 1024px)').matches !== false) return
+  const panelTrigger = useRef<HTMLButtonElement | null>(null)
+
+  const focusTicket = (trigger: HTMLButtonElement) => {
+    panelTrigger.current = trigger
     requestAnimationFrame(() => {
       ticketPanel.current?.focus({ preventScroll: true })
-      ticketPanel.current?.scrollIntoView({ block: 'start' })
+      if (window.matchMedia?.('(min-width: 1024px)').matches === false) {
+        ticketPanel.current?.scrollIntoView({ block: 'start' })
+      }
     })
   }
 
-  const openComposer = () => {
-    setCompose(true)
-    focusStackedTicket()
+  const closeTicket = () => {
+    setCompose(false)
+    setOfferId(null)
+    panelTrigger.current?.focus()
   }
 
   // sync with the chain now, then read the result: for a deposit that has just been sent
@@ -150,38 +218,11 @@ export function Market({
     ? selected
     : (markets[0]?.asset_id ?? null)
 
-  if (info.error && !info.data) {
-    return (
-      <Panel>
-        <EmptyState
-          description={info.error}
-          title={tr('market.unreachable', 'Can’t reach the market daemon')}
-        />
-      </Panel>
-    )
-  }
-  if (!info.data) {
-    return (
-      <Panel>
-        <EmptyState
-          description={tr(
-            'market.loadingBody',
-            'Connecting to your trading wallet.'
-          )}
-          title={tr('market.loading', 'Loading the market…')}
-        />
-      </Panel>
-    )
-  }
-  const inf = info.data
-
   const market = markets.find((m) => m.asset_id === current)
   const marketOrders = orders.filter((o) => o.asset_id === current)
   const { asks, bids } = splitBook(marketOrders.filter((o) => !o.mine))
   const offers = side === 'buy' ? asks : bids
-  const activeOffer = offerId
-    ? offers.find((o) => o.order_id === offerId)
-    : offers[0]
+  const activeOffer = offers.find((o) => o.order_id === offerId)
   const liveOrders = (mine.data ?? []).filter(
     (o) => o.state === 'open' || o.state === 'matching'
   )
@@ -204,50 +245,51 @@ export function Market({
     <div className="flex min-w-0 flex-col gap-4">
       <PageHeader
         action={
-          <div className="flex flex-wrap gap-2">
-            {onSimpleSwap && (
+          <div className="flex flex-wrap items-center gap-2">
+            {showNetwork && (
+              <Pill tone={inf.network === 'mainnet' ? 'success' : 'warning'}>
+                {networkLabel(inf.network)}
+              </Pill>
+            )}
+            {walletLabel && walletLabel !== ORIGINAL_WALLET_LABEL && (
+              <span className="self-center text-caption text-content-secondary">
+                {walletLabel}
+              </span>
+            )}
+            <NostrProfilesMenu npub={inf.npub} onSwitched={onProfileSwitched} />
+            {onManageRelays && (
               <Button
-                onClick={onSimpleSwap}
+                aria-haspopup="dialog"
+                onClick={onManageRelays}
                 size="sm"
                 type="button"
                 variant="surface"
               >
-                <ArrowLeftRight aria-hidden size={15} />
-                {tr('offers.simpleSwap', 'Simple swap')}
+                <RadioTower aria-hidden size={15} />
+                {tr('offers.nostrRelays', 'Relays ({{n}})', {
+                  n: inf.relays?.length ?? 0,
+                })}
               </Button>
             )}
-            <Button
-              disabled={!market}
-              onClick={openComposer}
-              size="sm"
-              type="button"
-            >
-              <Plus aria-hidden size={16} />
-              {tr('offers.publish', 'Publish offer')}
-            </Button>
+            {market && (
+              <Button
+                onClick={(event) => {
+                  setOfferId(null)
+                  setCompose(true)
+                  focusTicket(event.currentTarget)
+                }}
+                size="sm"
+                type="button"
+              >
+                <Plus aria-hidden size={16} />
+                {tr('offers.publish', 'Publish offer')}
+              </Button>
+            )}
           </div>
         }
-        title={tr('offers.marketTitle', 'P2P market')}
+        title={t('unified.market', { defaultValue: 'Nostr P2P market' })}
         variant="page"
       />
-      <PairHeader
-        bestAsk={asks[0]?.unit_price}
-        bestBid={bids[0]?.unit_price}
-        info={inf}
-        last={lastTrade ? tradeUnitPrice(lastTrade, knownPrecision) : undefined}
-        markets={markets}
-        onManageRelays={onManageRelays}
-        onSelect={chooseMarket}
-        open={marketOrders.length}
-        registry={
-          marketOrders.find((o) => o.registry?.ticker_differs)?.registry ??
-          marketOrders[0]?.registry ??
-          null
-        }
-        selected={current}
-        walletLabel={walletLabel}
-      />
-
       {(book.error || mine.error) && (
         <p className="rounded-xl bg-status-warning-subtle px-4 py-2 text-caption text-content-primary">
           {tr(
@@ -257,9 +299,15 @@ export function Market({
         </p>
       )}
 
-      <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,1fr)]">
+      <div
+        className={cx(
+          'grid min-w-0 items-start gap-4',
+          (compose || !!activeOffer) &&
+            'lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]'
+        )}
+      >
         <section className={cx(cardSurface.secondary, 'min-w-0')}>
-          <div className="flex gap-5 border-b border-divider/20 px-5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-divider/20 px-3 sm:px-5">
             {(['offers', 'mine'] as const).map((key) => (
               <button
                 aria-pressed={tab === key}
@@ -272,6 +320,7 @@ export function Market({
                 key={key}
                 onClick={() => {
                   setTab(key)
+                  setOfferId(null)
                   setCompose(false)
                 }}
                 type="button"
@@ -286,10 +335,23 @@ export function Market({
                 )}
               </button>
             ))}
+            {onSimpleSwap && (
+              <Button
+                className="ml-auto"
+                onClick={onSimpleSwap}
+                size="sm"
+                type="button"
+                variant="quiet"
+              >
+                <ArrowLeftRight aria-hidden size={15} />
+                {tr('offers.simpleSwap', 'Simple swap')}
+              </Button>
+            )}
           </div>
           {tab === 'mine' ? (
             <Activity
               balance={balance.data}
+              expectedNpub={inf.nostr_profiles ? inf.npub : undefined}
               knownPrecision={knownPrecision}
               onChanged={refreshAll}
               onOpenFunds={deposit}
@@ -298,14 +360,20 @@ export function Market({
               trades={trades.data ?? []}
               tradesLoading={trades.data === undefined && !trades.error}
             />
+          ) : book.data === undefined && book.error ? (
+            <div className="flex justify-center p-5">
+              <Button onClick={refreshAll} type="button" variant="outline">
+                {t('p2pMarket.retry', { defaultValue: 'Try again' })}
+              </Button>
+            </div>
           ) : market ? (
             <Offers
               loading={book.data === undefined && !book.error}
               offers={offers}
-              onSelect={(o) => {
+              onSelect={(o, trigger) => {
                 setOfferId(o.order_id)
                 setCompose(false)
-                focusStackedTicket()
+                focusTicket(trigger)
               }}
               onSide={(next) => {
                 setSide(next)
@@ -315,96 +383,119 @@ export function Market({
               selected={activeOffer}
               side={side}
               ticker={market.ticker}
-            />
-          ) : (
-            <EmptyState
-              description={tr(
-                'market.noMarketsBody',
-                'A market appears when someone posts an order, or when your trading wallet holds an RGB asset.'
-              )}
-              title={tr('market.noMarkets', 'No markets yet')}
-            />
-          )}
-        </section>
-        <section
-          aria-label={tr('offers.summary', 'Offer summary')}
-          className={cx(
-            cardSurface.secondary,
-            'min-w-0 scroll-mt-3 outline-none'
-          )}
-          ref={ticketPanel}
-          tabIndex={-1}
-        >
-          {compose && market ? (
-            <>
-              <div className="flex items-center justify-between gap-4 px-5 pt-4">
-                <h2 className="text-base font-semibold text-content-primary">
-                  {tr('offers.new', 'New offer')}
-                </h2>
-                <button
-                  aria-label={tr('offers.close', 'Close offer form')}
-                  className="rounded-lg p-2 text-content-secondary hover:bg-surface-raised"
-                  onClick={() => setCompose(false)}
-                  type="button"
-                >
-                  <X aria-hidden size={16} />
-                </button>
-              </div>
-              <TradeTicket
-                asset={market}
-                balance={balance.data}
-                info={inf}
-                initialMode="limit"
-                initialSide={side}
-                key={market.asset_id}
-                limitOnly
-                onOpenFunds={deposit}
-                onPlaced={() => {
-                  setCompose(false)
-                  setTab('mine')
-                  refreshAll()
-                }}
-                onReview={setTaking}
-                orders={marketOrders}
+            >
+              <PairHeader
+                markets={markets}
+                onSelect={chooseMarket}
+                registry={
+                  marketOrders.find((o) => o.registry?.ticker_differs)
+                    ?.registry ?? marketOrders[0]?.registry
+                }
+                selected={current}
               />
-            </>
-          ) : tab === 'offers' ? (
-            <OfferSummary
-              network={info.data?.network}
-              offer={activeOffer}
-              onReview={(o) => setTaking([o])}
-            />
+            </Offers>
+          ) : book.data === undefined ||
+            (balance.data === undefined && !balance.error) ? (
+            <EmptyState title={tr('book.loading', 'Loading the order book…')} />
           ) : (
             <EmptyState
               action={
-                market && (
-                  <button
-                    className="rounded-lg bg-[#8deaba] px-4 py-2 text-sm font-semibold text-[#113d2b] hover:bg-[#79ddab]"
-                    onClick={openComposer}
-                    type="button"
-                  >
-                    {tr('offers.publish', 'Publish offer')}
-                  </button>
+                deposit && (
+                  <Button onClick={deposit} type="button">
+                    {tr('guide.s1Cta', 'Deposit now')}
+                  </Button>
                 )
               }
               description={tr(
-                'offers.makeHint',
-                'Choose your price and keep your desktop online to answer other traders.'
+                'market.noMarketsBody',
+                'Deposit an RGB asset to publish the first offer.'
               )}
-              title={tr('offers.yourPrice', 'Your price')}
+              title={tr('market.noMarkets', 'No offers on your relays yet')}
             />
           )}
         </section>
+        {((compose && market) || activeOffer) && (
+          <section
+            aria-label={
+              compose
+                ? tr('offers.new', 'New offer')
+                : tr('offers.summary', 'Offer summary')
+            }
+            className={cx(
+              cardSurface.secondary,
+              'min-w-0 scroll-mt-3 outline-none'
+            )}
+            ref={ticketPanel}
+            tabIndex={-1}
+          >
+            {compose && market ? (
+              <>
+                <div className="flex items-center justify-between gap-4 px-5 pt-4">
+                  <h2 className="text-base font-semibold text-content-primary">
+                    {tr('offers.new', 'New offer')}
+                  </h2>
+                  <button
+                    aria-label={tr('offers.close', 'Close offer form')}
+                    className="rounded-lg p-2 text-content-secondary hover:bg-surface-raised"
+                    onClick={closeTicket}
+                    type="button"
+                  >
+                    <X aria-hidden size={16} />
+                  </button>
+                </div>
+                <TradeTicket
+                  asset={market}
+                  balance={balance.data}
+                  info={inf}
+                  initialMode="limit"
+                  initialSide={side}
+                  key={market.asset_id}
+                  limitOnly
+                  onOpenFunds={deposit}
+                  onPlaced={() => {
+                    setCompose(false)
+                    setTab('mine')
+                    refreshAll()
+                  }}
+                  onReview={setTaking}
+                  orders={marketOrders}
+                />
+              </>
+            ) : (
+              activeOffer && (
+                <OfferSummary
+                  network={inf.network}
+                  offer={activeOffer}
+                  onClose={closeTicket}
+                  onReview={(o) => setTaking([o])}
+                  taker={inf.npub}
+                />
+              )
+            )}
+          </section>
+        )}
       </div>
       <details
         className="rounded-xl border border-divider/15 bg-surface-card p-4 text-content-primary"
         onToggle={(e) => setAdvanced(e.currentTarget.open)}
       >
         <summary className="cursor-pointer text-sm font-medium">
-          {tr('offers.advanced', 'Market depth and trading tools')}
+          {tr('offers.advanced', 'Market tools')}
         </summary>
         {advanced && (
           <div className="mt-3 grid items-start gap-3 lg:grid-cols-2">
+            {market && (
+              <MarketStats
+                bestAsk={asks[0]?.unit_price}
+                bestBid={bids[0]?.unit_price}
+                last={
+                  lastTrade
+                    ? tradeUnitPrice(lastTrade, knownPrecision)
+                    : undefined
+                }
+                open={marketOrders.length}
+              />
+            )}
             {market && (
               <OrderBook
                 loading={book.data === undefined && !book.error}
@@ -448,27 +539,22 @@ export function Market({
                 orders={marketOrders}
               />
             )}
+            <div className="lg:col-span-2">
+              <HowItWorks
+                active={
+                  (mine.data ?? []).length > 0 || (trades.data ?? []).length > 0
+                }
+                confirmations={inf.min_confirmations}
+                funded={funded}
+                onDeposit={deposit}
+              />
+            </div>
+            {inf.network === 'signetcustom' && (
+              <MosaikBridge network={inf.network} />
+            )}
           </div>
         )}
       </details>
-      <HowItWorks
-        active={(mine.data ?? []).length > 0 || (trades.data ?? []).length > 0}
-        confirmations={inf.min_confirmations}
-        funded={funded}
-        onDeposit={deposit}
-      />
-
-      {inf.network === 'signetcustom' && (
-        <details className="rounded-xl border border-divider/15 bg-surface-card p-4 text-content-primary">
-          <summary className="cursor-pointer text-sm font-medium">
-            {tr('offers.webMarket', 'Mosaik web market')}
-          </summary>
-          <div className="mt-3">
-            <MosaikBridge network={inf.network} />
-          </div>
-        </details>
-      )}
-
       {taking && (
         <TakeSheet
           book={marketOrders}

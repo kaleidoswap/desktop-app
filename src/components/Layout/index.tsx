@@ -20,7 +20,11 @@ import { toast, ToastContainer } from 'react-toastify'
 
 import {
   desktopPathname,
+  isNodeMarketPath,
+  TRADE_NOSTR_P2P_PATH,
   CREATEUTXOS_PATH,
+  WALLET_HISTORY_PATH,
+  WALLET_DASHBOARD_PATH,
   SETTINGS_PATH,
   WALLET_SETUP_PATH,
   KALEIDO_MIND_PATH,
@@ -34,11 +38,11 @@ import { useNodeLifecycleEvents } from '../../hooks/useNodeLifecycleEvents'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import {
-  setAppMode,
   isNodeEnabled,
   isMindEnabled,
 } from '../../slices/settings/settings.slice'
 import { rememberProfile } from '../../routes/p2p-home/navigation'
+import { WalletNodeSources } from '../../routes/p2p-home/WalletNodeSources'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 import { BackupModal } from '../BackupModal'
 import { useBackup } from '../../hooks/useBackup'
@@ -54,6 +58,7 @@ import { SupportModal } from '../SupportModal'
 
 import 'react-toastify/dist/ReactToastify.min.css'
 import { DesktopFrame } from './DesktopFrame'
+import { MarketVenues } from '../Trade/MarketVenues'
 import { SetupFrame } from './SetupFrame'
 import {
   getMindLinks,
@@ -78,10 +83,6 @@ function UserProfile({ onLogout }: { onLogout: () => void }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const nodeInfo = nodeApi.endpoints.nodeInfo.useQueryState()
-  const dispatch = useAppDispatch()
-  const mindEnabled = useAppSelector((state) =>
-    isMindEnabled(state.settings.appMode)
-  )
   const nodeSettingsData = useAppSelector((state) => state.nodeSettings.data)
   const nodeReachability = useAppSelector((state) => state.node.reachability)
   const { reconnect, isReconnecting } = useNodeReconnect()
@@ -185,17 +186,6 @@ function UserProfile({ onLogout }: { onLogout: () => void }) {
               )}
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem
-            icon={<Icon name="psychology" size="sm" />}
-            onSelect={() => {
-              if (!mindEnabled) dispatch(setAppMode('both'))
-              navigate(KALEIDO_MIND_PATH)
-            }}
-          >
-            {mindEnabled
-              ? t('launcher.openMind')
-              : t('navigation.activate', { name: t('navigation.kaleidoMind') })}
-          </DropdownMenuItem>
           {hasNode && (
             <>
               <DropdownMenuItem
@@ -251,7 +241,7 @@ export const Layout = (props: Props) => {
     Record<string, ReturnType<typeof setTimeout>>
   >({})
 
-  const { pathname: routePath } = useLocation()
+  const { pathname: routePath, search } = useLocation()
   const pathname = desktopPathname(routePath)
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
@@ -267,25 +257,34 @@ export const Layout = (props: Props) => {
     pathname.startsWith(`${MAINNET_PATH}/`)
   const isSetupRoute = SETUP_PATHS.includes(pathname)
   const isNodeWorkspace = !isWalletProfileRoute && !isSetupRoute
+  const isMindRoute = pathname.startsWith(KALEIDO_MIND_PATH)
   useLayoutEffect(() => {
     if (!isNodeWorkspace) return
-    rememberProfile('node')
+    rememberProfile(isMindRoute ? 'mind' : 'node')
     // Deposit and withdrawal use the active wallet backend. Dismiss the node's
     // dialog before the next workspace can install its wallet and render it.
     return () => {
       dispatch(uiSliceActions.setModal({ type: 'none' }))
     }
-  }, [dispatch, isNodeWorkspace])
-  // KaleidoMind does not depend on the node, so the node-offline overlay must
-  // never block it — a node-less or "KaleidoMind only" user can keep using it.
-  const isMindRoute = pathname.startsWith(KALEIDO_MIND_PATH)
-
+  }, [dispatch, isMindRoute, isNodeWorkspace])
+  const isActivityRoute =
+    pathname === WALLET_HISTORY_PATH ||
+    pathname.startsWith(`${WALLET_HISTORY_PATH}/`)
+  const isNodeWalletRoute =
+    pathname === WALLET_DASHBOARD_PATH || pathname === CREATEUTXOS_PATH
   const isSettingsRoute = pathname === SETTINGS_PATH
-  const section = isMindRoute
-    ? 'accounts'
-    : isSettingsRoute
-      ? 'settings'
-      : 'node'
+  const market = isNodeMarketPath(pathname)
+  const section = market
+    ? 'market'
+    : isMindRoute
+      ? 'mind'
+      : isSettingsRoute
+        ? 'settings'
+        : isActivityRoute
+          ? 'activity'
+          : isNodeWalletRoute
+            ? 'wallet'
+            : 'node'
   const links = isMindRoute ? getMindLinks(t) : getNodeLinks(t)
   const activeLink = links.find((link) => matchesSectionLink(link, pathname))
   const activeTab = useRef<HTMLAnchorElement>(null)
@@ -295,11 +294,13 @@ export const Layout = (props: Props) => {
 
   const title = isMindRoute
     ? t('navigation.kaleidoMind')
-    : isSettingsRoute
-      ? t('navigation.settings')
-      : pathname === CREATEUTXOS_PATH
-        ? t('createUtxos.title')
-        : (activeLink?.label ?? t('unified.node'))
+    : isSettingsRoute || market || pathname === WALLET_DASHBOARD_PATH
+      ? undefined
+      : isActivityRoute
+        ? t('unified.activity')
+        : pathname === CREATEUTXOS_PATH
+          ? t('createUtxos.title')
+          : (activeLink?.label ?? t('unified.node'))
 
   const [lock] = nodeApi.endpoints.lock.useMutation()
 
@@ -657,81 +658,84 @@ export const Layout = (props: Props) => {
           }
           onHelp={() => setShowSupportModal(true)}
           secondaryNav={
-            !isSettingsRoute && (
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-divider/20 bg-surface-elevated px-3 py-2 sm:px-6">
-                <nav
-                  aria-label={t(
-                    isMindRoute ? 'navigation.kaleidoMind' : 'unified.node'
-                  )}
-                  className="flex max-w-full gap-1 overflow-x-auto"
-                >
-                  {(isMindRoute ? mindSectionEnabled : nodeSectionEnabled) ? (
-                    links.map((link) => (
-                      <Button
-                        asChild
-                        className={cn(
-                          'shrink-0',
-                          activeLink === link && 'bg-primary/10 text-brand'
-                        )}
-                        key={link.to}
-                        size="sm"
-                        variant={activeLink === link ? 'ghost' : 'quiet'}
-                      >
-                        <Link
-                          aria-current={
-                            activeLink === link ? 'page' : undefined
-                          }
-                          ref={activeLink === link ? activeTab : undefined}
-                          to={link.to}
+            market ? (
+              <MarketVenues
+                context="node"
+                nostr={
+                  pathname === TRADE_NOSTR_P2P_PATH &&
+                  new URLSearchParams(search).get('funds') !== '1'
+                }
+              />
+            ) : (
+              (section === 'node' || (isMindRoute && mindSectionEnabled)) && (
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-divider/20 bg-surface-elevated px-3 py-2 sm:px-6">
+                  <nav
+                    aria-label={t(
+                      isMindRoute ? 'navigation.kaleidoMind' : 'unified.node'
+                    )}
+                    className="flex max-w-full gap-1 overflow-x-auto"
+                  >
+                    {isMindRoute || nodeSectionEnabled ? (
+                      links.map((link) => (
+                        <Button
+                          asChild
+                          className={cn(
+                            'shrink-0',
+                            activeLink === link && 'bg-primary/10 text-brand'
+                          )}
+                          key={link.to}
+                          size="sm"
+                          variant={activeLink === link ? 'ghost' : 'quiet'}
                         >
-                          {link.icon}
-                          {link.label}
-                        </Link>
+                          <Link
+                            aria-current={
+                              activeLink === link ? 'page' : undefined
+                            }
+                            ref={activeLink === link ? activeTab : undefined}
+                            to={link.to}
+                          >
+                            {link.icon}
+                            {link.label}
+                          </Link>
+                        </Button>
+                      ))
+                    ) : (
+                      <Button
+                        onClick={() => navigate(WALLET_SETUP_PATH)}
+                        size="sm"
+                        type="button"
+                        variant="quiet"
+                      >
+                        {t('navigation.activate', {
+                          name: t('navigation.node'),
+                        })}
                       </Button>
-                    ))
-                  ) : (
-                    <Button
-                      onClick={() => {
-                        if (isMindRoute) dispatch(setAppMode('both'))
-                        else navigate(WALLET_SETUP_PATH)
-                      }}
-                      size="sm"
-                      type="button"
-                      variant="quiet"
-                    >
-                      {t('navigation.activate', {
-                        name: t(
-                          isMindRoute
-                            ? 'navigation.kaleidoMind'
-                            : 'navigation.node'
-                        ),
-                      })}
-                    </Button>
+                    )}
+                  </nav>
+                  {!isMindRoute && nodeSettingsData?.name && (
+                    <div className="flex shrink-0 gap-1">
+                      <Button
+                        onClick={() => handleTransactionAction('deposit')}
+                        size="sm"
+                        type="button"
+                        variant="surface"
+                      >
+                        <Icon name="download" size="sm" />
+                        {t('actions.deposit')}
+                      </Button>
+                      <Button
+                        onClick={() => handleTransactionAction('withdraw')}
+                        size="sm"
+                        type="button"
+                        variant="surface"
+                      >
+                        <Icon name="upload" size="sm" />
+                        {t('actions.withdraw')}
+                      </Button>
+                    </div>
                   )}
-                </nav>
-                {!isMindRoute && nodeSettingsData?.name && (
-                  <div className="flex shrink-0 gap-1">
-                    <Button
-                      onClick={() => handleTransactionAction('deposit')}
-                      size="sm"
-                      type="button"
-                      variant="surface"
-                    >
-                      <Icon name="download" size="sm" />
-                      {t('actions.deposit')}
-                    </Button>
-                    <Button
-                      onClick={() => handleTransactionAction('withdraw')}
-                      size="sm"
-                      type="button"
-                      variant="surface"
-                    >
-                      <Icon name="upload" size="sm" />
-                      {t('actions.withdraw')}
-                    </Button>
-                  </div>
-                )}
-              </div>
+                </div>
+              )
             )
           }
           section={section}
@@ -832,6 +836,11 @@ export const Layout = (props: Props) => {
             <div
               className={`h-full min-h-0 ${isMindRoute ? 'overflow-hidden p-3' : 'overflow-y-auto p-4'}`}
             >
+              {isNodeWalletRoute && (
+                <div className="mx-auto max-w-screen-xl">
+                  <WalletNodeSources section="wallet" source="node" />
+                </div>
+              )}
               {props.children}
             </div>
           </div>

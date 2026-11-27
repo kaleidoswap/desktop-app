@@ -50,11 +50,17 @@ function openMarket(npub?: string) {
 describe('P2P market', () => {
   it('shows the opposite side of the book and reviews the original terms before taking an offer', async () => {
     const { buy, take } = openMarket()
-    await screen.findByRole('button', { name: /Alice/ })
+    const ask = await screen.findByRole('button', { name: /Alice/ })
     expect(screen.queryByRole('button', { name: /my-maker|Bob/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Review swap' })).toBeNull()
+    fireEvent.click(ask)
     expect(screen.getByText('14,000 sat')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(screen.queryByRole('button', { name: 'Review swap' })).toBeNull()
+    fireEvent.click(ask)
     fireEvent.click(screen.getByRole('button', { name: 'Sell' }))
-    expect(screen.getByRole('button', { name: /Bob/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Review swap' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Bob/ }))
     expect(screen.getByText('3,000 sat')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Review swap' }))
     expect(take).not.toHaveBeenCalled()
@@ -69,12 +75,11 @@ describe('P2P market', () => {
     const npub = 'npub1makeridentity'
     const profiles = vi.spyOn(marketApi, 'makers').mockResolvedValue([])
     const { manageRelays } = openMarket(npub)
-    await screen.findByRole('button', { name: 'Nostr profile and reputation' })
+    const ask = await screen.findByRole('button', { name: /npub/ })
     expect(profiles).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Nostr relays (1)' }))
-    expect(screen.getByText('wss://relay.example')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Manage relays' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Relays (1)' }))
     expect(manageRelays).toHaveBeenCalledOnce()
+    fireEvent.click(ask)
     fireEvent.click(
       screen.getByRole('button', { name: 'Nostr profile and reputation' })
     )
@@ -91,9 +96,7 @@ describe('P2P market', () => {
     expect(
       screen.getByRole('button', { name: 'Cancel order' })
     ).toBeInTheDocument()
-    fireEvent.click(
-      screen.getAllByRole('button', { name: 'Publish offer' })[0]!
-    )
+    fireEvent.click(screen.getByRole('button', { name: 'Publish offer' }))
     const form = screen.getByRole('region', { name: 'Trade' })
     expect(
       within(form).getByRole('tab', { name: 'Buy DEMO' })

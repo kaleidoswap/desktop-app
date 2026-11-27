@@ -116,6 +116,10 @@ export interface PlanLimits {
   coins?: number[]
   /** Swaps a maker accepts from one taker at once. */
   perMaker?: number
+  /** With bitcoin as the input, buy within this reservation or sell until this gross receipt. */
+  satAmount?: number
+  /** Rank eligible offers by their price after taker fees. The retained RGB output is not a fee. */
+  includeFeesInPrice?: boolean
 }
 
 /** What a maker accepts from one taker at once, unless it was set otherwise. */
@@ -153,9 +157,22 @@ export function planMarket(
 
   const picks: Order[] = []
   let base = 0
+  let satAmount = 0
   let nextFit: Order | undefined
   const perMaker = limits.perMaker ?? DEFAULT_PER_MAKER
   const fromMaker = new Map<string, number>()
+  const candidates = rows.filter(inside)
+  if (limits.includeFeesInPrice) {
+    const rate = (o: Order) => {
+      const fees = o.platform_fee_sat + o.network_fee_sat
+      return (
+        (side === 'buy' ? o.price_sat + fees : o.price_sat - fees) / o.amount
+      )
+    }
+    candidates.sort((a, b) =>
+      side === 'buy' ? rate(a) - rate(b) : rate(b) - rate(a)
+    )
+  }
   // a buyer's swap spends a coin of its own, large enough for what it pays
   const coins =
     side === 'buy' && limits.coins
@@ -163,9 +180,24 @@ export function planMarket(
       : null
   let noCoinFor = 0
   let tooManyFromMaker = 0
-  for (const o of rows) {
-    if (!inside(o)) continue
-    if (base + o.amount > wantBase) {
+  let reserved = 0
+  for (const o of candidates) {
+    if (
+      side === 'sell' &&
+      limits.satAmount !== undefined &&
+      satAmount >= limits.satAmount
+    )
+      break
+    const cost = takerCost(o)
+    const nextSats = satAmount + (side === 'buy' ? cost.pay : cost.receive)
+    if (
+      base + o.amount > wantBase ||
+      !Number.isSafeInteger(nextSats) ||
+      !Number.isSafeInteger(reserved + cost.pay) ||
+      (side === 'buy' &&
+        limits.satAmount !== undefined &&
+        satAmount + cost.pay > limits.satAmount)
+    ) {
       nextFit ??= o
       continue
     }
@@ -174,7 +206,7 @@ export function planMarket(
       continue
     }
     if (coins) {
-      const i = coins.findIndex((c) => c >= takerCost(o).pay)
+      const i = coins.findIndex((c) => c >= cost.pay)
       if (i < 0) {
         noCoinFor += 1
         continue
@@ -184,6 +216,8 @@ export function planMarket(
     fromMaker.set(o.maker, (fromMaker.get(o.maker) ?? 0) + 1)
     picks.push(o)
     base += o.amount
+    satAmount = nextSats
+    reserved += cost.pay
   }
   const costs = picks.map(takerCost)
   const priceSats = picks.reduce((s, o) => s + o.price_sat, 0)
@@ -198,7 +232,7 @@ export function planMarket(
   return {
     avgPrice: unitsFilled ? priceSats / unitsFilled : 0,
     baseAmount: base,
-    beyondLimit: rows.filter((o) => !inside(o)).length,
+    beyondLimit: rows.length - candidates.length,
     fees: costs.reduce((s, c) => s + c.fees, 0),
     nextFit,
     noCoinFor,

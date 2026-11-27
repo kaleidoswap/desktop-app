@@ -1,7 +1,7 @@
-import { IconButton } from 'kaleido-ui'
+import { Button, IconButton, PageHeader } from 'kaleido-ui'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import {
   desktopPathname,
   MAINNET_ACTIVITY_PATH,
@@ -12,9 +12,15 @@ import {
   P2P_NODE_PATH,
   P2P_SETTINGS_PATH,
   P2P_TRADE_PATH,
-  P2P_WALLET_PATH,
+  TRADE_MARKET_MAKER_PATH,
 } from '../../app/router/paths'
 import { Layout } from '../../components/Layout'
+import { useAppSelector } from '../../app/store/hooks'
+import {
+  nodeWalletNetworkKey,
+  useDesktopTestNetworks,
+  useSelectedTestNetwork,
+} from './networks'
 import {
   DesktopFrame,
   type DesktopSection,
@@ -24,6 +30,8 @@ import {
   P2pSessionProvider,
   useOptionalP2pSession,
 } from '../trade/nostr-p2p/session'
+import { WalletNodeSources } from './WalletNodeSources'
+import { MarketVenues } from '../../components/Trade/MarketVenues'
 import { rememberProfile } from './navigation'
 import { openGuide, P2pGuide } from './P2pGuide'
 
@@ -38,16 +46,52 @@ const sections: Record<string, DesktopSection> = {
   [P2P_TRADE_PATH]: 'market',
 }
 const labels = {
-  accounts: 'unified.accounts',
   activity: 'unified.activity',
   market: 'unified.market',
+  mind: 'navigation.kaleidoMind',
   node: 'unified.node',
   settings: 'navigation.settings',
   wallet: 'p2pShell.wallet',
 }
+function MarketMakerEntry({ mainnet }: { mainnet: boolean }) {
+  const { t } = useTranslation()
+  const account = useAppSelector((state) => state.nodeSettings.data)
+  const options = useDesktopTestNetworks(mainnet ? [] : undefined)
+  const network = useSelectedTestNetwork(options)
+  const sameNetwork = mainnet
+    ? account.network === 'Mainnet'
+    : network?.key === nodeWalletNetworkKey(account.network)
+  if (account.name && sameNetwork)
+    return <Navigate replace to={TRADE_MARKET_MAKER_PATH} />
+  return (
+    <section className="mx-auto flex w-full max-w-5xl flex-col items-start gap-4">
+      <PageHeader
+        description={t('unified.marketNodeHint')}
+        title={t('navigation.marketMaker')}
+        variant="page"
+      />
+      <Button asChild variant="surface">
+        <Link to={mainnet ? MAINNET_NODE_PATH : P2P_NODE_PATH}>
+          {t('launcher.cards.remote')}
+        </Link>
+      </Button>
+    </section>
+  )
+}
+
+function useLightningVenue() {
+  const { pathname, search } = useLocation()
+  const path = desktopPathname(pathname)
+  return (
+    (path === P2P_TRADE_PATH || path === MAINNET_MARKET_PATH) &&
+    new URLSearchParams(search).get('venue') === 'lightning'
+  )
+}
+
 function Shell({ mainnet = false }: { mainnet?: boolean }) {
   const { t } = useTranslation()
   const session = useOptionalP2pSession()
+  const lightning = useLightningVenue()
   const pathname = desktopPathname(useLocation().pathname)
   useEffect(() => {
     rememberProfile(mainnet ? 'mainnet' : 'test')
@@ -67,20 +111,42 @@ function Shell({ mainnet = false }: { mainnet?: boolean }) {
             />
           )
         }
+        secondaryNav={
+          section === 'market' ? (
+            <MarketVenues
+              context={mainnet ? 'mainnet' : 'test'}
+              nostr={!lightning}
+            />
+          ) : undefined
+        }
         section={section}
-        title={t(
-          pathname === P2P_WALLET_PATH ? 'p2pShell.home' : labels[section]
-        )}
+        title={
+          section === 'settings' ||
+          section === 'market' ||
+          (section === 'wallet' && (mainnet || session?.phase === 'running'))
+            ? undefined
+            : t(labels[section])
+        }
       >
         <div className="mx-auto w-full max-w-screen-xl px-4 py-5 sm:px-6 sm:py-6">
-          {session ? (
+          {(section === 'wallet' ||
+            section === 'activity' ||
+            section === 'settings') && (
+            <WalletNodeSources
+              section={section}
+              source={mainnet ? 'mainnet' : 'trading'}
+            />
+          )}
+          {lightning ? (
+            <MarketMakerEntry mainnet={mainnet} />
+          ) : session && section !== 'settings' ? (
             <P2pGate key={session.account} session={session}>
               <Outlet />
-              <P2pGuide />
             </P2pGate>
           ) : (
             <Outlet />
           )}
+          {session?.phase === 'running' && <P2pGuide />}
         </div>
       </DesktopFrame>
     </Layout>
@@ -91,7 +157,8 @@ export const MainnetShell = () => <Shell mainnet />
 
 export function Component() {
   const pathname = desktopPathname(useLocation().pathname)
-  if (pathname === P2P_NODE_PATH) return <Shell />
+  const lightning = useLightningVenue()
+  if (pathname === P2P_NODE_PATH || lightning) return <Shell />
   return (
     <P2pSessionProvider>
       <Shell />

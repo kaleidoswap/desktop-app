@@ -7,12 +7,28 @@ export const units = (amount: number, precision: number) =>
   amount / 10 ** precision
 
 export function fmtUnits(amount: number, precision: number): string {
-  return units(amount, precision).toLocaleString(
-    i18n.resolvedLanguage ?? 'en-US',
-    {
-      maximumFractionDigits: precision,
-      minimumFractionDigits: 0,
-    }
+  const locale = i18n.resolvedLanguage ?? 'en-US'
+  if (!Number.isSafeInteger(amount) || !isPrecision(precision))
+    return String(amount)
+  if (!precision) return amount.toLocaleString(locale)
+  // Formatting a scaled float can lose the last digit of a valid RGB amount.
+  const scale = 10n ** BigInt(precision)
+  const base = BigInt(Math.abs(amount))
+  const whole = Number(base / scale)
+  const integral = (amount < 0 ? -whole : whole).toLocaleString(locale)
+  const remainder = String(base % scale)
+    .padStart(precision, '0')
+    .replace(/0+$/, '')
+  if (!remainder) return integral
+  const decimal = new Intl.NumberFormat(locale)
+    .formatToParts(0.1)
+    .find((part) => part.type === 'decimal')!.value
+  return (
+    integral +
+    decimal +
+    BigInt(remainder)
+      .toLocaleString(locale, { useGrouping: false })
+      .padStart(remainder.length, (0).toLocaleString(locale))
   )
 }
 
@@ -109,10 +125,15 @@ export function timeLeft(expiry: number, now = Date.now()): string {
 
 export function ago(ts: number, now = Date.now()): string {
   const s = Math.floor(now / 1000) - ts
-  if (s < 60) return 'just now'
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
-  return new Date(ts * 1000).toLocaleDateString()
+  const locale = i18n.resolvedLanguage ?? 'en-US'
+  const relative = new Intl.RelativeTimeFormat(locale, {
+    numeric: 'auto',
+    style: 'short',
+  })
+  if (s < 60) return relative.format(0, 'second')
+  if (s < 3600) return relative.format(-Math.floor(s / 60), 'minute')
+  if (s < 86400) return relative.format(-Math.floor(s / 3600), 'hour')
+  return new Date(ts * 1000).toLocaleDateString(locale)
 }
 
 export const short = (s: string, n = 6) =>

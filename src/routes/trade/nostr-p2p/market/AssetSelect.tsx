@@ -42,24 +42,38 @@ const Mark = ({ asset }: { asset: SwapAsset }) =>
   ) : null
 
 interface ButtonProps {
-  asset: SwapAsset
+  asset?: SwapAsset
+  label: string
   onClick: () => void
 }
 
 /** The asset next to an amount: its mark, ticker and badge. Opens the picker. */
-export function AssetButton({ asset, onClick }: ButtonProps) {
-  const tr = useTr()
+function BitcoinMark() {
+  return (
+    <span
+      aria-hidden
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#F7931A] font-semibold text-white"
+    >
+      ₿
+    </span>
+  )
+}
+
+export function AssetButton({ asset, label, onClick }: ButtonProps) {
   return (
     <button
-      aria-label={tr('swap.chooseAsset', 'Choose the asset')}
-      className="flex min-h-11 flex-none items-center gap-2 rounded-full border border-divider/30 bg-surface-elevated py-1 pl-1 pr-3 text-content-primary transition-colors hover:border-primary/50"
+      aria-haspopup="dialog"
+      aria-label={label + ' · ' + (asset?.ticker ?? 'BTC')}
+      className="flex min-h-11 w-[clamp(6rem,40%,10rem)] shrink-0 items-center gap-1.5 rounded-full border border-divider/30 bg-surface-elevated py-1 pl-1 pr-3 text-content-primary transition-colors hover:border-primary/50"
       onClick={onClick}
       type="button"
     >
-      <AssetMark asset={asset} size={30} />
-      <span className="font-semibold">{asset.ticker}</span>
-      <Mark asset={asset} />
-      <ChevronDown className="h-4 w-4 text-content-tertiary" />
+      {asset ? <AssetMark asset={asset} size={30} /> : <BitcoinMark />}
+      <span className="min-w-0 flex-1 truncate text-left font-semibold">
+        {asset?.ticker ?? 'BTC'}
+      </span>
+      {asset && <Mark asset={asset} />}
+      <ChevronDown className="h-4 w-4 shrink-0 text-content-tertiary" />
     </button>
   )
 }
@@ -70,7 +84,8 @@ interface Props {
   assets: SwapAsset[]
   balance: Balance | undefined
   selected: string | null
-  onSelect: (assetId: string) => void
+  onSelect: (assetId: string | null) => void
+  title: string
 }
 
 /**
@@ -83,6 +98,7 @@ export function AssetSelect({
   assets,
   balance,
   selected,
+  title,
   onSelect,
 }: Props) {
   const tr = useTr()
@@ -114,13 +130,19 @@ export function AssetSelect({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results, balance])
   const otherShown = searching || showUnlisted || !anyListed
+  const showBitcoin =
+    !searching ||
+    ['bitcoin', 'btc', 'sats'].some((s) =>
+      s.includes(query.trim().toLowerCase())
+    )
   const flat = [
+    ...(showBitcoin ? [null] : []),
     ...sections.listed,
     ...sections.mine,
     ...(otherShown ? sections.other : []),
   ]
 
-  const pick = (id: string) => {
+  const pick = (id: string | null) => {
     onSelect(id)
     onClose()
   }
@@ -135,7 +157,7 @@ export function AssetSelect({
     } else if (e.key === 'Enter') {
       e.preventDefault()
       const a = flat[active]
-      if (a) pick(a.assetId)
+      if (a !== undefined) pick(a?.assetId ?? null)
     }
   }
 
@@ -208,14 +230,8 @@ export function AssetSelect({
   )
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      size="sm"
-      title={tr('swap.chooseAsset', 'Choose the asset')}
-      viewport
-    >
-      <div className="flex flex-col gap-3 p-4" onKeyDown={onKey}>
+    <Modal isOpen={isOpen} onClose={onClose} size="sm" title={title} viewport>
+      <div className="flex flex-col gap-3 p-4">
         <div className="flex items-center gap-2 rounded-xl border border-divider/30 bg-surface-base px-3 focus-within:border-primary/60">
           <Search className="h-4 w-4 text-content-tertiary" />
           <input
@@ -225,6 +241,7 @@ export function AssetSelect({
               setQuery(e.target.value)
               setActive(0)
             }}
+            onKeyDown={onKey}
             placeholder={tr(
               'swap.searchLong',
               'Search by ticker, name, or paste an asset ID'
@@ -245,23 +262,24 @@ export function AssetSelect({
           )}
         </div>
 
-        {!searching && sections.listed.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {sections.listed.slice(0, 6).map((a) => (
+        <ul className="-mx-1 flex max-h-[26rem] flex-col overflow-y-auto">
+          {showBitcoin && (
+            <li>
               <button
-                className="flex items-center gap-1.5 rounded-full border border-divider/30 py-1 pl-1 pr-3 text-sm text-content-primary hover:border-primary/50"
-                key={a.assetId}
-                onClick={() => pick(a.assetId)}
+                aria-current={selected === null}
+                className={
+                  'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-content-primary ' +
+                  (active === 0 ? 'bg-surface-overlay/60' : '')
+                }
+                onClick={() => pick(null)}
+                onMouseEnter={() => setActive(0)}
                 type="button"
               >
-                <AssetMark asset={a} size={22} />
-                {a.ticker}
+                <BitcoinMark />
+                Bitcoin · BTC
               </button>
-            ))}
-          </div>
-        )}
-
-        <ul className="-mx-1 flex max-h-[26rem] flex-col overflow-y-auto">
+            </li>
+          )}
           {sections.listed.length > 0 &&
             heading(tr('swap.sectionListed', 'Listed by KaleidoSwap'))}
           {sections.listed.map(row)}

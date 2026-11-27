@@ -80,7 +80,10 @@ describe('remote node onboarding', () => {
         )
       )
       expect(navigate).not.toHaveBeenCalled()
-      expect(dispatch).not.toHaveBeenCalled()
+      // Only the saved account list is refreshed until native selection completes.
+      expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
+        'nodeApi/invalidateTags',
+      ])
       selectAccount()
       await waitFor(() => expect(navigate).toHaveBeenCalledWith(route))
       expect(navigate).toHaveBeenCalledTimes(1)

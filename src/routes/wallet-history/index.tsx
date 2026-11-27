@@ -7,6 +7,7 @@ import {
   WALLET_HISTORY_ASSETS_PATH,
   WALLET_HISTORY_CHANNEL_ORDERS_PATH,
 } from '../../app/router/paths'
+import { WalletNodeSources } from '../p2p-home/WalletNodeSources'
 import { RouteTabs, type RouteTab } from '../../components/Layout/RouteTabs'
 
 const tabs: RouteTab[] = [
@@ -41,7 +42,8 @@ export function Component() {
   const { t } = useTranslation()
   return (
     <div className="container mx-auto max-w-6xl px-4 py-6">
-      <RouteTabs label={t('navigation.history')} tabs={tabs} />
+      <WalletNodeSources section="activity" source="node" />
+      <RouteTabs label={t('unified.activity')} tabs={tabs} />
       <Outlet />
     </div>
   )

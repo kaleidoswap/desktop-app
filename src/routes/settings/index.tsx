@@ -1,6 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
 import {
-  ChevronDown,
   LogOut,
   Eye,
   EyeOff,
@@ -26,11 +25,15 @@ import React, { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import { isValidBitcoindRpcUrl } from '../../helpers/unlock'
-import { WALLET_SETUP_PATH } from '../../app/router/paths'
+import {
+  MAINNET_SETTINGS_PATH,
+  P2P_SETTINGS_PATH,
+  WALLET_SETUP_PATH,
+} from '../../app/router/paths'
 import { RootState } from '../../app/store'
 import { useAppSelector } from '../../app/store/hooks'
 import { AppVersion } from '../../components/AppVersion'
@@ -44,29 +47,17 @@ import {
   StatusModal,
 } from '../../components/StatusModal'
 import { useBackup } from '../../hooks/useBackup'
-import { LanguagePicker } from '../../components/Layout/LanguagePicker'
+import { lastWalletContext } from '../p2p-home/navigation'
+import { WalletNodeSources } from '../p2p-home/WalletNodeSources'
+import { ApplicationPreferences } from './ApplicationPreferences'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { waitForNodeReady } from '../../utils/nodeState'
-import {
-  setAppMode,
-  setBitcoinUnit,
-  setFiatCurrency,
-  setNodeConnectionString,
-  type AppMode,
-  // setTheme, // temporarily unused — light mode disabled
-} from '../../slices/settings/settings.slice'
-import {
-  CURRENCY_LABELS,
-  CURRENCY_SYMBOLS,
-  SUPPORTED_CURRENCIES,
-} from '../../slices/priceApi/priceApi.slice'
+import { setNodeConnectionString } from '../../slices/settings/settings.slice'
 
 import { NodeLogsPanel } from './NodeLogsPanel'
 
 interface FormFields {
-  bitcoinUnit: string
-  fiatCurrency: string
   nodeConnectionString: string
   lspUrl: string
   rpcConnectionUrl: string
@@ -171,34 +162,30 @@ const ActionCard = ({
   </button>
 )
 
-export const Component: React.FC = () => {
+export function Component() {
+  const name = useAppSelector((state) => state.nodeSettings.data.name)
+  if (!name) {
+    return (
+      <Navigate
+        replace
+        to={
+          lastWalletContext() === 'test'
+            ? P2P_SETTINGS_PATH
+            : MAINNET_SETTINGS_PATH
+        }
+      />
+    )
+  }
+  return <NodeSettings />
+}
+
+function NodeSettings() {
   const { i18n, t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const { bitcoinUnit, fiatCurrency, nodeConnectionString, appMode } =
-    useSelector((state: RootState) => state.settings)
-
-  const APP_MODE_OPTIONS: {
-    mode: AppMode
-    labelKey: string
-    fallback: string
-  }[] = [
-    {
-      fallback: 'Node + Mind',
-      labelKey: 'launcher.modes.both.title',
-      mode: 'both',
-    },
-    {
-      fallback: 'Only Node',
-      labelKey: 'launcher.modes.node.title',
-      mode: 'node',
-    },
-    {
-      fallback: 'Only Mind',
-      labelKey: 'launcher.modes.mind.title',
-      mode: 'mind',
-    },
-  ]
+  const nodeConnectionString = useSelector(
+    (state: RootState) => state.settings.nodeConnectionString
+  )
   const currentAccount = useAppSelector((state) => state.nodeSettings.data)
   const nodeSettings = useAppSelector((state) => state.nodeSettings.data)
 
@@ -244,9 +231,7 @@ export const Component: React.FC = () => {
   } = useForm<FormFields>({
     defaultValues: {
       bearerToken: nodeSettings.bearer_token || '',
-      bitcoinUnit,
       defaultMakerUrl: nodeSettings.default_maker_url || '',
-      fiatCurrency,
       indexerUrl: nodeSettings.indexer_url || '',
       lspUrl:
         nodeSettings.default_lsp_url || nodeSettings.default_maker_url || '',
@@ -274,9 +259,7 @@ export const Component: React.FC = () => {
   useEffect(() => {
     reset({
       bearerToken: nodeSettings.bearer_token || '',
-      bitcoinUnit,
       defaultMakerUrl: nodeSettings.default_maker_url || '',
-      fiatCurrency,
       indexerUrl: nodeSettings.indexer_url || '',
       lspUrl:
         nodeSettings.default_lsp_url || nodeSettings.default_maker_url || '',
@@ -290,7 +273,7 @@ export const Component: React.FC = () => {
       proxyEndpoint: nodeSettings.proxy_endpoint || '',
       rpcConnectionUrl: nodeSettings.rpc_connection_url || '',
     })
-  }, [bitcoinUnit, fiatCurrency, nodeConnectionString, nodeSettings, reset])
+  }, [nodeConnectionString, nodeSettings, reset])
 
   const handleRestartNode = async () => {
     try {
@@ -340,8 +323,6 @@ export const Component: React.FC = () => {
 
       // Batch state updates to reduce renders
       const updates = async () => {
-        dispatch(setBitcoinUnit(data.bitcoinUnit))
-        dispatch(setFiatCurrency(data.fiatCurrency as any))
         dispatch(setNodeConnectionString(data.nodeConnectionString))
 
         await invoke('update_account', {
@@ -452,9 +433,7 @@ export const Component: React.FC = () => {
   const handleUndo = () => {
     reset({
       bearerToken: nodeSettings.bearer_token || '',
-      bitcoinUnit,
       defaultMakerUrl: nodeSettings.default_maker_url || '',
-      fiatCurrency,
       indexerUrl: nodeSettings.indexer_url || '',
       lspUrl:
         nodeSettings.default_lsp_url || nodeSettings.default_maker_url || '',
@@ -478,7 +457,7 @@ export const Component: React.FC = () => {
       dispatch(nodeSettingsActions.resetNodeSettings())
       navigate(WALLET_SETUP_PATH)
       toast.success(t('settings.toasts.shutDown', 'Node shut down'))
-    } catch (error) {
+    } catch {
       toast.error(
         t('settings.toasts.shutdownFailed', 'Failed to shut down the node')
       )
@@ -508,7 +487,6 @@ export const Component: React.FC = () => {
 
   const inputCls =
     'w-full px-3.5 py-2.5 text-sm text-white bg-surface-base/60 border border-border-default rounded-lg placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors'
-  const selectCls = `${inputCls} appearance-none pr-10`
 
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     {
@@ -538,11 +516,11 @@ export const Component: React.FC = () => {
     },
   ]
   const activeTab = tabs.some((x) => x.id === tab) ? tab : 'general'
-  const isFormTab =
-    activeTab === 'general' || activeTab === 'trading' || activeTab === 'node'
+  const isFormTab = activeTab === 'trading' || activeTab === 'node'
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-4 py-6">
+      <WalletNodeSources section="settings" source="node" />
       {/* ── Header: account + node status ── */}
       <header className="flex flex-wrap items-center gap-4 rounded-2xl border border-border-subtle bg-surface-overlay px-5 py-4">
         <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15">
@@ -610,96 +588,19 @@ export const Component: React.FC = () => {
         ))}
       </nav>
 
+      {activeTab === 'general' && (
+        <>
+          <ApplicationPreferences />
+          <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
+            <AppVersion showDetailed />
+          </section>
+        </>
+      )}
+
       <form
         className={isFormTab ? 'flex flex-col gap-5' : 'hidden'}
         onSubmit={handleSubmit(handleSave)}
       >
-        {/* ── General ── */}
-        {activeTab === 'general' && (
-          <>
-            <SettingsCard title={t('settings.applicationSettings')}>
-              <SettingRow
-                description={t('settings.capabilitiesDescription', {
-                  defaultValue:
-                    'Choose which parts of KaleidoSwap are shown — the node, the AI brain, or both.',
-                })}
-                label={t('settings.capabilities', {
-                  defaultValue: 'Capabilities',
-                })}
-              >
-                <div className="grid grid-cols-3 gap-1 rounded-lg border border-border-default bg-surface-base/60 p-1">
-                  {APP_MODE_OPTIONS.map((opt) => (
-                    <button
-                      aria-pressed={appMode === opt.mode}
-                      className={`whitespace-nowrap rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
-                        appMode === opt.mode
-                          ? 'bg-primary/15 text-primary'
-                          : 'text-content-secondary hover:text-white'
-                      }`}
-                      key={opt.mode}
-                      onClick={() => dispatch(setAppMode(opt.mode))}
-                      type="button"
-                    >
-                      {t(opt.labelKey, { defaultValue: opt.fallback })}
-                    </button>
-                  ))}
-                </div>
-              </SettingRow>
-
-              <Controller
-                control={control}
-                name="bitcoinUnit"
-                render={({ field }) => (
-                  <SettingRow label={t('settings.bitcoinUnit')}>
-                    <div className="relative">
-                      <select {...field} className={selectCls}>
-                        <option value="SAT">
-                          {t('settings.bitcoinUnitSat')}
-                        </option>
-                        <option value="BTC">
-                          {t('settings.bitcoinUnitBtc')}
-                        </option>
-                      </select>
-                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-content-secondary" />
-                    </div>
-                  </SettingRow>
-                )}
-              />
-
-              <Controller
-                control={control}
-                name="fiatCurrency"
-                render={({ field }) => (
-                  <SettingRow
-                    description={t('settings.fiatCurrencyDescription')}
-                    label={t('settings.fiatCurrency')}
-                  >
-                    <div className="relative">
-                      <select {...field} className={selectCls}>
-                        {SUPPORTED_CURRENCIES.map((currency) => (
-                          <option key={currency} value={currency}>
-                            {CURRENCY_SYMBOLS[currency]}{' '}
-                            {CURRENCY_LABELS[currency]}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-content-secondary" />
-                    </div>
-                  </SettingRow>
-                )}
-              />
-
-              <SettingRow label={t('settings.language')}>
-                <LanguagePicker full />
-              </SettingRow>
-            </SettingsCard>
-
-            <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
-              <AppVersion showDetailed={true} />
-            </section>
-          </>
-        )}
-
         {/* ── Maker & LSP ── */}
         {activeTab === 'trading' && (
           <SettingsCard

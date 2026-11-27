@@ -1,9 +1,9 @@
 import { KeyRound, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../../components/ui'
 
-import { useTr } from './market/hooks'
 import { Panel, cx } from './market/ui'
 
 /** A phrase as a person types it: lower case, one space between words. */
@@ -56,7 +56,9 @@ export function WalletSetup({
   onComplete,
   startWithRestore = false,
 }: Props) {
-  const tr = useTr()
+  const { t } = useTranslation('translation', {
+    keyPrefix: 'p2pMarket.market.setup',
+  })
   const [step, setStep] = useState<Step>(
     startWithRestore ? 'restore' : 'choose'
   )
@@ -105,26 +107,24 @@ export function WalletSetup({
           <header className="flex flex-col gap-1">
             <h2 className="text-xl font-bold text-content-primary">
               {walletLabel
-                ? tr('setup.titleNamed', 'Set up {{name}}', {
+                ? t('titleNamed', {
                     name: walletLabel,
                   })
-                : tr('setup.title', 'Set up your trading wallet')}
+                : t('title')}
             </h2>
             <p className="text-body text-content-secondary">
-              {tr(
-                'setup.body',
-                'Your own wallet for trading on {{network}}. No Lightning node needed.',
-                { network: networkLabel }
-              )}
+              {t('body', { network: networkLabel })}
             </p>
           </header>
           <ol
-            aria-label="Getting started"
+            aria-label={t('gettingStarted')}
             className="flex gap-4 text-caption text-content-secondary"
           >
-            <li className="font-semibold text-primary">1 · Create wallet</li>
-            <li>2 · Add funds</li>
-            <li>3 · Make an offer</li>
+            <li className="font-semibold text-primary">
+              1 · {t('stepCreate')}
+            </li>
+            <li>2 · {t('stepFund')}</li>
+            <li>3 · {t('stepOffer')}</li>
           </ol>
           <div className="grid gap-3 sm:grid-cols-2">
             <button
@@ -135,13 +135,10 @@ export function WalletSetup({
             >
               <ShieldCheck aria-hidden className="text-primary" size={20} />
               <strong className="text-body text-content-primary">
-                {tr('setup.create', 'Create a new wallet')}
+                {t('create')}
               </strong>
               <span className="text-caption text-content-secondary">
-                {tr(
-                  'setup.createHelp',
-                  'You get a 12-word recovery phrase to write down.'
-                )}
+                {t('createHelp')}
               </span>
             </button>
             <button
@@ -159,13 +156,10 @@ export function WalletSetup({
                 size={20}
               />
               <strong className="text-body text-content-primary">
-                {tr('setup.restore', 'I have a recovery phrase')}
+                {t('restore')}
               </strong>
               <span className="text-caption text-content-secondary">
-                {tr(
-                  'setup.restoreHelp',
-                  'Bring back a wallet you made before.'
-                )}
+                {t('restoreHelp')}
               </span>
             </button>
           </div>
@@ -175,7 +169,7 @@ export function WalletSetup({
               onClick={onCancel}
               type="button"
             >
-              {tr('setup.useOther', 'Use another wallet')}
+              {t('useOther')}
             </button>
           )}
         </Panel>
@@ -185,14 +179,9 @@ export function WalletSetup({
         <Panel className="flex flex-col gap-4">
           <header className="flex flex-col gap-1">
             <h2 className="text-xl font-bold text-content-primary">
-              {tr('setup.writeTitle', 'Write down your recovery phrase')}
+              {t('writeTitle')}
             </h2>
-            <p className="text-body text-content-secondary">
-              {tr(
-                'setup.writeBody',
-                'These words restore your bitcoin if this computer is lost. Anyone who has them can take your funds, so keep them offline and never share them.'
-              )}
-            </p>
+            <p className="text-body text-content-secondary">{t('writeBody')}</p>
           </header>
           <ol className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {words.map((w, i) => (
@@ -210,10 +199,7 @@ export function WalletSetup({
             ))}
           </ol>
           <p className="rounded-xl bg-status-warning-subtle p-3 text-caption text-content-primary">
-            {tr(
-              'setup.assetsNote',
-              'The phrase restores bitcoin. RGB assets also depend on this computer’s data, so bring assets back to your node when you are done trading.'
-            )}
+            {t('assetsNote')}
           </p>
           <div className="flex justify-between">
             <Button
@@ -223,11 +209,9 @@ export function WalletSetup({
               }}
               variant="outline"
             >
-              {tr('setup.back', 'Back')}
+              {t('back')}
             </Button>
-            <Button onClick={toConfirm}>
-              {tr('setup.written', 'I have written it down')}
-            </Button>
+            <Button onClick={toConfirm}>{t('written')}</Button>
           </div>
         </Panel>
       )}
@@ -236,13 +220,10 @@ export function WalletSetup({
         <Panel className="flex flex-col gap-4">
           <header className="flex flex-col gap-1">
             <h2 className="text-xl font-bold text-content-primary">
-              {tr('setup.confirmTitle', 'Check your phrase')}
+              {t('confirmTitle')}
             </h2>
             <p className="text-body text-content-secondary">
-              {tr(
-                'setup.confirmBody',
-                'Type these words from your recovery phrase to confirm you saved it.'
-              )}
+              {t('confirmBody')}
             </p>
           </header>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -251,7 +232,7 @@ export function WalletSetup({
                 className="flex flex-col gap-1.5 text-caption text-content-secondary"
                 key={p}
               >
-                {tr('setup.wordN', 'Word {{n}}', { n: p + 1 })}
+                {t('wordN', { n: p + 1 })}
                 <input
                   autoCapitalize="none"
                   autoComplete="off"
@@ -275,14 +256,14 @@ export function WalletSetup({
           {error && <p className="text-caption text-status-danger">{error}</p>}
           <div className="flex justify-between">
             <Button onClick={() => setStep('show')} variant="outline">
-              {tr('setup.back', 'Back')}
+              {t('back')}
             </Button>
             <Button
               disabled={!confirmed || busy}
               isLoading={busy}
               onClick={() => void run(() => onComplete(phrase))}
             >
-              {tr('setup.createNow', 'Create wallet')}
+              {t('createNow')}
             </Button>
           </div>
         </Panel>
@@ -292,13 +273,10 @@ export function WalletSetup({
         <Panel className="flex flex-col gap-4">
           <header className="flex flex-col gap-1">
             <h2 className="text-xl font-bold text-content-primary">
-              {tr('setup.restoreTitle', 'Restore your wallet')}
+              {t('restoreTitle')}
             </h2>
             <p className="text-body text-content-secondary">
-              {tr(
-                'setup.restoreBody',
-                'Enter your recovery phrase, with a space between the words. It stays on this computer.'
-              )}
+              {t('restoreBody')}
             </p>
           </header>
           <textarea
@@ -307,17 +285,17 @@ export function WalletSetup({
             autoCorrect="off"
             className="min-h-28 rounded-xl bg-surface-base p-3 text-body text-content-primary outline-none ring-1 ring-border-subtle focus:ring-2 focus:ring-primary/40"
             onChange={(e) => setRestoreText(e.target.value)}
-            placeholder={tr('setup.restorePlaceholder', 'word1 word2 word3 …')}
+            placeholder={t('restorePlaceholder')}
             spellCheck={false}
             value={restoreText}
           />
           <p className="text-caption text-content-tertiary">
-            {tr('setup.wordCount', '{{n}} words', { n: restoreWords.length })}
+            {t('wordCount', { n: restoreWords.length })}
           </p>
           {error && <p className="text-caption text-status-danger">{error}</p>}
           <div className="flex justify-between">
             <Button onClick={() => setStep('choose')} variant="outline">
-              {tr('setup.back', 'Back')}
+              {t('back')}
             </Button>
             <Button
               disabled={!restoreValid || busy}
@@ -326,7 +304,7 @@ export function WalletSetup({
                 void run(() => onComplete(normalizePhrase(restoreText)))
               }
             >
-              {tr('setup.restoreNow', 'Restore wallet')}
+              {t('restoreNow')}
             </Button>
           </div>
         </Panel>

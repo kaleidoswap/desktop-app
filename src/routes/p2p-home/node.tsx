@@ -14,7 +14,7 @@ import {
   MAINNET_NODE_PATH,
   P2P_NODE_PATH,
   P2P_TRADE_PATH,
-  WALLET_DASHBOARD_PATH,
+  CHANNELS_PATH,
   WALLET_REMOTE_PATH,
   WALLET_SETUP_PATH,
 } from '../../app/router/paths'
@@ -86,7 +86,7 @@ export function Component() {
           asChild
           className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left [overflow-wrap:anywhere]"
         >
-          <Link onClick={activateNode} to={WALLET_DASHBOARD_PATH}>
+          <Link onClick={activateNode} to={CHANNELS_PATH}>
             {t('unified.openNode', {
               defaultValue: 'Open {{name}} · {{network}}',
               name: account.name,
@@ -126,8 +126,8 @@ export function Component() {
         </CardFooter>
       </Card>
       <Button asChild className="px-0" size="sm" variant="link">
-        <Link to={WALLET_SETUP_PATH}>
-          {t('unified.manageNodes', { defaultValue: 'Manage node accounts' })}
+        <Link state={{ walletContext: 'test' }} to={WALLET_SETUP_PATH}>
+          {t('unified.manageNodes')}
         </Link>
       </Button>
     </section>

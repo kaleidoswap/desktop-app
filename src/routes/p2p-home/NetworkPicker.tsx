@@ -10,9 +10,24 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import {
   desktopPathname,
+  isNodeMarketPath,
+  TRADE_NOSTR_P2P_PATH,
+  P2P_TRADE_PATH,
+  MAINNET_MARKET_PATH,
+  KALEIDO_MIND_PATH,
+  MAINNET_ACTIVITY_PATH,
   MAINNET_NODE_PATH,
+  MAINNET_WALLET_PATH,
+  P2P_BALANCE_PATH,
+  WALLET_DASHBOARD_PATH,
+  CREATEUTXOS_PATH,
+  MAINNET_SETTINGS_PATH,
   MAINNET_PATH,
+  P2P_ACTIVITY_PATH,
   P2P_NODE_PATH,
+  P2P_SETTINGS_PATH,
+  SETTINGS_PATH,
+  WALLET_HISTORY_PATH,
   WALLET_INIT_PATH,
   WALLET_REMOTE_PATH,
   WALLET_RESTORE_PATH,
@@ -40,7 +55,7 @@ export function NetworkPicker({
   setupNetwork?: BitcoinNetwork
 }) {
   const { t } = useTranslation()
-  const { pathname: routePath, search, state } = useLocation()
+  const { pathname: routePath, hash, search, state } = useLocation()
   const pathname = desktopPathname(routePath)
   const navigate = useNavigate()
   const session = useOptionalP2pSession()
@@ -103,15 +118,49 @@ export function NetworkPicker({
           else saveNetwork(key)
         }
         const nextMainnet = key === 'mainnet'
-        if (node || nodeWizard) {
-          navigate(nextMainnet ? MAINNET_NODE_PATH : P2P_NODE_PATH)
-        } else if (pathname === WALLET_SETUP_PATH) {
+        if (
+          pathname === KALEIDO_MIND_PATH ||
+          pathname.startsWith(`${KALEIDO_MIND_PATH}/`) ||
+          (pathname === WALLET_SETUP_PATH && !nodeWizard)
+        ) {
           const walletContext = nextMainnet ? 'mainnet' : 'test'
           rememberWalletContext(walletContext)
           navigate(
-            { pathname, search },
+            { hash, pathname: routePath, search },
             { replace: true, state: { ...state, walletContext } }
           )
+        } else if (
+          node &&
+          (pathname === WALLET_DASHBOARD_PATH || pathname === CREATEUTXOS_PATH)
+        ) {
+          navigate(nextMainnet ? MAINNET_WALLET_PATH : P2P_BALANCE_PATH)
+        } else if (
+          node &&
+          (pathname === WALLET_HISTORY_PATH ||
+            pathname.startsWith(`${WALLET_HISTORY_PATH}/`))
+        ) {
+          navigate(nextMainnet ? MAINNET_ACTIVITY_PATH : P2P_ACTIVITY_PATH)
+        } else if (node && isNodeMarketPath(pathname)) {
+          const lightning =
+            pathname !== TRADE_NOSTR_P2P_PATH ||
+            new URLSearchParams(search).get('funds') === '1'
+          navigate({
+            pathname: nextMainnet ? MAINNET_MARKET_PATH : P2P_TRADE_PATH,
+            search: lightning ? '?venue=lightning' : '',
+          })
+        } else if (
+          pathname === P2P_TRADE_PATH ||
+          pathname === MAINNET_MARKET_PATH
+        ) {
+          if (nextMainnet !== mainnet || !session)
+            navigate({
+              pathname: nextMainnet ? MAINNET_MARKET_PATH : P2P_TRADE_PATH,
+              search,
+            })
+        } else if (node && pathname === SETTINGS_PATH) {
+          navigate(nextMainnet ? MAINNET_SETTINGS_PATH : P2P_SETTINGS_PATH)
+        } else if (node || nodeWizard) {
+          navigate(nextMainnet ? MAINNET_NODE_PATH : P2P_NODE_PATH)
         } else if (nextMainnet !== mainnet) {
           navigate(switchNetworkPath(pathname, nextMainnet))
         } else if (!session && pathname !== P2P_NODE_PATH) {

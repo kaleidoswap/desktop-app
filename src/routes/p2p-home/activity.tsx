@@ -1,10 +1,4 @@
-import {
-  PageHeader,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from 'kaleido-ui'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from 'kaleido-ui'
 import { useTranslation } from 'react-i18next'
 
 import { Component as AssetsHistory } from '../wallet-history/assets'
@@ -40,7 +34,6 @@ export const Component = () => {
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-      <PageHeader title={title} variant="page" />
       <Tabs defaultValue="swaps">
         <TabsList
           aria-label={title}

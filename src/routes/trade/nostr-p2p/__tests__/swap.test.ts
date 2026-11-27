@@ -4,6 +4,9 @@ import type { Balance, Order } from '../api'
 import {
   baseForSats,
   pickableAssets,
+  parseSwapInput,
+  plainSwapAmount,
+  quoteSwapAmount,
   quoteSwap,
   quoteSwapBase,
   swapAssets,
@@ -268,5 +271,106 @@ describe('swapAssets collectibles', () => {
       })
     )
     expect(a.ticker).toBe('Painting')
+  })
+})
+
+describe('two-sided quotes', () => {
+  it('reads decimal base units exactly and rejects fractional sats, unsafe inputs and excess precision', () => {
+    expect(parseSwapInput('0,000000000000000001', 18)).toBe(1)
+    expect(plainSwapAmount(1, 18)).toBe('0.000000000000000001')
+    expect(parseSwapInput('90071992547409.91', 2)).toBe(Number.MAX_SAFE_INTEGER)
+    expect(parseSwapInput('90071992547409.92', 2)).toBeNull()
+    expect(parseSwapInput('1.25', 0)).toBeNull()
+    expect(parseSwapInput('1e2', 2)).toBeNull()
+    expect(parseSwapInput('0.251', 2)).toBeNull()
+  })
+  it('skips an oversized best offer when buying with a bitcoin budget and prices the next whole offer including fees', () => {
+    const largest = order({ amount: 10000, price_sat: 150000 })
+    const smaller = order({ amount: 100, price_sat: 1505, unit_price: 1505 })
+    const q = quoteSwapAmount(
+      [largest, smaller],
+      usd,
+      'buy',
+      'btc',
+      5505,
+      balance()
+    )
+    expect(q.problem).toBeNull()
+    expect(q.plan.picks).toEqual([smaller])
+    expect(q.plan.reserveSat).toBe(5505)
+    expect(q.plan.baseAmount).toBe(100)
+    expect(
+      quoteSwapAmount([largest, smaller], usd, 'buy', 'btc', 5504, balance())
+        .problem
+    ).toBe('too_small')
+  })
+  it('does not review gross proceeds outside available liquidity and requires BTC to fund seller fees', () => {
+    const bid = order({ side: 'buy' })
+    const held = balance({
+      assets: [
+        {
+          asset_id: usd.assetId,
+          name: 'Dollar',
+          precision: 2,
+          spendable: 1000,
+          ticker: 'USD',
+          total: 1000,
+        },
+      ],
+    })
+    expect(
+      quoteSwapAmount([bid], usd, 'sell', 'btc', 15001, held).problem
+    ).toBe('target_unavailable')
+    const sell = quoteSwapAmount([bid], usd, 'sell', 'btc', 15000, held)
+    expect(sell.plan.sats).toBe(15000)
+    expect(sell.plan.reserveSat).toBe(3000)
+    expect(
+      quoteSwapAmount([bid], usd, 'sell', 'btc', 15000, {
+        ...held,
+        btc_settled_sat: 2999,
+      }).problem
+    ).toBe('not_enough_btc')
+  })
+  it('chooses the lowest fee-inclusive price inside slippage and keeps the RGB output out of trading fees', () => {
+    const costly = order({
+      maker: 'costly',
+      network_fee_sat: 4_000,
+      price_sat: 15_000,
+      unit_price: 1500,
+    })
+    const cheaper = order({
+      maker: 'cheaper',
+      network_fee_sat: 1_000,
+      price_sat: 15_050,
+      unit_price: 1505,
+    })
+    const q = quoteSwapAmount(
+      [costly, cheaper],
+      usd,
+      'buy',
+      'asset',
+      1000,
+      balance(),
+      0.01
+    )
+    expect(q.plan.picks).toEqual([cheaper])
+    expect(q.plan.fees).toBe(2000)
+    expect(q.plan.reserveSat).toBe(18050)
+  })
+  it('ignores expired, incorrectly scaled and incomplete offers before applying slippage', () => {
+    const stale = order({ expiry: 1, unit_price: 1 })
+    const invalid = order({ platform_fee_sat: NaN, unit_price: 2 })
+    const scale = order({ precision: 3, unit_price: 3 })
+    const valid = order({})
+    const wide = order({ maker: 'outside', unit_price: 1540 })
+    const book = [stale, invalid, scale, valid, wide]
+    expect(
+      quoteSwapAmount(book, usd, 'buy', 'asset', 2000, balance(), 0.01).plan
+        .picks
+    ).toEqual([valid])
+    expect(
+      quoteSwapAmount(book, usd, 'buy', 'asset', 2000, balance(), 0.05).plan
+        .picks
+    ).toEqual([valid, wide])
   })
 })

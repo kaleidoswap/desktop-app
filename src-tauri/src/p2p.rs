@@ -106,6 +106,10 @@ pub struct P2pStatus {
 /// webview's origin.
 const ALLOWED: &[(&str, &str)] = &[
     ("GET", "/api/info"),
+    ("GET", "/api/nostr/profiles"),
+    ("POST", "/api/nostr/profiles"),
+    ("POST", "/api/nostr/profiles/select"),
+    ("POST", "/api/nostr/profiles/forget"),
     ("GET", "/api/balance"),
     ("GET", "/api/book"),
     ("GET", "/api/orders"),
@@ -142,6 +146,14 @@ const ALLOWED: &[(&str, &str)] = &[
 /// Whether the app may call `method path`: the market's own routes, nothing from the daemon's
 /// development tools. Cancelling an order names the order in the path.
 pub fn route_allowed(method: &str, path: &str) -> bool {
+    // Only market signatures may carry a signer precondition in the URL.
+    if let Some((route, signer)) = path.split_once("?signer=") {
+        let signing = (method == "POST" && matches!(route, "/api/orders" | "/api/take"))
+            || (method == "DELETE" && route.starts_with("/api/orders/"));
+        return signing && signer.len() == 63 && signer.starts_with("npub1")
+            && signer[5..].bytes().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
+            && !route.contains('?') && route_allowed(method, route);
+    }
     if ALLOWED.contains(&(method, path)) {
         return true;
     }
@@ -802,6 +814,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn profile_commands_and_signed_routes_are_scoped() {
+        assert!(route_allowed("POST", "/api/nostr/profiles/select"));
+        assert!(route_allowed("POST", "/api/nostr/profiles/forget"));
+        assert!(!route_allowed("GET", "/api/nostr/profiles/forget"));
+        let signer = format!("npub1{}", "q".repeat(58));
+        assert!(route_allowed("POST", &format!("/api/take?signer={signer}")));
+        assert!(route_allowed("DELETE", &format!("/api/orders/order1?signer={signer}")));
+        assert!(!route_allowed("POST", &format!("/api/recovery-phrase?signer={signer}")));
+        assert!(!route_allowed("POST", &format!("/api/take?signer={signer}&other=1")));
+    }
+
+    #[test]
     fn the_bundled_daemon_is_looked_for_where_the_bundler_puts_it() {
         let res = Path::new("/app/Resources");
         let found = binary_candidates(res, "p2pd");
@@ -932,6 +956,9 @@ mod tests {
     fn only_the_market_routes_are_reachable_from_the_app() {
         for (m, p) in [
             ("GET", "/api/info"),
+    ("GET", "/api/nostr/profiles"),
+    ("POST", "/api/nostr/profiles"),
+    ("POST", "/api/nostr/profiles/select"),
             ("GET", "/api/book"),
             ("POST", "/api/take"),
             ("POST", "/api/orders"),

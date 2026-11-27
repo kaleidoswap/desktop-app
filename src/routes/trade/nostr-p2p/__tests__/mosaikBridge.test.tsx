@@ -30,7 +30,7 @@ describe('private Mosaik handoff', () => {
     expect(opener.openUrl).toHaveBeenCalledWith(
       'https://kaleido-edge.mole-pangolin.ts.net:8444/'
     )
-    expect(screen.getByText(/Balances do not sync/)).toBeTruthy()
+    expect(screen.getByText(/separate extension wallet/i)).toBeTruthy()
   })
   it('shows an actionable failure if the browser cannot open', async () => {
     opener.openUrl.mockRejectedValueOnce(new Error('blocked'))

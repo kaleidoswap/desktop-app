@@ -4,7 +4,6 @@ import React from 'react'
 
 import {
   CHANNELS_PATH,
-  CREATEUTXOS_PATH,
   CREATE_NEW_CHANNEL_PATH,
   KALEIDO_MIND_AGENT_PATH,
   KALEIDO_MIND_BRAIN_PATH,
@@ -14,15 +13,6 @@ import {
   KALEIDO_MIND_SKILLS_PATH,
   NWC_PATH,
   ORDER_CHANNEL_PATH,
-  TRADE_DCA_PATH,
-  TRADE_LIMIT_PATH,
-  TRADE_MANUAL_PATH,
-  TRADE_MARKET_MAKER_PATH,
-  TRADE_NOSTR_P2P_PATH,
-  TRADE_PATH,
-  WALLET_DASHBOARD_PATH,
-  WALLET_HISTORY_DEPOSITS_PATH,
-  WALLET_HISTORY_PATH,
   WALLET_INIT_PATH,
   WALLET_REMOTE_PATH,
   WALLET_RESTORE_PATH,
@@ -35,44 +25,13 @@ interface SectionLink {
   icon: React.ReactNode
   to: string
   otherPaths?: string[]
-  parentPath?: string
 }
 
 export function matchesSectionLink(link: SectionLink, pathname: string) {
-  return (
-    pathname === link.to ||
-    link.otherPaths?.includes(pathname) ||
-    (link.parentPath !== undefined &&
-      (pathname === link.parentPath ||
-        pathname.startsWith(`${link.parentPath}/`)))
-  )
+  return pathname === link.to || link.otherPaths?.includes(pathname)
 }
 
 export const getNodeLinks = (t: TFunction): SectionLink[] => [
-  {
-    icon: <Icon name="grid_view" size="sm" />,
-    label: t('navigation.dashboard'),
-    otherPaths: [CREATEUTXOS_PATH],
-    to: WALLET_DASHBOARD_PATH,
-  },
-  {
-    icon: <Icon name="swap_horiz" size="sm" />,
-    label: t('navigation.trade'),
-    otherPaths: [
-      TRADE_PATH,
-      TRADE_MANUAL_PATH,
-      TRADE_DCA_PATH,
-      TRADE_LIMIT_PATH,
-      TRADE_NOSTR_P2P_PATH,
-    ],
-    to: TRADE_MARKET_MAKER_PATH,
-  },
-  {
-    icon: <Icon name="history" size="sm" />,
-    label: t('navigation.history'),
-    parentPath: WALLET_HISTORY_PATH,
-    to: WALLET_HISTORY_DEPOSITS_PATH,
-  },
   {
     icon: <Icon name="hub" size="sm" />,
     label: t('navigation.channels'),

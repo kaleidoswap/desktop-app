@@ -1,5 +1,5 @@
 import { RefreshCw } from 'lucide-react'
-import React, { useEffect } from 'react'
+import React, { useEffect, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { logger } from '../../utils/logger'
@@ -71,6 +71,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
   assetSlot,
 }) => {
   const { t } = useTranslation()
+  const inputId = useId()
   useEffect(() => {
     logger.debug(
       `SwapInputField rendering: label=${label}, value=${value}, isLoading=${isLoading}, readOnly=${readOnly}`
@@ -105,9 +106,12 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
       {/* Header row: label | available amount + refresh | size chips */}
       <div className="px-4 py-2 border-b border-border-default/20 flex items-center justify-between gap-2 flex-wrap">
         {/* Label */}
-        <span className="text-xs font-semibold text-white uppercase tracking-wider shrink-0">
+        <label
+          className="shrink-0 text-caption font-medium text-content-secondary"
+          htmlFor={inputId}
+        >
           {label}
-        </span>
+        </label>
 
         {/* Right side: available + refresh + size chips */}
         <div className="flex items-center gap-2 min-w-0 flex-wrap">
@@ -116,7 +120,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
               className={`flex items-center gap-1 text-xs ${amountAnimationClass} shrink-0`}
             >
               <span className="text-content-tertiary">
-                {availableAmountLabel || t('trade.swapInput.available')}:
+                {availableAmountLabel || t('trade.swapInput.available')}
               </span>
               <span className="text-content-primary font-medium">
                 {availableAmount}
@@ -178,6 +182,8 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
               <input
                 className={`w-full pl-4 pr-16 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-12 hover:border-border-default/50 focus:outline-none ${readOnly ? 'text-content-secondary cursor-default' : ''} ${inputAnimationClass}`}
                 disabled={disabled}
+                id={inputId}
+                inputMode="decimal"
                 onChange={handleAmountChange}
                 onKeyDown={(e) => {
                   if (e.key === 'Backspace' && !value) {

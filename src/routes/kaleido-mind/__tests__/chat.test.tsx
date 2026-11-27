@@ -1,4 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
+import { Provider } from 'react-redux'
+import { store } from '../../../app/store'
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Component as Layout } from '../index'
@@ -16,7 +18,6 @@ const mock = vi.hoisted(() => ({
 }))
 vi.mock('../../../hooks/useMind', () => ({ useMind: () => mock.mind }))
 vi.mock('../../../api/mind', () => ({ mindClient: { on: () => () => {} } }))
-vi.mock('../../../app/store/hooks', () => ({ useAppSelector: () => true }))
 vi.mock('../thinking-toggle', () => ({ ThinkingToggle: () => null }))
 vi.mock('../start-brain-modal', () => ({ StartBrainModal: () => null }))
 vi.mock('../welcome-actions', () => ({
@@ -35,16 +36,18 @@ beforeEach(() => {
 
 function renderChat() {
   return render(
-    <MemoryRouter initialEntries={['/kaleido-mind']}>
-      <Link to="/kaleido-mind">Chat tab</Link>
-      <Link to="/kaleido-mind/brain">Brain tab</Link>
-      <Routes>
-        <Route element={<Layout />} path="kaleido-mind">
-          <Route element={<Chat />} index />
-          <Route element={<p>Brain panel</p>} path="brain" />
-        </Route>
-      </Routes>
-    </MemoryRouter>
+    <Provider store={store}>
+      <MemoryRouter initialEntries={['/kaleido-mind']}>
+        <Link to="/kaleido-mind">Chat tab</Link>
+        <Link to="/kaleido-mind/brain">Brain tab</Link>
+        <Routes>
+          <Route element={<Layout />} path="kaleido-mind">
+            <Route element={<Chat />} index />
+            <Route element={<p>Brain panel</p>} path="brain" />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </Provider>
   )
 }
 

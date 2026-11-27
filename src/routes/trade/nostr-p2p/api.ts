@@ -43,6 +43,7 @@ export interface AssetFacts {
 }
 
 export interface Info {
+  nostr_profiles?: boolean
   name: string
   network: string
   npub: string
@@ -140,6 +141,9 @@ export interface Trade {
   id: string
   side: Side
   role: 'maker' | 'taker'
+  /** Participant public keys recorded for this swap. Older daemons may omit either. */
+  maker_npub?: string | null
+  taker_npub?: string | null
   asset_id: string
   ticker: string | null
   amount: number
@@ -178,6 +182,7 @@ export interface Trade {
 }
 
 export interface NewOrder {
+  expected_npub?: string
   side: Side
   asset_id: string
   /** Asset units, in base units. */
@@ -203,16 +208,22 @@ export const ANSWER_WINDOW_SECS = 30
 /** A maker marked away may be back soon, so it gets longer, but not the daemon's full ten minutes. */
 export const ANSWER_WINDOW_AWAY_SECS = 120
 
+function signedPath(path: string, expectedNpub?: string) {
+  return expectedNpub
+    ? path + '?signer=' + encodeURIComponent(expectedNpub)
+    : path
+}
+
 export const marketApi = {
   /** Null when the daemon reads no registry. */
   asset: (contractId: string) =>
     get<AssetFacts | null>(`/api/asset/${contractId}`),
   balance: () => get<Balance>('/api/balance'),
   book: () => get<Order[]>('/api/book'),
-  cancel: (id: string) =>
+  cancel: (id: string, expectedNpub?: string) =>
     transport().request<void>(
       'DELETE',
-      `/api/orders/${encodeURIComponent(id)}`
+      signedPath(`/api/orders/${encodeURIComponent(id)}`, expectedNpub)
     ),
   info: () => get<Info>('/api/info'),
   /** Profiles of up to 20 makers. Checking a NIP-05 name asks its domain, so ask only on demand. */
@@ -220,12 +231,16 @@ export const marketApi = {
     get<MakerProfile[]>(`/api/makers?npubs=${npubs.join(',')}`),
   orders: () => get<Order[]>('/api/orders'),
 
-  placeOrder: (o: NewOrder) => post<Order>('/api/orders', o),
+  placeOrder: ({ expected_npub, ...order }: NewOrder) =>
+    post<Order>(signedPath('/api/orders', expected_npub), order),
   /** Sync the wallet with the chain now, instead of waiting for the next automatic sync. */
   refresh: () => post<void>('/api/refresh', {}),
   // the daemon refuses if the order is no longer on the terms that were reviewed
-  take: (o: Order, opts?: { answerWithinSecs?: number }) =>
-    post<unknown>('/api/take', {
+  take: (
+    o: Order,
+    opts?: { answerWithinSecs?: number; expectedNpub?: string }
+  ) =>
+    post<unknown>(signedPath('/api/take', opts?.expectedNpub), {
       ...(opts?.answerWithinSecs
         ? { answer_within_secs: opts.answerWithinSecs }
         : {}),

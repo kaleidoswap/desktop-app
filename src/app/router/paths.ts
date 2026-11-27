@@ -45,6 +45,16 @@ export const MAINNET_NODE_PATH = `${MAINNET_PATH}/node`
 export const TRADE_DCA_PATH = makePath(['dca'])
 export const TRADE_LIMIT_PATH = makePath(['limit-orders'])
 
+export const isNodeMarketPath = (pathname: string) =>
+  [
+    TRADE_PATH,
+    TRADE_MARKET_MAKER_PATH,
+    TRADE_MANUAL_PATH,
+    TRADE_DCA_PATH,
+    TRADE_LIMIT_PATH,
+    TRADE_NOSTR_P2P_PATH,
+  ].includes(desktopPathname(pathname))
+
 export const WALLET_DASHBOARD_PATH = makePath(['wallet-dashboard'])
 
 export const SETTINGS_PATH = makePath(['settings'])

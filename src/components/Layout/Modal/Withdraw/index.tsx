@@ -71,9 +71,10 @@ const createFungibleAssignment = (amount: number): any => {
   }
 }
 
-export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
-  onClose,
-}) => {
+export const WithdrawModalContent: React.FC<{
+  initialAssetId?: string
+  onClose: () => void
+}> = ({ initialAssetId = BTC_ASSET_ID, onClose }) => {
   const dispatch = useAppDispatch()
   const { t } = useTranslation()
   const { bitcoinUnit } = useSettings()
@@ -150,7 +151,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
     defaultValues: {
       address: '',
       amount: 0,
-      asset_id: BTC_ASSET_ID,
+      asset_id: initialAssetId,
       donation: false,
       fee_rate: 'normal',
       network: 'on-chain',
@@ -1472,7 +1473,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
               ? t('withdrawModal.sent.title', 'Payment sent')
               : showConfirmation
                 ? t('withdrawModal.main.title.confirm')
-                : t('withdrawModal.main.title.form')}
+                : t('p2pHome.send')}
           </h3>
           <button
             className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"

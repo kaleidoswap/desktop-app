@@ -2,8 +2,10 @@
 // useMind() instance and renders the shared header + loading banner, with the
 // active sub-page (Brain / Models / Skills / Chat) in the Outlet.
 
-import { FlaskConical, Loader2 } from 'lucide-react'
+import { Button, Card, CardContent } from 'kaleido-ui'
+import { Loader2 } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Outlet, useLocation } from 'react-router-dom'
 
 import {
@@ -12,6 +14,8 @@ import {
 } from '../../app/router/paths'
 import { mindClient, type MindEvent } from '../../api/mind'
 import { useMind } from '../../hooks/useMind'
+import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
+import { isMindEnabled, setAppMode } from '../../slices/settings/settings.slice'
 
 import { MockModeBanner } from './mock-mode-banner'
 import { RuntimeInstall } from './runtime-install'
@@ -19,6 +23,25 @@ import { StatusPill, type ChatMsg } from './shared'
 import { StartBrainModal } from './start-brain-modal'
 
 export const Component: React.FC = () => {
+  const { t } = useTranslation()
+  const dispatch = useAppDispatch()
+  const enabled = useAppSelector((state) =>
+    isMindEnabled(state.settings.appMode)
+  )
+  if (enabled) return <MindWorkspace />
+  return (
+    <Card className="mx-auto w-full max-w-xl">
+      <CardContent className="flex flex-col items-start gap-4 py-5">
+        <p>{t('launcher.mindShort')}</p>
+        <Button onClick={() => dispatch(setAppMode('both'))} type="button">
+          {t('navigation.activate', { name: t('navigation.kaleidoMind') })}
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+function MindWorkspace() {
   const mind = useMind()
   const { status } = mind
   const providerOn = status?.on === true
@@ -87,15 +110,8 @@ export const Component: React.FC = () => {
 
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col gap-3 overflow-y-auto">
-      {/* The app's section header already shows the "KaleidoMind" title. The
-          chat carries its own status in its header, so only the other tabs
-          get this slim experimental + status row. */}
       {!onChatRoute && (
-        <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-300">
-            <FlaskConical className="h-3 w-3" />
-            Experimental
-          </span>
+        <div className="flex justify-end">
           <StatusPill
             model={status?.activeModelName}
             on={providerOn}

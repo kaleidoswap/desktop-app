@@ -1,19 +1,14 @@
-import {
-  Button,
-  Card,
-  CopyButton,
-  PageHeader,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from 'kaleido-ui'
-import { ArrowDownLeft, ArrowUpRight, Coins, Plus } from 'lucide-react'
+import { CopyButton } from 'kaleido-ui'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useNavigate } from 'react-router-dom'
+
+import { P2P_TRADE_PATH } from '../../app/router/paths'
+import {
+  WalletOverview,
+  WalletPage,
+} from '../../components/Wallet/WalletOverview'
 import { useAppDispatch } from '../../app/store/hooks'
 import { UTXOManagementModal } from '../../components/UTXOManagementModal'
 import { useSettings } from '../../hooks/useSettings'
@@ -29,6 +24,7 @@ import { usePoll } from '../trade/nostr-p2p/market/hooks'
 import { useP2pSession } from '../trade/nostr-p2p/session'
 import { WalletSwitch } from '../trade/nostr-p2p/WalletSwitch'
 
+import { FaucetCard } from './FaucetCard'
 import { IssueDialog } from './IssueDialog'
 import { bitcoinSummary } from './summary'
 
@@ -39,6 +35,7 @@ import { bitcoinSummary } from './summary'
 export const Component = () => {
   const { t } = useTranslation()
   const dispatch = useAppDispatch()
+  const navigate = useNavigate()
   const { bitcoinUnit } = useSettings()
   const session = useP2pSession()
   const balance = usePoll(marketApi.balance, 5_000)
@@ -47,230 +44,130 @@ export const Component = () => {
   const [issue, setIssue] = useState(false)
 
   const btc = bitcoinSummary(balance.data)
-  const coinSizes = balance.data?.btc_coins ?? []
-  const assets = [...(balance.data?.assets ?? [])].sort(
-    (a, b) => b.total - a.total
-  )
+  const coinSizes = balance.data?.btc_coins
+  const assetList = balance.data?.assets
+  const assets = [...(assetList ?? [])].sort((a, b) => b.total - a.total)
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <PageHeader
-        action={
-          <WalletSwitch
-            onCreate={session.addWallet}
-            onSelect={session.chooseWallet}
-            selectedId={session.walletId}
-            wallets={session.wallets}
-          />
+    <WalletPage
+      action={
+        <WalletSwitch
+          onCreate={session.addWallet}
+          onSelect={session.chooseWallet}
+          selectedId={session.walletId}
+          wallets={session.wallets}
+        />
+      }
+      description={
+        session.config &&
+        `${networkLabel(session.config.network)} · ${t('p2pShell.onchain')}`
+      }
+    >
+      <WalletOverview
+        assets={assets.map((a) => ({
+          amounts: [
+            a.total == null ? null : fmtUnits(a.total, a.precision),
+            a.spendable == null ? null : fmtUnits(a.spendable, a.precision),
+          ],
+          description: [a.ticker && a.name, short(a.asset_id, 6)]
+            .filter(Boolean)
+            .join(' · '),
+          id: a.asset_id,
+          ticker: a.ticker || a.name,
+        }))}
+        assetsState={
+          assetList
+            ? 'ready'
+            : balance.data || balance.error
+              ? 'unavailable'
+              : 'loading'
         }
-        description={
-          session.config &&
-          `${networkLabel(session.config.network)} · ${t('p2pShell.onchain', { defaultValue: 'on-chain RGB' })}`
+        balance={
+          balance.data && btc.ready != null
+            ? `${fmtSats(btc.ready)} sats`
+            : null
         }
-        title={t('p2pShell.wallet', { defaultValue: 'Wallet' })}
-        variant="page"
-      />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-        <Card className="min-w-0 gap-4 p-4 sm:p-6">
-          <div className="flex flex-col gap-1">
-            <span className="text-caption font-semibold text-muted-foreground">
-              {t('p2pWallet.bitcoin', { defaultValue: 'BITCOIN' })}
-            </span>
-            <span className="text-3xl font-bold tracking-tight text-content-primary">
-              {balance.data ? `${fmtSats(btc.ready)} sats` : '–'}
-            </span>
-            {btc.pending > 0 && (
+        balanceDetails={
+          <>
+            {balance.data && btc.pending > 0 && (
               <span className="text-sm text-status-warning">
-                {t('p2pWallet.pending', {
-                  defaultValue: '+ {{sats}} sats still confirming',
-                  sats: fmtSats(btc.pending),
-                })}
+                {t('p2pWallet.pending', { sats: fmtSats(btc.pending) })}
               </span>
             )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <span className="text-sm text-content-secondary">
-              {t('p2pWallet.coins', {
-                count: coinSizes.length,
-                defaultValue: '{{count}} coins free for swaps',
-              })}
-            </span>
-            {coinSizes.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {coinSizes.map((c, i) => (
-                  <span
-                    className="rounded-md bg-surface-base px-2 py-1 font-mono text-xs text-content-secondary"
-                    key={i}
-                  >
-                    {fmtSats(c)}
-                  </span>
-                ))}
+            {coinSizes && (
+              <div className="flex flex-col gap-2">
+                <span className="text-sm text-content-secondary">
+                  {t('p2pWallet.coins', { count: coinSizes.length })}
+                </span>
+                {coinSizes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {coinSizes.map((coin, i) => (
+                      <span
+                        className="rounded-md bg-surface-base px-2 py-1 font-mono text-xs text-content-secondary"
+                        key={i}
+                      >
+                        {fmtSats(coin)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <span className="text-xs text-content-tertiary">
+                  {t('p2pWallet.coinsWhy')}
+                </span>
               </div>
             )}
-            <span className="text-xs leading-relaxed text-content-tertiary">
-              {t('p2pWallet.coinsWhy', {
-                defaultValue:
-                  'Each swap spends a coin of its own, so more coins means more swaps at once.',
-              })}
-            </span>
-          </div>
-
-          <div className="mt-auto flex flex-wrap gap-2">
-            <Button
-              onClick={() =>
-                dispatch(
-                  uiSliceActions.setModal({
-                    assetId: undefined,
-                    type: 'deposit',
-                  })
-                )
-              }
-              type="button"
-              variant="surface"
-            >
-              <ArrowDownLeft aria-hidden size={16} />
-              {t('p2pHome.receive', { defaultValue: 'Receive' })}
-            </Button>
-            <Button
-              onClick={() =>
-                dispatch(
-                  uiSliceActions.setModal({
-                    assetId: undefined,
-                    type: 'withdraw',
-                  })
-                )
-              }
-              type="button"
-              variant="surface"
-            >
-              <ArrowUpRight aria-hidden size={16} />
-              {t('p2pHome.send', { defaultValue: 'Send' })}
-            </Button>
-            <Button
-              onClick={() => setCoins(true)}
-              type="button"
-              variant="quiet"
-            >
-              <Coins aria-hidden size={16} />
-              {t('p2pWallet.manageCoins', { defaultValue: 'Manage coins' })}
-            </Button>
-          </div>
-        </Card>
-
-        <Card className="min-w-0 gap-3 p-4 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-subhead font-bold">
-              {t('p2pWallet.assets', { defaultValue: 'Assets' })}
-            </h2>
-            <Button
-              onClick={() => setIssue(true)}
-              size="sm"
-              type="button"
-              variant="surface"
-            >
-              <Plus aria-hidden size={16} />
-              {t('p2pWallet.issue', { defaultValue: 'Issue an asset' })}
-            </Button>
-          </div>
-          {assets.length === 0 ? (
-            <p className="text-sm text-content-tertiary">
-              {t('p2pHome.noAssets', {
-                defaultValue:
-                  'No assets yet. Buy one on the market or receive one with an RGB invoice.',
-              })}
-            </p>
-          ) : (
-            <Table className="max-sm:[&_td]:px-1 max-sm:[&_th]:px-1">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>
-                    {t('p2pWallet.asset', { defaultValue: 'ASSET' })}
-                  </TableHead>
-                  <TableHead className="text-right">
-                    {t('p2pWallet.total', { defaultValue: 'TOTAL' })}
-                  </TableHead>
-                  <TableHead className="text-right">
-                    {t('p2pWallet.spendable', { defaultValue: 'SPENDABLE' })}
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <span className="sr-only">
-                      {t('p2pWallet.actions', { defaultValue: 'Actions' })}
-                    </span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assets.map((a) => (
-                  <TableRow key={a.asset_id}>
-                    <TableCell>
-                      <span className="flex flex-col">
-                        <span className="font-medium text-content-primary">
-                          {a.ticker || a.name}
-                        </span>
-                        <span className="font-mono text-xs text-content-tertiary">
-                          {a.name} · {short(a.asset_id, 6)}
-                        </span>
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {fmtUnits(a.total, a.precision)}
-                    </TableCell>
-                    <TableCell
-                      className={`text-right tabular-nums ${a.spendable < a.total ? 'text-status-warning' : 'text-content-primary'}`}
-                    >
-                      {fmtUnits(a.spendable, a.precision)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        onClick={() =>
-                          dispatch(
-                            uiSliceActions.setModal({
-                              assetId: a.asset_id,
-                              type: 'deposit',
-                            })
-                          )
-                        }
-                        size="xs"
-                        type="button"
-                        variant="link"
-                      >
-                        {t('p2pHome.receive', { defaultValue: 'Receive' })}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-          {info.data && (
-            <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-divider/10 pt-3 text-xs text-content-tertiary">
-              <span>
-                {t('p2pWallet.identity', {
-                  defaultValue: 'Nostr identity of this wallet',
-                })}
-              </span>
+          </>
+        }
+        balanceLabel={t('p2pWallet.bitcoin')}
+        balanceLoading={!balance.data && !balance.error}
+        columns={[t('p2pWallet.total'), t('p2pWallet.spendable')]}
+        emptyMessage={t('p2pHome.noAssets')}
+        error={balance.error ?? info.error ?? undefined}
+        footer={
+          info.data?.npub && (
+            <>
+              <span>{t('p2pWallet.identity')}</span>
               <span className="font-mono text-content-secondary">
                 {short(info.data.npub, 10)}
               </span>
               <CopyButton
-                copiedAnnouncement={t('p2pWallet.copied', {
-                  defaultValue: 'Copied',
-                })}
-                copyLabel={t('p2pWallet.copyNpub', {
-                  defaultValue: 'Copy the Nostr key',
-                })}
+                copiedAnnouncement={t('p2pWallet.copied')}
+                copyLabel={t('p2pWallet.copyNpub')}
                 failedMessage={t('mnemonicViewer.copyFailed')}
-                label={t('p2pWallet.identity', {
-                  defaultValue: 'Nostr identity of this wallet',
-                })}
+                label={t('p2pWallet.identity')}
                 value={info.data.npub}
               />
-            </div>
-          )}
-        </Card>
-      </div>
+            </>
+          )
+        }
+        marketAction={{
+          label: t('unified.market'),
+          onClick: () => navigate(P2P_TRADE_PATH),
+        }}
+        onIssue={() => setIssue(true)}
+        onManageCoins={() => setCoins(true)}
+        onReceive={(assetId) =>
+          dispatch(uiSliceActions.setModal({ assetId, type: 'deposit' }))
+        }
+        onRefresh={() => {
+          balance.refresh()
+          info.refresh()
+        }}
+        onSend={(assetId) =>
+          dispatch(uiSliceActions.setModal({ assetId, type: 'withdraw' }))
+        }
+      />
+      {session.config?.faucet_url &&
+        assetList &&
+        !balance.error &&
+        btc.ready + btc.pending === 0 &&
+        assets.every((a) => a.total === 0) && (
+          <FaucetCard
+            address={info.data?.address}
+            faucetUrl={session.config.faucet_url}
+            networkLabel={networkLabel(session.config.network)}
+          />
+        )}
 
       {coins && (
         <UTXOManagementModal
@@ -286,6 +183,6 @@ export const Component = () => {
         onClose={() => setIssue(false)}
         onIssued={() => balance.refresh()}
       />
-    </div>
+    </WalletPage>
   )
 }

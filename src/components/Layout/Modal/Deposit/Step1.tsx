@@ -248,7 +248,7 @@ export const Step1 = ({ onNext, onClose }: Props) => {
       <div className="mb-4 flex items-center gap-3 border-b border-divider/10 pb-4">
         <Download className="h-6 w-6 text-primary" />
         <h3 className="flex-1 text-xl font-bold text-white">
-          {t('depositModal.title', 'Deposit')}
+          {t('p2pHome.receive')}
         </h3>
         <button
           className="rounded-lg p-1.5 text-content-secondary transition-colors hover:bg-surface-high/60 hover:text-white"

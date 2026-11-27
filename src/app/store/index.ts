@@ -1,4 +1,8 @@
-import { combineReducers, configureStore } from '@reduxjs/toolkit'
+import {
+  combineReducers,
+  configureStore,
+  createListenerMiddleware,
+} from '@reduxjs/toolkit'
 
 import { makerApi } from '../../slices/makerApi/makerApi.slice.ts'
 import { pairsSlice } from '../../slices/makerApi/pairs.slice.ts'
@@ -24,14 +28,35 @@ const rootReducer = combineReducers({
   ui: uiSlice.reducer,
 })
 
+export type RootState = ReturnType<typeof rootReducer>
+
+// Node endpoints share query arguments across accounts, even for the same RGB
+// contract. Drop those entries before components subscribe to a different node.
+const nodeConnection = createListenerMiddleware<RootState>()
+nodeConnection.startListening({
+  effect: (_action, api) => {
+    api.dispatch(nodeApi.util.resetApiState())
+  },
+  predicate: (_action, current, previous) => {
+    const before = previous.nodeSettings.data
+    const after = current.nodeSettings.data
+    return (
+      before.name !== after.name ||
+      before.network !== after.network ||
+      before.node_url !== after.node_url ||
+      before.bearer_token !== after.bearer_token
+    )
+  },
+})
+
 export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
+      .prepend(nodeConnection.middleware)
       .concat(nodeApi.middleware)
       .concat(makerApi.middleware)
       .concat(priceApi.middleware),
   reducer: rootReducer,
 })
 
-export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch

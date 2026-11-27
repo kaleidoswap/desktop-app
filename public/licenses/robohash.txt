@@ -1,0 +1,6 @@
+Robohash Set 1
+Classic robot artwork by Zikri Kader, distributed under Creative Commons Attribution 4.0.
+License: https://creativecommons.org/licenses/by/4.0/
+Original artwork: https://github.com/e1ven/Robohash/tree/52cb1525d83306652b79ac440e94cdd45e22a43a/robohash/sets/set1
+
+The transparent originals were resized to 96 × 96 pixels and arranged into lossless WebP sprite sheets. Each sheet represents one color. Rows and columns follow the sorted part directories and filenames used by Robohash.

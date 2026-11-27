@@ -1,20 +1,32 @@
+import { Button, PageHeader } from 'kaleido-ui'
 import {
   AlertTriangle,
   ArrowDownUp,
+  ArrowLeft,
   BadgeCheck,
   ChevronDown,
   Info,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import { SwapInputField } from '../../../../components/Trade/SwapInputField'
 import { openGuide } from '../../../p2p-home/P2pGuide'
-import { marketApi, type Order, type Side } from '../api'
-import { fmtPrice, fmtSats, fmtUnits, short, toBase } from '../format'
+import { NostrParticipants } from '../NostrParticipants'
+import { NostrProfilesMenu } from '../NostrProfilesMenu'
 import {
-  baseForSats,
+  availableSats,
+  marketApi,
+  type Info as MarketInfo,
+  type Order,
+  type Side,
+} from '../api'
+import { fmtPrice, fmtSats, fmtUnits, short } from '../format'
+import {
+  parseSwapInput,
+  plainSwapAmount,
+  type SwapAsset,
   pickableAssets,
-  quoteSwapBase,
+  quoteSwapAmount,
   swapAssets,
   type SwapProblem,
 } from '../swap'
@@ -26,24 +38,72 @@ import { TakeSheet } from './TakeSheet'
 
 type Editing = 'asset' | 'btc'
 
-/** A base-unit amount as an input shows it: plain digits, no grouping. */
-const plain = (base: number, precision: number) =>
-  precision === 0 ? String(base) : String(base / 10 ** precision)
-
-/** Keep only what an amount can be: digits and one decimal point. */
-const cleanAmount = (s: string) => {
-  const t = s.replace(',', '.').replace(/[^\d.]/g, '')
-  const [i, ...rest] = t.split('.')
-  return rest.length ? `${i}.${rest.join('')}` : i
-}
-
 /**
  * The market as a swap: say what you pay or what you get, in either field, see the price the book
  * gives and who fills it, then review. Nothing is signed before the review.
  */
-export function SwapView() {
-  const tr = useTr()
+export function SwapView({ onShowOffers }: { onShowOffers?: () => void }) {
+  const [session, setSession] = useState(0)
+  return (
+    <SwapSession
+      key={session}
+      onProfileSwitched={() => setSession((key) => key + 1)}
+      onShowOffers={onShowOffers}
+    />
+  )
+}
+
+function SwapSession({
+  onShowOffers,
+  onProfileSwitched,
+}: {
+  onShowOffers?: () => void
+  onProfileSwitched: () => void
+}) {
+  const { t } = useTranslation()
   const info = usePoll(marketApi.info, 30_000)
+  return (
+    <div className="flex min-w-0 flex-col gap-5">
+      <PageHeader
+        action={
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {info.data && (
+              <NostrProfilesMenu
+                npub={info.data.npub}
+                onSwitched={onProfileSwitched}
+              />
+            )}
+            {onShowOffers && (
+              <Button
+                onClick={onShowOffers}
+                size="sm"
+                type="button"
+                variant="surface"
+              >
+                <ArrowLeft aria-hidden size={16} />
+                {t('p2pMarket.market.offers.available')}
+              </Button>
+            )}
+          </div>
+        }
+        title={t('p2pTrade.simpleSwap', { defaultValue: 'Simple swap' })}
+        variant="page"
+      />
+      {info.data ? (
+        <SwapForm info={info.data} key={info.data.npub} />
+      ) : (
+        <p className="py-16 text-center text-content-secondary">
+          {info.error ?? t('p2pMarket.market.swap.loading')}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function SwapForm({ info }: { info: MarketInfo }) {
+  const tr = useTr()
+  const { i18n, t } = useTranslation()
+  const locale = i18n?.resolvedLanguage
   const balance = usePoll(marketApi.balance, 4_000)
   const book = usePoll(marketApi.book, 2_500)
   const trades = usePoll(marketApi.trades, 2_000)
@@ -52,37 +112,75 @@ export function SwapView() {
     () => swapAssets(book.data ?? [], balance.data),
     [book.data, balance.data]
   )
-  const [choosing, setChoosing] = useState(false)
-  const [assetId, setAssetId] = useState<string | null>(null)
+  const [choosing, setChoosing] = useState<'pay' | 'receive' | null>(null)
+  const [selectedAsset, setSelectedAsset] = useState<SwapAsset | null>(null)
   const asset =
-    assets.find((a) => a.assetId === assetId) ??
+    assets.find((a) => a.assetId === selectedAsset?.assetId) ??
+    selectedAsset ??
     pickableAssets(assets, false)[0]
   const [side, setSide] = useState<Side>('buy')
   const [editing, setEditing] = useState<Editing>('asset')
   const [assetText, setAssetText] = useState('')
   const [btcText, setBtcText] = useState('')
   const [pct, setPct] = useState<number | undefined>()
+  const [slippage, setSlippage] = useState(0.01)
   const [showMakers, setShowMakers] = useState(false)
-  const [taking, setTaking] = useState<Order[] | null>(null)
+  const [taking, setTaking] = useState<{
+    orders: Order[]
+    info: MarketInfo
+  } | null>(null)
 
-  const btcReady =
-    balance.data?.btc_settled_sat ?? balance.data?.btc_spendable_sat ?? 0
+  const btcReady = availableSats(balance.data)
   const held = balance.data?.assets.find((a) => a.asset_id === asset?.assetId)
   const assetHeld = held?.spendable ?? 0
 
-  const wantBase = useMemo(() => {
-    if (!asset) return 0
-    return editing === 'asset'
-      ? toBase(assetText, asset.precision)
-      : baseForSats(book.data ?? [], asset, side, Number(btcText) || 0)
-  }, [asset, editing, assetText, btcText, book.data, side])
-
+  const precision = editing === 'btc' ? 0 : (asset?.precision ?? 0)
+  const typed = parseSwapInput(
+    editing === 'btc' ? btcText : assetText,
+    precision
+  )
   const quote = useMemo(
     () =>
       asset
-        ? quoteSwapBase(book.data ?? [], asset, side, wantBase, balance.data)
+        ? quoteSwapAmount(
+            book.data ?? [],
+            asset,
+            side,
+            editing,
+            typed ?? 0,
+            balance.data,
+            slippage
+          )
         : null,
-    [asset, book.data, side, wantBase, balance.data]
+    [asset, book.data, side, editing, typed, balance.data, slippage]
+  )
+
+  const reset = () => {
+    setAssetText('')
+    setBtcText('')
+    setPct(undefined)
+  }
+  const review = taking && (
+    <TakeSheet
+      book={(book.data ?? []).filter(
+        (o) => o.asset_id === taking.orders[0]?.asset_id
+      )}
+      info={taking.info}
+      key={taking.orders.map((o) => o.order_id).join(',')}
+      onChanged={() => {
+        balance.refresh()
+        book.refresh()
+        trades.refresh()
+      }}
+      onClose={() => {
+        setTaking(null)
+        balance.refresh()
+        book.refresh()
+      }}
+      onSwitch={(o) => setTaking({ info: taking.info, orders: [{ ...o }] })}
+      orders={taking.orders}
+      trades={trades.data ?? []}
+    />
   )
 
   if (!book.data || !balance.data) {
@@ -94,16 +192,20 @@ export function SwapView() {
   }
   if (!asset || !quote) {
     return (
-      <div className="mx-auto max-w-md py-16 text-center text-content-secondary">
-        {tr(
-          'swap.empty',
-          'No offers on your relays right now. Check back soon, or post one from the order book.'
-        )}
-      </div>
+      <>
+        <div className="mx-auto max-w-md py-16 text-center text-content-secondary">
+          {tr(
+            'swap.empty',
+            'No offers on your relays right now. Check back soon, or post one from the order book.'
+          )}
+        </div>
+        {review}
+      </>
     )
   }
 
-  const est = quote.estimate
+  const est =
+    !quote.problem || quote.problem === 'partial' ? quote.plan : quote.estimate
   const priced = est.picks.length > 0
   const btcShown =
     editing === 'btc'
@@ -115,27 +217,30 @@ export function SwapView() {
     editing === 'asset'
       ? assetText
       : priced
-        ? plain(est.baseAmount, asset.precision)
+        ? plainSwapAmount(est.baseAmount, asset.precision)
         : ''
 
-  const reset = () => {
-    setAssetText('')
-    setBtcText('')
-    setPct(undefined)
-  }
-
   const onPct = (p: number) => {
+    setSelectedAsset(asset)
     setPct(p)
     if (side === 'buy') {
       setEditing('btc')
-      setBtcText(String(Math.floor((btcReady * p) / 100)))
+      setBtcText(String((BigInt(btcReady) * BigInt(p)) / 100n))
     } else {
       setEditing('asset')
-      setAssetText(plain(Math.floor((assetHeld * p) / 100), asset.precision))
+      setAssetText(
+        plainSwapAmount(
+          Number((BigInt(assetHeld) * BigInt(p)) / 100n),
+          asset.precision
+        )
+      )
     }
   }
 
-  const problem: SwapProblem = quote.problem
+  const problem: SwapProblem =
+    quote.problem === 'partial' && side === 'buy' && editing === 'asset'
+      ? 'target_unavailable'
+      : quote.problem
   const canReview =
     quote.plan.picks.length > 0 && (problem === null || problem === 'partial')
 
@@ -152,10 +257,23 @@ export function SwapView() {
     not_enough_btc: tr('swap.notEnoughBtc', 'Not enough bitcoin'),
     ok: tr('swap.review', 'Review swap'),
     partial: tr('swap.review', 'Review swap'),
+    target_unavailable: tr(
+      'swap.targetUnavailable',
+      'Available offers cannot cover the amount you want to receive.'
+    ),
     too_small: tr('swap.amountTooSmall', 'Amount too small'),
   }
 
   const message = (): { tone: 'info' | 'warn'; text: string } | null => {
+    if (typed === null)
+      return {
+        text: tr(
+          'swap.invalidAmount',
+          'Enter an amount with up to {{precision}} decimal places.',
+          { precision }
+        ),
+        tone: 'warn',
+      }
     switch (problem) {
       case 'no_offers':
         return {
@@ -167,15 +285,16 @@ export function SwapView() {
         }
       case 'too_small':
         return {
-          text: est.nextFit
-            ? tr(
-                'swap.tooSmall',
-                'Offers fill whole: the smallest one that fits is {{amount}}.',
-                {
-                  amount: fmtUnits(est.nextFit.amount, est.nextFit.precision),
-                }
-              )
-            : tr('swap.noFit', 'No offer fits this amount.'),
+          text:
+            est.nextFit && editing === 'asset'
+              ? tr(
+                  'swap.tooSmall',
+                  'Offers fill whole: the smallest one that fits is {{amount}}.',
+                  {
+                    amount: fmtUnits(est.nextFit.amount, est.nextFit.precision),
+                  }
+                )
+              : tr('swap.noFit', 'No offer fits this amount.'),
           tone: 'info',
         }
       case 'not_enough_btc':
@@ -203,20 +322,19 @@ export function SwapView() {
           ),
           tone: 'warn',
         }
-      case 'partial':
-        return {
-          text: tr(
-            'swap.partial',
-            'Offers fill whole, so this swap gets {{amount}} of what you asked.',
-            { amount: fmtUnits(est.baseAmount, asset.precision) }
-          ),
-          tone: 'info',
-        }
+      case 'target_unavailable':
+        return { text: button.target_unavailable, tone: 'warn' }
       default:
         return null
     }
   }
   const note = message()
+  const receiveLabel = tr('swap.chooseReceive', 'Choose the asset to receive')
+  const payLabel = tr('swap.choosePay', 'Choose the asset to pay with')
+  const assetFilled = `${fmtUnits(est.baseAmount, asset.precision)} ${asset.ticker}`
+  const bitcoinFilled = `${fmtSats(est.sats)} sats`
+  const differs =
+    priced && (editing === 'asset' ? est.baseAmount : est.sats) !== typed
 
   const byMaker = new Map<string, MakerShare>()
   for (const o of est.picks) {
@@ -231,69 +349,72 @@ export function SwapView() {
     byMaker.set(o.maker, m)
   }
 
-  const btcChip = (
-    <span className="flex h-12 items-center gap-2 rounded-full border border-divider/30 bg-surface-elevated px-3 font-semibold text-content-primary">
-      <span
-        aria-hidden
-        className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F7931A] text-xs font-bold text-white"
-      >
-        ₿
-      </span>
-      sats
-    </span>
-  )
-  const assetChip = (
-    <AssetButton asset={asset} onClick={() => setChoosing(true)} />
-  )
-
-  const btcField = (label: string, pays: boolean) => (
-    <SwapInputField
-      asset="BTC"
-      assetOptions={[]}
-      assetSlot={btcChip}
-      availableAmount={pays ? `${fmtSats(btcReady)} sats` : undefined}
-      disabled={false}
-      formatAmount={(n) => fmtSats(n)}
-      getDisplayAsset={() => 'sats'}
-      label={label}
-      onAmountChange={(e) => {
-        setEditing('btc')
-        setPct(undefined)
-        setBtcText(cleanAmount(e.target.value).split('.')[0])
-      }}
-      onAssetChange={() => undefined}
-      onSizeClick={pays ? onPct : undefined}
-      selectedSize={pct}
-      showSizeButtons={pays && btcReady > 0}
-      value={btcShown}
-    />
-  )
-  const assetField = (label: string, pays: boolean) => (
-    <SwapInputField
-      asset={asset.assetId}
-      assetOptions={[]}
-      assetSlot={assetChip}
-      availableAmount={
-        pays || assetHeld > 0
-          ? `${fmtUnits(assetHeld, asset.precision)} ${asset.ticker}`
-          : undefined
-      }
-      disabled={false}
-      formatAmount={(n) => fmtUnits(n, asset.precision)}
-      getDisplayAsset={() => asset.ticker}
-      label={label}
-      onAmountChange={(e) => {
-        setEditing('asset')
-        setPct(undefined)
-        setAssetText(cleanAmount(e.target.value))
-      }}
-      onAssetChange={() => undefined}
-      onSizeClick={pays ? onPct : undefined}
-      selectedSize={pct}
-      showSizeButtons={pays && assetHeld > 0}
-      value={assetShown}
-    />
-  )
+  const payingBalance = side === 'buy' ? btcReady : assetHeld
+  const amountField = (pays: boolean) => {
+    const btc = (side === 'buy') === pays
+    const field = btc ? 'btc' : 'asset'
+    const label = pays
+      ? tr('swap.youPay', 'You pay')
+      : tr('swap.youGet', 'You get')
+    const value = btc ? btcShown : assetShown
+    const available = btc
+      ? fmtSats(btcReady) + ' sats'
+      : fmtUnits(assetHeld, asset.precision) + ' ' + asset.ticker
+    return (
+      <div className="min-w-0 rounded-xl bg-surface-inset p-3 sm:p-4">
+        <div className="mb-2 flex min-w-0 items-baseline justify-between gap-2">
+          <label
+            className="shrink-0 text-caption font-medium text-content-secondary"
+            htmlFor={'swap-' + field}
+          >
+            {label}
+          </label>
+          <span
+            className="truncate text-right text-caption text-content-tertiary"
+            title={available}
+          >
+            {pays ? tr('ticket.available', 'Available') : t('p2pHome.balance')}{' '}
+            {available}
+          </span>
+        </div>
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <input
+              aria-invalid={(editing === field && typed === null) || undefined}
+              autoComplete="off"
+              className={
+                'min-w-0 w-full rounded-lg bg-transparent py-2 pl-1 text-2xl font-semibold tabular-nums text-content-primary outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ' +
+                (btc ? 'pr-9' : 'pr-1')
+              }
+              id={'swap-' + field}
+              inputMode={btc || !asset.precision ? 'numeric' : 'decimal'}
+              maxLength={64}
+              onChange={(e) => {
+                setSelectedAsset(asset)
+                setEditing(field)
+                setPct(undefined)
+                if (btc) setBtcText(e.target.value)
+                else setAssetText(e.target.value)
+              }}
+              placeholder="0"
+              spellCheck={false}
+              value={value}
+            />
+            {btc && (
+              <span className="pointer-events-none absolute inset-y-0 right-1 flex items-center text-caption text-content-tertiary">
+                sats
+              </span>
+            )}
+          </div>
+          <AssetButton
+            asset={btc ? undefined : asset}
+            label={pays ? payLabel : receiveLabel}
+            onClick={() => setChoosing(pays ? 'pay' : 'receive')}
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
@@ -301,28 +422,48 @@ export function SwapView() {
         aria-label={tr('swap.title', 'Swap')}
         className="flex flex-col gap-2 rounded-2xl border border-divider/10 bg-surface-elevated/40 p-4 sm:p-5"
       >
-        {side === 'buy'
-          ? btcField(tr('swap.youPay', 'You pay'), true)
-          : assetField(tr('swap.youPay', 'You pay'), true)}
-
-        <div className="relative z-10 -my-4 flex justify-center">
-          <button
+        {Number.isSafeInteger(payingBalance) && payingBalance > 0 && (
+          <div
+            aria-labelledby="swap-balance-share"
+            className="flex flex-wrap items-center justify-end gap-1"
+            role="group"
+          >
+            <span
+              className="mr-auto text-caption text-content-secondary"
+              id="swap-balance-share"
+            >
+              {tr('ticket.share', 'Share of available balance')}
+            </span>
+            {[25, 50, 75, 100].map((p) => (
+              <Button
+                aria-pressed={p === pct}
+                key={p}
+                onClick={() => onPct(p)}
+                size="sm"
+                type="button"
+                variant={p === pct ? 'surface' : 'quiet'}
+              >
+                {p}%
+              </Button>
+            ))}
+          </div>
+        )}
+        {amountField(true)}
+        <div className="flex justify-center">
+          <Button
             aria-label={tr('swap.flip', 'Switch direction')}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-divider/30 bg-surface-base text-content-secondary shadow-lg transition-colors hover:text-primary"
             onClick={() => {
               setSide(side === 'buy' ? 'sell' : 'buy')
-              setEditing('asset')
               reset()
             }}
+            size="sm"
             type="button"
+            variant="surface"
           >
-            <ArrowDownUp className="h-4 w-4" />
-          </button>
+            <ArrowDownUp size={16} />
+          </Button>
         </div>
-
-        {side === 'buy'
-          ? assetField(tr('swap.youGet', 'You get'), false)
-          : btcField(tr('swap.youGet', 'You get'), false)}
+        {amountField(false)}
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-xs">
           {asset.imitates ? (
@@ -353,6 +494,31 @@ export function SwapView() {
           </span>
         </div>
 
+        <label className="flex flex-wrap items-center justify-between gap-2 px-1 text-caption text-content-secondary">
+          {tr('swap.slippage', 'Price tolerance')}
+          <select
+            className="rounded-lg bg-surface-inset px-2 py-1 text-content-primary"
+            onChange={(e) => setSlippage(Number(e.target.value))}
+            value={slippage}
+          >
+            {[0.005, 0.01, 0.02, 0.05].map((n) => (
+              <option key={n} value={n}>
+                {Intl.NumberFormat(locale, {
+                  maximumFractionDigits: 1,
+                  style: 'percent',
+                }).format(n)}
+              </option>
+            ))}
+          </select>
+        </label>
+        {differs && (
+          <p className="rounded-xl bg-surface-inset px-3 py-2 text-caption text-content-secondary">
+            {tr('swap.actualFill', 'Whole offers fill {{pay}} → {{receive}}.', {
+              pay: side === 'buy' ? bitcoinFilled : assetFilled,
+              receive: side === 'buy' ? assetFilled : bitcoinFilled,
+            })}
+          </p>
+        )}
         {priced && (
           <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl bg-surface-base/60 px-4 py-3 text-sm">
             <dt className="text-content-tertiary">
@@ -385,7 +551,7 @@ export function SwapView() {
               <MakerList
                 assetId={asset.assetId}
                 makers={[...byMaker.values()]}
-                network={info.data?.network}
+                network={info.network}
                 precision={asset.precision}
                 ticker={asset.ticker}
               />
@@ -407,6 +573,12 @@ export function SwapView() {
           </dl>
         )}
 
+        {priced && (
+          <NostrParticipants
+            makers={est.picks.map((o) => o.maker_npub ?? o.maker)}
+            taker={info.npub}
+          />
+        )}
         {note && (
           <p
             className={`flex items-start gap-2 rounded-xl px-3 py-2 text-sm ${
@@ -420,18 +592,22 @@ export function SwapView() {
           </p>
         )}
 
-        <button
-          className={`mt-1 min-h-12 rounded-xl text-base font-bold transition-colors ${
-            canReview && info.data
-              ? 'bg-primary text-surface-base hover:opacity-90'
-              : 'cursor-not-allowed bg-surface-base text-content-tertiary'
-          }`}
-          disabled={!canReview || !info.data}
-          onClick={() => setTaking(quote.plan.picks)}
+        <Button
+          className="mt-1 w-full"
+          disabled={!canReview}
+          onClick={() =>
+            setTaking({
+              info: { ...info },
+              orders: quote.plan.picks.map((o) => ({ ...o })),
+            })
+          }
+          size="lg"
           type="button"
         >
-          {button[problem ?? 'ok']}
-        </button>
+          {problem === 'target_unavailable'
+            ? tr('swap.review', 'Review swap')
+            : button[problem ?? 'ok']}
+        </Button>
         <p className="text-center text-xs text-content-tertiary">
           {tr(
             'swap.nothingSigned',
@@ -447,45 +623,26 @@ export function SwapView() {
       >
         {tr('swap.howItWorks', 'How does a P2P swap work?')}
       </button>
-      <p className="px-2 text-center text-xs leading-relaxed text-content-tertiary">
-        {tr(
-          'swap.howItSettles',
-          'Each maker settles with you in its own Bitcoin transaction, with both sides in it: you get the asset, or your bitcoin never leaves.'
-        )}
-      </p>
-
       <AssetSelect
         assets={assets}
         balance={balance.data}
-        isOpen={choosing}
-        onClose={() => setChoosing(false)}
+        isOpen={choosing !== null}
+        onClose={() => setChoosing(null)}
         onSelect={(id) => {
-          setAssetId(id)
+          const nextSide =
+            (choosing === 'pay') === (id === null) ? 'buy' : 'sell'
+          if (side === nextSide && (id === null || id === asset.assetId)) return
+          setSide(nextSide)
+          if (id !== null)
+            setSelectedAsset(assets.find((a) => a.assetId === id) ?? null)
           reset()
         }}
-        selected={asset.assetId}
+        selected={
+          (choosing === 'pay') === (side === 'buy') ? null : asset.assetId
+        }
+        title={choosing === 'pay' ? payLabel : receiveLabel}
       />
-
-      {taking && info.data && (
-        <TakeSheet
-          book={(book.data ?? []).filter((o) => o.asset_id === asset.assetId)}
-          info={info.data}
-          onChanged={() => {
-            balance.refresh()
-            book.refresh()
-            trades.refresh()
-          }}
-          onClose={() => {
-            setTaking(null)
-            reset()
-            balance.refresh()
-            book.refresh()
-          }}
-          onSwitch={(o) => setTaking([o])}
-          orders={taking}
-          trades={trades.data ?? []}
-        />
-      )}
+      {review}
     </div>
   )
 }

@@ -70,7 +70,10 @@ export type Phase =
  * serves them, from setup to running. `standalone` is the P2P app, which has no node: while its
  * wallet runs, the app's wallet screens read the trading wallet instead of a node.
  */
-export function useP2pWalletSession(standalone: boolean) {
+export function useP2pWalletSession(
+  standalone: boolean,
+  nodeNetworkKey?: string
+) {
   const [options, setOptions] = useState<P2pNetworkOption[] | null>(null)
   useEffect(() => {
     if (!isTauri()) {
@@ -82,10 +85,14 @@ export function useP2pWalletSession(standalone: boolean) {
       .then(setOptions)
       .catch(() => setOptions([]))
   }, [])
-  const [networkKey, setNetworkKeyState] = useState(() => savedNetwork() ?? '')
+  const [preferredNetwork, setNetworkKeyState] = useState(
+    () => savedNetwork() ?? ''
+  )
+  const networkKey = nodeNetworkKey ?? preferredNetwork
   const networks = options ?? []
   const config: P2pNetworkOption | undefined =
-    networks.find((o) => o.key === networkKey) ?? networks[0]
+    networks.find((o) => o.key === networkKey) ??
+    (nodeNetworkKey === undefined ? networks[0] : undefined)
   const network = config?.network ?? ''
   const [walletLists, setWalletLists] = useState<
     Record<string, TradingWallet[]>

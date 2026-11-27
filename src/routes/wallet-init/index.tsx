@@ -31,6 +31,7 @@ import {
   WALLET_DASHBOARD_PATH,
   WALLET_SETUP_PATH,
 } from '../../app/router/paths'
+import { invalidateNodeAccounts } from '../../slices/nodeAccounts'
 import { useAppDispatch } from '../../app/store/hooks'
 import { Layout } from '../../components/Layout'
 import { MnemonicDisplay } from '../../components/MnemonicDisplay'
@@ -892,6 +893,7 @@ export const Component = () => {
       proxyEndpoint: nodeSetupForm.getValues('proxy_endpoint'),
       rpcConnectionUrl: nodeSetupForm.getValues('rpc_connection_url'),
     })
+    dispatch(invalidateNodeAccounts())
 
     await invoke('set_current_account', { accountName })
 

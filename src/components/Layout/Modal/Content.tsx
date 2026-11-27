@@ -12,6 +12,11 @@ export const Content = (props: Props) => {
     case 'deposit':
       return <DepositModalContent onClose={props.onClose} />
     case 'withdraw':
-      return <WithdrawModalContent onClose={props.onClose} />
+      return (
+        <WithdrawModalContent
+          initialAssetId={props.modal.assetId}
+          onClose={props.onClose}
+        />
+      )
   }
 }

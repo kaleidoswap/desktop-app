@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import {
   desktopPathname,
+  KALEIDO_MIND_PATH,
   MAINNET_ACTIVITY_PATH,
   MAINNET_MARKET_PATH,
   MAINNET_NODE_PATH,
@@ -19,6 +20,8 @@ import {
   readWalletList,
   readSelectedWalletId,
   savedNetwork,
+  saveNetwork,
+  writeSelectedWalletId,
 } from '../trade/nostr-p2p/wallets'
 
 const sections = [
@@ -37,7 +40,7 @@ export function switchNetworkPath(path: string, mainnet: boolean): string {
   return (pair ?? sections[3])[mainnet ? 0 : 1]
 }
 
-type Profile = 'mainnet' | 'test' | 'node'
+type Profile = 'mainnet' | 'test' | 'node' | 'mind'
 const entryKey = 'kaleidoswap.desktop.last-profile'
 const walletContextKey = 'kaleidoswap.desktop.last-wallet-context'
 
@@ -61,7 +64,8 @@ export function rememberWalletContext(context: 'mainnet' | 'test') {
 
 export function rememberProfile(profile: Profile) {
   try {
-    const walletContext = profile === 'node' ? lastWalletContext() : profile
+    const walletContext =
+      profile === 'node' || profile === 'mind' ? lastWalletContext() : profile
     rememberWalletContext(walletContext)
     localStorage.setItem(entryKey, profile)
   } catch {
@@ -69,7 +73,7 @@ export function rememberProfile(profile: Profile) {
   }
 }
 
-export async function findTradingWallet() {
+async function findTradingWallet() {
   const preferred = savedNetwork()
   const networks = (await p2pNetworks()).sort(
     (a, b) => Number(b.key === preferred) - Number(a.key === preferred)
@@ -87,17 +91,23 @@ export async function findTradingWallet() {
   return null
 }
 
-// Older versions had no profile preference. Keep their account picker on upgrade.
+// Resume explicit choices first, then discover accounts from older installations.
 export async function startupPath(mindOnly: boolean): Promise<string> {
   try {
     const last = localStorage.getItem(entryKey)
     if (last === 'mainnet') return MAINNET_WALLET_PATH
     if (last === 'test') return P2P_BALANCE_PATH
-    if (last === 'node') return WALLET_SETUP_PATH
+    if (last === 'mind') return KALEIDO_MIND_PATH
+    if (last === 'node') {
+      // Older Mind-only sessions were tagged as node sessions even after disconnecting.
+      if (mindOnly && !(await invoke('get_current_account')))
+        return KALEIDO_MIND_PATH
+      return WALLET_SETUP_PATH
+    }
   } catch {
     // Continue with native account discovery.
   }
-  if (mindOnly) return WALLET_SETUP_PATH
+  if (mindOnly) return KALEIDO_MIND_PATH
   if (!('__TAURI_INTERNALS__' in window)) return MAINNET_WALLET_PATH
   try {
     const accounts = await invoke<unknown[]>('get_accounts')
@@ -108,5 +118,12 @@ export async function startupPath(mindOnly: boolean): Promise<string> {
   }
   // A build without the test daemon can still open its mainnet wallet.
   const existing = await findTradingWallet().catch(() => null)
-  return existing ? WALLET_SETUP_PATH : MAINNET_WALLET_PATH
+  if (!existing) return MAINNET_WALLET_PATH
+  saveNetwork(existing.network.key)
+  try {
+    writeSelectedWalletId(existing.network.network, existing.wallet.id)
+  } catch {
+    // A restricted storage environment can still open the test wallet.
+  }
+  return P2P_BALANCE_PATH
 }

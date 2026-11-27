@@ -1,17 +1,23 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { Provider } from 'react-redux'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
 import { store } from '../../../app/store'
 import { getWalletOverride } from '../../../api/wallet-override'
 import { i18n } from '../../../i18n'
-import { P2pMarketPage } from '../../../routes/trade/nostr-p2p'
+import { Component as NodeHistory } from '../../../routes/wallet-history'
+import {
+  Component as NodeP2pRoute,
+  P2pMarketPage,
+} from '../../../routes/trade/nostr-p2p'
+import * as desktopNetworks from '../../../routes/p2p-home/networks'
 import { useP2pWalletSession } from '../../../routes/trade/nostr-p2p/session'
 import { setNodeReachability } from '../../../slices/node/node.slice'
 import { nodeSettingsActions } from '../../../slices/nodeSettings/nodeSettings.slice'
 import { setAppMode } from '../../../slices/settings/settings.slice'
 import { Layout } from '..'
+import { TradeNav } from '../../Trade/TradeNav'
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn().mockResolvedValue(() => {}),
@@ -59,9 +65,7 @@ function renderRoute(path: string, child = <article>Test page</article>) {
 }
 
 it.each([
-  ['/wallet-history/channel-orders', 'History', '/wallet-history/deposits'],
   ['/order-new-channel', 'Channels', '/channels'],
-  ['/limit-orders', 'Trading', '/market-maker'],
   ['/nwc', 'App Connections', '/nwc'],
 ])('keeps the global and contextual selections on %s', (path, label, href) => {
   renderRoute(path)
@@ -71,6 +75,16 @@ it.each([
   expect(primary.querySelector('a[aria-current="page"]')).toHaveTextContent(
     'Lightning node'
   )
+  const sidebar = within(primary)
+  expect(sidebar.getByRole('link', { name: 'Wallet' })).toHaveAttribute(
+    'href',
+    '/wallet-dashboard'
+  )
+  expect(sidebar.getByRole('link', { name: 'Lightning node' })).toHaveAttribute(
+    'href',
+    '/channels'
+  )
+  expect(screen.queryByRole('link', { name: 'Dashboard' })).toBeNull()
   const secondary = screen.getByLabelText('Lightning node', { selector: 'nav' })
   const activeLinks = secondary.querySelectorAll('a[aria-current="page"]')
   expect(activeLinks).toHaveLength(1)
@@ -78,17 +92,95 @@ it.each([
   expect(activeLinks[0]).toHaveAttribute('href', href)
 })
 
-it('keeps the node-linked Nostr market under Trading with the node wallet backend', () => {
-  renderRoute('/nostr-p2p', <P2pMarketPage />)
-  const node = within(
-    screen.getByRole('navigation', { name: 'Lightning node' })
+it('shows node history deep links in Activity with the original transaction tabs', () => {
+  renderRoute('/wallet-history/channel-orders', <NodeHistory />)
+  const primary = within(
+    screen.getByRole('navigation', { name: i18n.t('p2pShell.menu') })
   )
-  expect(node.getByRole('link', { name: 'Trading' })).toHaveAttribute(
+  expect(primary.getByRole('link', { name: 'Activity' })).toHaveAttribute(
     'aria-current',
     'page'
   )
+  expect(primary.getByRole('link', { name: 'Activity' })).toHaveAttribute(
+    'href',
+    '/wallet-history/deposits'
+  )
+  const filters = within(screen.getByRole('navigation', { name: 'Activity' }))
+  expect(filters.getByRole('link', { name: 'Channel Orders' })).toHaveAttribute(
+    'aria-current',
+    'page'
+  )
+  expect(filters.getAllByRole('link')).toHaveLength(5)
+  expect(screen.queryByRole('link', { name: 'History' })).toBeNull()
+})
+
+it('opens a legacy Nostr market link in Markets while preserving its wallet backend', () => {
+  renderRoute('/nostr-p2p', <P2pMarketPage />)
+  const primary = within(
+    screen.getByRole('navigation', { name: i18n.t('p2pShell.menu') })
+  )
+  expect(primary.getByRole('link', { name: /Markets/ })).toHaveAttribute(
+    'aria-current',
+    'page'
+  )
+  const venues = within(screen.getByRole('navigation', { name: 'Markets' }))
+  expect(venues.getByText(i18n.t('unified.nostrVenue'))).toHaveAttribute(
+    'aria-current',
+    'page'
+  )
+  expect(venues.getByRole('link', { name: /Market Maker/ })).toHaveAttribute(
+    'href',
+    '/market-maker'
+  )
   expect(useP2pWalletSession).toHaveBeenCalledWith(false)
   expect(getWalletOverride()).toBeNull()
+})
+
+it('groups Lightning orders with the market maker', () => {
+  renderRoute('/limit-orders', <TradeNav />)
+  const primary = within(
+    screen.getByRole('navigation', { name: i18n.t('p2pShell.menu') })
+  )
+  expect(primary.getByRole('link', { name: /Markets/ })).toHaveAttribute(
+    'aria-current',
+    'page'
+  )
+  expect(
+    screen.queryByRole('navigation', { name: 'Lightning node' })
+  ).toBeNull()
+  expect(
+    screen.getByRole('link', { name: i18n.t('navigation.limitOrders') })
+  ).toHaveAttribute('aria-current', 'page')
+})
+
+it('opens transfers from Trading on the node network and exposes the marketplace once', () => {
+  const networks = vi
+    .spyOn(desktopNetworks, 'useDesktopTestNetworks')
+    .mockReturnValue([
+      { key: 'SignetCustom', label: 'Mutinynet', network: 'signetcustom' },
+    ])
+  try {
+    renderRoute(
+      '/market-maker',
+      <Routes>
+        <Route element={<TradeNav />} path="/market-maker" />
+        <Route element={<NodeP2pRoute />} path="/nostr-p2p" />
+      </Routes>
+    )
+    const tradeTabs = within(
+      screen.getByRole('navigation', { name: 'Trading' })
+    )
+    expect(tradeTabs.queryByRole('link', { name: /Nostr P2P/i })).toBeNull()
+    const transfers = tradeTabs.getByRole('link', {
+      name: i18n.t('navigation.p2pTransfers'),
+    })
+    expect(transfers).toHaveAttribute('href', '/nostr-p2p?funds=1')
+    fireEvent.click(transfers)
+    expect(useP2pWalletSession).toHaveBeenLastCalledWith(false, 'SignetCustom')
+    expect(screen.getAllByRole('link', { name: /Nostr P2P/i })).toHaveLength(1)
+  } finally {
+    networks.mockRestore()
+  }
 })
 
 it('keeps Mind available without a node and switches between Brain and Chat', () => {
@@ -99,7 +191,7 @@ it('keeps Mind available without a node and switches between Brain and Chat', ()
     screen.getByRole('navigation', { name: i18n.t('p2pShell.menu') })
   )
   expect(
-    primary.getByRole('link', { name: i18n.t('unified.accounts') })
+    primary.getByRole('link', { name: /KaleidoMind.*Beta/i })
   ).toHaveAttribute('aria-current', 'page')
   expect(primary.getByRole('link', { name: 'Settings' })).not.toHaveAttribute(
     'href',
@@ -149,6 +241,13 @@ it('opens support inside the node content and keeps the workspace menu available
   expect(portal.queryByRole('navigation')).not.toBeInTheDocument()
   expect(primary.getByRole('link', { name: 'Wallet' })).toHaveAttribute(
     'href',
-    '/p2p/wallet'
+    '/wallet-dashboard'
   )
+  expect(primary.getByRole('link', { name: 'Wallet' })).toHaveAttribute(
+    'aria-current',
+    'page'
+  )
+  expect(
+    screen.queryByRole('navigation', { name: 'Lightning node' })
+  ).toBeNull()
 })

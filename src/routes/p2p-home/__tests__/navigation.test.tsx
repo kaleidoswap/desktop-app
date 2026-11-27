@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  KALEIDO_MIND_PATH,
   MAINNET_MARKET_PATH,
   MAINNET_NODE_PATH,
   MAINNET_SETTINGS_PATH,
@@ -22,7 +23,11 @@ import {
   switchNetworkPath,
 } from '../navigation'
 import { TestNetworkGate } from '../node'
-import { saveWallet } from '../../trade/nostr-p2p/wallets'
+import {
+  saveWallet,
+  readSelectedWalletId,
+  savedNetwork,
+} from '../../trade/nostr-p2p/wallets'
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
 vi.mock('react-i18next', () => ({
@@ -87,12 +92,15 @@ describe('unified wallet entry', () => {
         ? { version: 1 }
         : null
     })
-    expect(await startupPath(false)).toBe(WALLET_SETUP_PATH)
+    expect(await startupPath(false)).toBe(P2P_BALANCE_PATH)
+    expect(savedNetwork()).toBe(localNetwork.key)
+    expect(readSelectedWalletId('regtest')).toBe('desk')
   })
   it('resumes the last explicit profile before running native discovery', async () => {
     for (const [profile, to] of [
       ['test', P2P_BALANCE_PATH],
       ['node', WALLET_SETUP_PATH],
+      ['mind', KALEIDO_MIND_PATH],
       ['mainnet', MAINNET_WALLET_PATH],
     ] as const) {
       rememberProfile(profile)
@@ -109,8 +117,18 @@ describe('unified wallet entry', () => {
     rememberProfile('mainnet')
     expect(lastWalletContext()).toBe('mainnet')
   })
-  it('keeps Mind and account discovery failures on the legacy chooser', async () => {
+  it('opens Mind for a Mind-only installation, retaining a saved node account on upgrade', async () => {
+    expect(await startupPath(true)).toBe(KALEIDO_MIND_PATH)
+    rememberProfile('test')
+    rememberProfile('mind')
+    expect(lastWalletContext()).toBe('test')
+    rememberProfile('node')
+    vi.mocked(invoke).mockResolvedValue(null)
+    expect(await startupPath(true)).toBe(KALEIDO_MIND_PATH)
+    vi.mocked(invoke).mockResolvedValue({ name: 'connected-node' })
     expect(await startupPath(true)).toBe(WALLET_SETUP_PATH)
+  })
+  it('keeps account management accessible if native discovery fails', async () => {
     vi.mocked(invoke).mockRejectedValue(new Error('unavailable'))
     expect(await startupPath(false)).toBe(WALLET_SETUP_PATH)
   })

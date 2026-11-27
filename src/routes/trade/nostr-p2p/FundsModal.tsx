@@ -477,7 +477,7 @@ export const FundsModal = ({
         )}
 
         <Button
-          disabled={busy || units <= 0 || tooMuch || (deposit && !nodeReady)}
+          disabled={busy || units <= 0 || tooMuch || !nodeReady}
           fullWidth
           isLoading={busy}
           onClick={submit}

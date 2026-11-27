@@ -1,3 +1,4 @@
+import { NostrAvatar } from '../NostrParticipants'
 import { BadgeCheck, Radio } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -76,6 +77,7 @@ export function MakerList({
               aria-hidden
               className={`h-2 w-2 flex-none rounded-full ${m.away ? 'bg-content-tertiary' : 'bg-status-success'}`}
             />
+            <NostrAvatar npub={m.npub ?? m.maker} />
             <span className="flex min-w-0 flex-col">
               <span className="flex items-center gap-1">
                 {p?.name ? (

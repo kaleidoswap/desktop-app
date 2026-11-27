@@ -1,3 +1,5 @@
+import { NostrParticipants } from '../NostrParticipants'
+import { Button, DisclosureCard } from 'kaleido-ui'
 import { Copy } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
@@ -49,6 +51,9 @@ export function TakeSheet({
   onChanged,
 }: Props) {
   const tr = useTr()
+  const [reviewedNpub] = useState(() =>
+    info.nostr_profiles ? info.npub : undefined
+  )
   // seconds; trades from earlier attempts at the same order do not count
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const started = startedAt !== null
@@ -123,6 +128,7 @@ export function TakeSheet({
       // a maker that is around answers fast: do not wait minutes for one that does not
       orders.map((o) =>
         marketApi.take(o, {
+          ...(reviewedNpub ? { expectedNpub: reviewedNpub } : {}),
           answerWithinSecs: o.away
             ? ANSWER_WINDOW_AWAY_SECS
             : ANSWER_WINDOW_SECS,
@@ -227,7 +233,7 @@ export function TakeSheet({
     // like a peer-to-peer exchange shows whether the other side is around: a maker that was seen
     // a moment ago answers fast, one that was not may take minutes
     {
-      label: tr('take.makerStatus', 'Maker'),
+      label: tr('take.makerStatus', 'Maker status'),
       tone: away ? ('warning' as const) : ('success' as const),
       value: away
         ? tr('take.makerAway', 'Away · last seen {{when}}', {
@@ -238,6 +244,22 @@ export function TakeSheet({
           }),
     },
   ]
+
+  const diagram = (
+    <SwapGlyph
+      confirmations={reached(p.stage, 'confirming') ? p.confirmations : null}
+      counterparty={orders.length > 1 ? `${orders.length}×` : first.maker}
+      fee={
+        settlement?.platformFeeSat != null && settlement.networkFeeSat != null
+          ? `${fmtSats(settlement.platformFeeSat + settlement.networkFeeSat)} sats`
+          : tr('cost.unavailable', 'Unavailable')
+      }
+      phase={started ? p.stage : 'idle'}
+      receive={buying ? asset : (gross ?? '–')}
+      required={p.required || info.min_confirmations}
+      send={buying ? priceText : asset}
+    />
+  )
 
   return (
     <Modal
@@ -255,23 +277,10 @@ export function TakeSheet({
       }
     >
       <div className="flex flex-col gap-5 p-5">
-        <SwapGlyph
-          confirmations={
-            reached(p.stage, 'confirming') ? p.confirmations : null
-          }
-          counterparty={orders.length > 1 ? `${orders.length}×` : first.maker}
-          fee={
-            settlement?.platformFeeSat != null &&
-            settlement.networkFeeSat != null
-              ? `${fmtSats(settlement.platformFeeSat + settlement.networkFeeSat)} sats`
-              : tr('cost.unavailable', 'Unavailable')
-          }
-          phase={started ? p.stage : 'idle'}
-          receive={buying ? asset : (gross ?? '–')}
-          required={p.required || info.min_confirmations}
-          send={buying ? priceText : asset}
+        <NostrParticipants
+          makers={orders.map((order) => order.maker_npub ?? order.maker)}
+          taker={info.npub}
         />
-
         {!started && (
           <>
             {settlement && (
@@ -333,19 +342,18 @@ export function TakeSheet({
                 )}
               </p>
             )}
-            <p className="text-caption text-content-secondary">
-              {tr(
-                'take.atomic',
-                'One Bitcoin transaction carries both sides, so either both transfers happen or neither does. Nobody holds your funds in between, and the platform fee is paid inside the same transaction.'
-              )}
-            </p>
-            <button
-              className={cx(
-                'rounded-xl py-3 text-body font-bold transition-opacity disabled:cursor-not-allowed disabled:opacity-40',
-                buying
-                  ? 'bg-status-success text-text-on-accent'
-                  : 'bg-status-danger text-white'
-              )}
+            <DisclosureCard
+              title={tr('swap.howItWorks', 'How does a P2P swap work?')}
+            >
+              <p className="mb-3 text-caption text-content-secondary">
+                {tr(
+                  'take.atomic',
+                  'One Bitcoin transaction carries both sides, so either both transfers happen or neither does. Nobody holds your funds in between, and the platform fee is paid inside the same transaction.'
+                )}
+              </p>
+              {diagram}
+            </DisclosureCard>
+            <Button
               disabled={busy || (unverified && !checked)}
               onClick={() => void confirm()}
               type="button"
@@ -355,12 +363,13 @@ export function TakeSheet({
                 : buying
                   ? tr('take.confirmBuy', 'Confirm purchase')
                   : tr('take.confirmSell', 'Confirm sale')}
-            </button>
+            </Button>
           </>
         )}
 
         {started && (
           <>
+            {diagram}
             <Steps steps={steps} />
             {p.failures.length > 0 && (
               <div className="flex flex-col gap-1 rounded-xl bg-status-danger-subtle p-3 text-caption text-content-primary">

@@ -1,8 +1,10 @@
+import { PageHeader } from 'kaleido-ui'
 import { KeyRound, RadioTower, RefreshCw, ScanSearch } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../components/ui'
+import { ApplicationPreferences } from '../settings/ApplicationPreferences'
 import { p2pRelaysGet, type P2pRelaySettings } from '../trade/nostr-p2p/p2p'
 import { RecoveryPhraseModal } from '../trade/nostr-p2p/RecoveryPhraseModal'
 import { RelaysModal } from '../trade/nostr-p2p/RelaysModal'
@@ -26,24 +28,28 @@ const Section = ({
   </section>
 )
 
-/** The trading wallet's settings: its network, relays, recovery phrase and upkeep. */
-export const Component = () => {
+function TradingWalletPreferences({ networkKey }: { networkKey: string }) {
   const { t } = useTranslation()
-  const session = useP2pSession()
-  const { config, networks, restart, rescan } = session
+  const { rescan, restart } = useP2pSession()
   const [relays, setRelays] = useState<P2pRelaySettings | null>(null)
   const [editRelays, setEditRelays] = useState(false)
   const [recovery, setRecovery] = useState(false)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    if (!config || editRelays) return
-    p2pRelaysGet(config.key)
-      .then(setRelays)
-      .catch(() => setRelays(null))
-  }, [config, editRelays])
-
-  if (!config) return null
+    if (editRelays) return
+    let current = true
+    p2pRelaysGet(networkKey)
+      .then((result) => {
+        if (current) setRelays(result)
+      })
+      .catch(() => {
+        if (current) setRelays(null)
+      })
+    return () => {
+      current = false
+    }
+  }, [networkKey, editRelays])
   const relayList = relays ? (relays.custom ?? relays.defaults) : []
 
   const run = async (f: () => Promise<void>) => {
@@ -56,20 +62,7 @@ export const Component = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold tracking-tight text-content-primary">
-        {t('p2pShell.settings', { defaultValue: 'Settings' })}
-      </h1>
-
-      {networks.length > 1 && (
-        <p className="text-sm text-content-secondary">
-          {t('p2pSettings.networkBody', {
-            defaultValue:
-              'Each network has wallets of its own. Switching restarts the trading wallet.',
-          })}
-        </p>
-      )}
-
+    <>
       <Section
         body={
           relays
@@ -98,14 +91,18 @@ export const Component = () => {
           defaultValue:
             'The 12 words restore your bitcoin. RGB assets also need the wallet data on this computer.',
         })}
-        title={t('p2pSettings.recovery', { defaultValue: 'Recovery phrase' })}
+        title={t('p2pSettings.recovery', {
+          defaultValue: 'Recovery phrase',
+        })}
       >
         <Button
           icon={<KeyRound size={14} />}
           onClick={() => setRecovery(true)}
           variant="outline"
         >
-          {t('p2pSettings.showRecovery', { defaultValue: 'Show the phrase' })}
+          {t('p2pSettings.showRecovery', {
+            defaultValue: 'Show the phrase',
+          })}
         </Button>
       </Section>
 
@@ -136,7 +133,7 @@ export const Component = () => {
 
       <RelaysModal
         isOpen={editRelays}
-        networkKey={config.key}
+        networkKey={networkKey}
         onClose={() => setEditRelays(false)}
         onSaved={() => void restart()}
       />
@@ -144,6 +141,20 @@ export const Component = () => {
         isOpen={recovery}
         onClose={() => setRecovery(false)}
       />
+    </>
+  )
+}
+
+export function Component() {
+  const { t } = useTranslation()
+  const { account, config, phase } = useP2pSession()
+  return (
+    <div className="flex flex-col gap-4">
+      <PageHeader title={t('settings.applicationSettings')} variant="page" />
+      <ApplicationPreferences />
+      {phase === 'running' && config && (
+        <TradingWalletPreferences key={account} networkKey={config.key} />
+      )}
     </div>
   )
 }

@@ -89,8 +89,6 @@ export function CostPreview({ view }: { view: string }) {
         {banner} This is the market components with that offer prefilled.
       </p>
       <PairHeader
-        bestAsk={sell.unit_price}
-        info={info}
         markets={[
           {
             asset_id: sell.asset_id,
@@ -102,9 +100,7 @@ export function CostPreview({ view }: { view: string }) {
           },
         ]}
         onSelect={() => undefined}
-        open={1}
         selected={sell.asset_id}
-        walletLabel="Demo wallet"
       />
       <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <OrderBook onPick={() => undefined} orders={[sell]} ticker="DEMO" />

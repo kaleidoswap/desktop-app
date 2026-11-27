@@ -30,127 +30,75 @@ export function CostBreakdown({
   const tr = useTr()
   const unavailable = tr('cost.unavailable', 'Unavailable')
   const money = (n: number | null) => (n === null ? unavailable : sats(n))
-  const feeWho = (yours: boolean) =>
-    yours
-      ? tr('cost.youReserveFee', 'You reserve this')
-      : tr('cost.takerPaysFee', 'Reserved by whoever takes the order')
-  const feeHint = (estimate: boolean | undefined, yours: boolean) =>
-    [
-      estimate ? tr('cost.estimate', 'Estimate, not an accepted offer') : null,
-      feeWho(yours),
-    ]
-      .filter(Boolean)
-      .join(' · ')
+  const buying = s.side === 'buy'
+  const estimate = tr('cost.estimateShort', 'Estimate')
 
   const rows: Row[] = [
-    ...(asset
+    ...(!buying && asset
       ? [
           {
-            label:
-              s.side === 'buy'
-                ? tr('cost.receiveAsset', 'You receive')
-                : tr('cost.giveAsset', 'You give'),
+            label: tr('offers.pay', 'You pay'),
             value: asset,
           },
         ]
       : []),
     {
       hint: priceHint,
-      label: tr('cost.price', 'Price'),
+      label: tr('ticket.price', 'Price'),
       value: money(s.priceSat),
     },
     {
       hint:
-        s.platformFeeSat === null
-          ? tr('cost.notReported', 'Not reported')
-          : [
-              s.platformFromLegacy
-                ? tr('cost.legacyPlatform', 'Recorded platform fee')
-                : null,
-              feeHint(estimates?.platform, s.youPayFees),
-            ]
-              .filter(Boolean)
-              .join(' · '),
+        s.platformFromLegacy && s.platformFeeSat !== null
+          ? tr('cost.recordedFee', 'From trade history')
+          : estimates?.platform
+            ? estimate
+            : undefined,
       label: tr('cost.platform', 'Platform fee'),
       value: money(s.platformFeeSat),
     },
     {
-      hint:
-        s.networkFeeSat === null
-          ? tr('cost.notReported', 'Not reported')
-          : feeHint(estimates?.network, s.youPayFees),
+      hint: estimates?.network ? estimate : undefined,
       label: tr('cost.network', 'Network fee'),
       value: money(s.networkFeeSat),
     },
     {
-      hint:
-        s.rgbOutputSat === null
-          ? tr('cost.notReported', 'Not reported')
-          : s.youFundRgb
-            ? tr(
-                'cost.rgbYours',
-                'Not a fee. Stays in your wallet with the asset.'
-              )
-            : tr(
-                'cost.rgbBuyer',
-                'Not a fee. The buyer keeps this with the asset.'
-              ),
-      label: tr('cost.rgb', 'RGB output'),
+      label: s.youFundRgb
+        ? tr('offers.retained', 'Sats kept with the RGB asset')
+        : tr('cost.buyerOutput', 'Sat retained by the buyer with the asset'),
       value: money(s.rgbOutputSat),
     },
   ]
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid gap-2 sm:grid-cols-2">
+      <dl className="grid gap-2 sm:grid-cols-2">
         <div className="rounded-xl bg-surface-inset px-3 py-2.5">
-          <p className="text-tiny text-content-tertiary">
-            {tr('cost.reserved', 'Reserved')}
-          </p>
-          <p className="text-xl font-semibold tabular-nums text-content-primary">
-            {s.reserveSat === null ? unavailable : sats(s.reserveSat)}
-          </p>
-          <p className="text-caption text-content-secondary">
-            {s.reserveSat === null
-              ? tr(
-                  'cost.reserveMissing',
-                  'A part of this was not reported, so it is not shown as zero.'
-                )
-              : s.retainedSat
-                ? tr(
-                    'cost.reserveKeeps',
-                    'Set aside from your balance. {{n}} sats of it stay in your wallet with the asset.',
-                    { n: fmtSats(s.retainedSat) }
-                  )
-                : tr(
-                    'cost.reservePlain',
-                    'Set aside from your balance. This is not the price you receive.'
-                  )}
-          </p>
+          <dt className="text-caption text-content-secondary">
+            {tr('offers.reserve', 'Bitcoin to reserve')}
+          </dt>
+          <dd className="text-lg font-semibold tabular-nums text-content-primary">
+            {money(s.reserveSat)}
+          </dd>
         </div>
         <div className="rounded-xl bg-surface-inset px-3 py-2.5">
-          <p className="text-tiny text-content-tertiary">
-            {s.side === 'sell'
-              ? tr('cost.gross', 'Price you receive')
-              : tr('cost.btcBack', 'Bitcoin you are paid')}
-          </p>
-          <p className="text-xl font-semibold tabular-nums text-content-primary">
-            {s.receiveSat === null ? unavailable : sats(s.receiveSat)}
-          </p>
-          <p className="text-caption text-content-secondary">
-            {s.side === 'sell'
-              ? tr(
-                  'cost.grossHelp',
-                  'The full price. Bitcoin you reserve is not subtracted from it.'
-                )
-              : tr(
-                  'cost.buyerPaidAsset',
-                  'You are paid in the asset, not in bitcoin.'
-                )}
-          </p>
+          <dt className="text-caption text-content-secondary">
+            {tr('offers.receive', 'You receive')}
+          </dt>
+          <dd className="break-words text-lg font-semibold tabular-nums text-content-primary">
+            {buying ? (asset ?? unavailable) : money(s.receiveSat)}
+          </dd>
         </div>
-      </div>
+      </dl>
       <SummaryRows rows={rows} />
+      {!s.youPayFees && (
+        <p className="text-caption text-content-secondary">
+          {tr(
+            'cost.feesByTaker',
+            'The trader who accepts the offer reserves both fees.'
+          )}
+        </p>
+      )}
     </div>
   )
 }

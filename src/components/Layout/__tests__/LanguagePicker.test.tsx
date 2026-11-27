@@ -11,7 +11,7 @@ import { settingsReducer } from '../../../slices/settings/settings.slice'
 import { I18nProvider } from '../../I18nProvider'
 import { LanguagePicker } from '../LanguagePicker'
 
-it('follows the system locale until the user chooses a language and syncs both settings controls', async () => {
+it('follows the system locale and exposes one language selector for application settings', async () => {
   vi.stubGlobal('localStorage', memoryWalletStore())
   const system = vi
     .spyOn(navigator, 'languages', 'get')
@@ -46,8 +46,9 @@ it('follows the system locale until the user chooses a language and syncs both s
       expect(document.documentElement).toHaveAttribute('lang', 'ja')
     )
     expect(
-      main.getByRole('combobox', { name: i18n.t('settings.language') })
-    ).toHaveTextContent('日本語')
+      screen.getAllByRole('combobox', { name: i18n.t('settings.language') })
+    ).toEqual([picker])
+    expect(picker).toHaveTextContent('日本語')
     expect(localStorage.getItem('kaleidoswap_language')).toBe('ja')
     await userEvent.click(
       main.getByRole('combobox', { name: i18n.t('settings.fiatCurrency') })

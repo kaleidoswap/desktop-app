@@ -67,9 +67,9 @@ export function SetupFrame({
     <DesktopFrame
       context={context}
       navigationLocked={setupBusy}
-      section={accounts ? 'accounts' : 'node'}
+      section="node"
       setupNetwork={network}
-      title={t(accounts ? 'unified.accounts' : 'unified.node')}
+      title={accounts ? undefined : t('unified.node')}
     >
       <div className="flex h-full min-h-0 flex-col">{children}</div>
     </DesktopFrame>

@@ -251,6 +251,8 @@ describe('numbers', () => {
     expect(fmtPrice(0.0123)).toBe('0.0123')
     expect(fmtPrice(0)).toBe('–')
     expect(fmtUnits(150, 2)).toBe('1.5')
+    expect(fmtUnits(Number.MAX_SAFE_INTEGER, 2)).toBe('90,071,992,547,409.91')
+    expect(fmtUnits(1, 18)).toBe('0.000000000000000001')
   })
 
   it('counts time left in the largest sensible unit', () => {
