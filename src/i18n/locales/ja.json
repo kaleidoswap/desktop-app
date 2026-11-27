@@ -3427,16 +3427,16 @@
       "amountLabel": "数量",
       "title2": "資金を移動",
       "nodeLoading": "ノードを読み取っています…",
-      "tradingSub": "マーケットで使用",
-      "depositTab": "トレーディングウォレットへ入金",
+      "tradingSub": "RGB · Nostr P2P",
+      "depositTab": "オンチェーンウォレットへ移動",
       "enterAmount": "数量を入力してください",
       "assetLabel": "移すもの",
-      "tradingTitle": "トレーディングウォレット",
-      "nodeTitle": "ノード",
-      "withdrawTab": "ノードへ出金",
+      "tradingTitle": "オンチェーンウォレット",
+      "nodeTitle": "Lightningノード",
+      "withdrawTab": "Lightningノードへ移動",
       "max": "最大",
       "share": "残高の割合",
-      "nodeSub": "あなたの貯蓄"
+      "nodeSub": "Lightningとチャネル"
     },
     "market": {
       "reputation": {

@@ -37,10 +37,14 @@ export const Component = () => {
       <Tabs defaultValue="swaps">
         <TabsList
           aria-label={title}
-          className="h-auto max-w-full flex-wrap justify-start"
+          className="h-auto w-full max-w-full flex-wrap justify-start gap-1 rounded-none border-b border-divider/30 bg-transparent p-0"
         >
           {tabs.map(({ value, label }) => (
-            <TabsTrigger key={value} value={value}>
+            <TabsTrigger
+              className="rounded-none border-b-2 border-transparent bg-transparent px-3 py-2 text-sm font-medium text-content-secondary shadow-none hover:text-content-primary data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-brand data-[state=active]:shadow-none"
+              key={value}
+              value={value}
+            >
               {label}
             </TabsTrigger>
           ))}

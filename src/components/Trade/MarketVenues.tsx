@@ -53,44 +53,46 @@ export function MarketVenues({
     },
   ]
   return (
-    <nav
-      aria-label={t('unified.markets')}
-      className="flex shrink-0 flex-wrap gap-1 border-b border-divider/20 bg-surface-elevated px-3 py-2 sm:px-5"
-    >
-      {venues.map(({ active, icon, label, onClick, to }) => {
-        const className = cn(
-          buttonVariants({ size: 'sm', variant: active ? 'ghost' : 'quiet' }),
-          active && 'bg-primary/10 text-brand'
-        )
-        const content = (
-          <>
-            <Icon name={icon} size="sm" />
-            {label}
-          </>
-        )
-        if (active)
-          return (
-            <span aria-current="page" className={className} key={icon}>
-              {content}
-            </span>
+    <div className="shrink-0 border-b border-divider/20 bg-surface-elevated px-3 py-2 sm:px-5">
+      <nav
+        aria-label={t('unified.markets')}
+        className="inline-flex max-w-full flex-wrap gap-1 rounded-xl border border-divider/20 bg-surface-card p-1"
+      >
+        {venues.map(({ active, icon, label, onClick, to }) => {
+          const className = cn(
+            buttonVariants({ size: 'sm', variant: active ? 'ghost' : 'quiet' }),
+            active && 'bg-primary/15 text-brand'
           )
-        if (!to)
-          return (
-            <span
-              aria-disabled="true"
-              className={cn(className, 'opacity-60')}
-              key={icon}
-              title={t('p2pMarket.noNetwork')}
-            >
-              {content}
-            </span>
+          const content = (
+            <>
+              <Icon name={icon} size="sm" />
+              {label}
+            </>
           )
-        return (
-          <Link className={className} key={icon} onClick={onClick} to={to}>
-            {content}
-          </Link>
-        )
-      })}
-    </nav>
+          if (active)
+            return (
+              <span aria-current="page" className={className} key={icon}>
+                {content}
+              </span>
+            )
+          if (!to)
+            return (
+              <span
+                aria-disabled="true"
+                className={cn(className, 'opacity-60')}
+                key={icon}
+                title={t('p2pMarket.noNetwork')}
+              >
+                {content}
+              </span>
+            )
+          return (
+            <Link className={className} key={icon} onClick={onClick} to={to}>
+              {content}
+            </Link>
+          )
+        })}
+      </nav>
+    </div>
   )
 }

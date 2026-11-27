@@ -285,7 +285,7 @@ export const FundsModal = ({
         <p className="text-caption text-content-secondary">
           {t(
             'p2pMarket.funds.explain2',
-            'Your node holds your savings. The trading wallet is a separate wallet for the market: only what you deposit here can be traded, and you can withdraw it back at any time.'
+            'Move funds between your Lightning node and your On-chain wallet (used for Nostr P2P swaps). You can transfer back at any time.'
           )}
         </p>
 
@@ -316,8 +316,8 @@ export const FundsModal = ({
                 <ArrowUp aria-hidden size={14} />
               )}
               {d === 'toTrading'
-                ? t('p2pMarket.funds.depositTab', 'Deposit to trading wallet')
-                : t('p2pMarket.funds.withdrawTab', 'Withdraw to node')}
+                ? t('p2pMarket.funds.depositTab', 'Move to On-chain wallet')
+                : t('p2pMarket.funds.withdrawTab', 'Move to Lightning node')}
             </button>
           ))}
         </div>
@@ -336,15 +336,15 @@ export const FundsModal = ({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
           <Balance
             active={deposit}
-            sub={t('p2pMarket.funds.nodeSub', 'your savings')}
-            title={t('p2pMarket.funds.nodeTitle', 'Node')}
+            sub={t('p2pMarket.funds.nodeSub', 'Lightning & channels')}
+            title={t('p2pMarket.funds.nodeTitle', 'Lightning node')}
             unknown={!nodeReady}
             value={nodeBalance}
           />
           <Balance
             active={!deposit}
-            sub={t('p2pMarket.funds.tradingSub', 'used for the market')}
-            title={t('p2pMarket.funds.tradingTitle', 'Trading wallet')}
+            sub={t('p2pMarket.funds.tradingSub', 'RGB · Nostr P2P')}
+            title={t('p2pMarket.funds.tradingTitle', 'On-chain wallet')}
             value={tradingBalance}
           />
         </div>

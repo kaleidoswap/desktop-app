@@ -171,13 +171,9 @@ it('opens transfers from Trading on the node network and exposes the marketplace
       screen.getByRole('navigation', { name: 'Trading' })
     )
     expect(tradeTabs.queryByRole('link', { name: /Nostr P2P/i })).toBeNull()
-    const transfers = tradeTabs.getByRole('link', {
-      name: i18n.t('navigation.p2pTransfers'),
-    })
-    expect(transfers).toHaveAttribute('href', '/nostr-p2p?funds=1')
-    fireEvent.click(transfers)
-    expect(useP2pWalletSession).toHaveBeenLastCalledWith(false, 'SignetCustom')
-    expect(screen.getAllByRole('link', { name: /Nostr P2P/i })).toHaveLength(1)
+    expect(
+      tradeTabs.queryByRole('link', { name: i18n.t('navigation.p2pTransfers') })
+    ).toBeNull()
   } finally {
     networks.mockRestore()
   }

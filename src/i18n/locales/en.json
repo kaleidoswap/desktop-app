@@ -3421,16 +3421,16 @@
       "amountLabel": "Amount",
       "title2": "Move funds",
       "nodeLoading": "Reading your node…",
-      "tradingSub": "used for the market",
-      "depositTab": "Deposit to trading wallet",
+      "tradingSub": "RGB · Nostr P2P",
+      "depositTab": "Move to On-chain wallet",
       "enterAmount": "Enter an amount",
       "assetLabel": "What to move",
-      "tradingTitle": "Trading wallet",
-      "nodeTitle": "Node",
-      "withdrawTab": "Withdraw to node",
+      "tradingTitle": "On-chain wallet",
+      "nodeTitle": "Lightning node",
+      "withdrawTab": "Move to Lightning node",
       "max": "Max",
       "share": "Share of the balance",
-      "nodeSub": "your savings"
+      "nodeSub": "Lightning & channels"
     },
     "market": {
       "reputation": {

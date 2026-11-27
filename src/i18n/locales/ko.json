@@ -3421,16 +3421,16 @@
       "amountLabel": "수량",
       "title2": "자금 이동",
       "nodeLoading": "노드를 읽는 중…",
-      "tradingSub": "마켓에 사용",
-      "depositTab": "거래 지갑으로 입금",
+      "tradingSub": "RGB · Nostr P2P",
+      "depositTab": "온체인 지갑으로 이동",
       "enterAmount": "수량을 입력하세요",
       "assetLabel": "옮길 항목",
-      "tradingTitle": "거래 지갑",
-      "nodeTitle": "노드",
-      "withdrawTab": "노드로 출금",
+      "tradingTitle": "온체인 지갑",
+      "nodeTitle": "라이트닝 노드",
+      "withdrawTab": "라이트닝 노드로 이동",
       "max": "최대",
       "share": "잔액 비율",
-      "nodeSub": "내 저축"
+      "nodeSub": "라이트닝 및 채널"
     },
     "market": {
       "reputation": {

@@ -1,4 +1,4 @@
-import { Button, IconButton, PageHeader } from 'kaleido-ui'
+import { Button, PageHeader } from 'kaleido-ui'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
@@ -33,7 +33,7 @@ import {
 import { WalletNodeSources } from './WalletNodeSources'
 import { MarketVenues } from '../../components/Trade/MarketVenues'
 import { rememberProfile } from './navigation'
-import { openGuide, P2pGuide } from './P2pGuide'
+import { P2pGuide } from './P2pGuide'
 
 const sections: Record<string, DesktopSection> = {
   [MAINNET_ACTIVITY_PATH]: 'activity',
@@ -47,7 +47,7 @@ const sections: Record<string, DesktopSection> = {
 }
 const labels = {
   activity: 'unified.activity',
-  market: 'unified.market',
+  market: 'unified.markets',
   mind: 'navigation.kaleidoMind',
   node: 'unified.node',
   settings: 'navigation.settings',
@@ -101,16 +101,6 @@ function Shell({ mainnet = false }: { mainnet?: boolean }) {
     <Layout walletActions={session?.phase === 'running'}>
       <DesktopFrame
         context={mainnet ? 'mainnet' : 'test'}
-        headerActions={
-          session?.phase === 'running' && (
-            <IconButton
-              icon="help"
-              label={t('p2pShell.guide')}
-              onClick={() => openGuide()}
-              type="button"
-            />
-          )
-        }
         secondaryNav={
           section === 'market' ? (
             <MarketVenues
@@ -120,13 +110,7 @@ function Shell({ mainnet = false }: { mainnet?: boolean }) {
           ) : undefined
         }
         section={section}
-        title={
-          section === 'settings' ||
-          section === 'market' ||
-          (section === 'wallet' && (mainnet || session?.phase === 'running'))
-            ? undefined
-            : t(labels[section])
-        }
+        title={t(labels[section])}
       >
         <div className="mx-auto w-full max-w-screen-xl px-4 py-5 sm:px-6 sm:py-6">
           {(section === 'wallet' ||

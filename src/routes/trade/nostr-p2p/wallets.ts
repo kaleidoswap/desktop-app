@@ -45,7 +45,7 @@ export interface WalletStore {
   removeItem(key: string): void
 }
 
-export const ORIGINAL_WALLET_LABEL = 'Trading wallet'
+export const ORIGINAL_WALLET_LABEL = 'Default wallet'
 
 export const originalWallet = (): TradingWallet => ({
   id: '',

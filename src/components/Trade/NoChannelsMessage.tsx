@@ -1,4 +1,5 @@
 import {
+  ArrowLeftRight,
   Link,
   Plus,
   ShoppingCart,
@@ -14,8 +15,9 @@ import { useTranslation } from 'react-i18next'
 import {
   CREATE_NEW_CHANNEL_PATH,
   ORDER_CHANNEL_PATH,
+  TRADE_NOSTR_P2P_PATH,
 } from '../../app/router/paths'
-import { useAppDispatch } from '../../app/store/hooks'
+import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import { TradingPair } from '../../slices/makerApi/makerApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 
@@ -38,6 +40,8 @@ export const NoChannelsMessage: React.FC<NoChannelsMessageProps> = ({
 }) => {
   const dispatch = useAppDispatch()
   const { t } = useTranslation()
+  const nodeNetwork = useAppSelector((s) => s.nodeSettings.data.network)
+  const canMoveFromOnchain = Boolean(nodeNetwork && nodeNetwork !== 'Mainnet')
 
   const handleShowDepositModal = () => {
     dispatch(uiSliceActions.setModal({ assetId: undefined, type: 'deposit' }))
@@ -57,7 +61,7 @@ export const NoChannelsMessage: React.FC<NoChannelsMessageProps> = ({
             {t('trade.noChannels.insufficientBalanceMessage')}
           </p>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-wrap justify-center gap-3 pt-4">
             <button
               className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg
                      font-medium transition-colors flex items-center gap-2 text-base"
@@ -66,6 +70,17 @@ export const NoChannelsMessage: React.FC<NoChannelsMessageProps> = ({
               <Wallet className="w-5 h-5" />
               {t('trade.noChannels.depositBTC')}
             </button>
+            {canMoveFromOnchain && (
+              <button
+                className="px-6 py-3 bg-surface-overlay hover:bg-surface-elevated text-content-primary border border-border-default rounded-lg
+                       font-medium transition-colors flex items-center gap-2 text-base"
+                onClick={() => onNavigate(`${TRADE_NOSTR_P2P_PATH}?funds=1`)}
+                type="button"
+              >
+                <ArrowLeftRight className="w-5 h-5" />
+                {t('p2pMarket.funds.title2', 'Move funds')}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -142,6 +157,9 @@ export const NoTradingChannelsMessage: React.FC<
     dispatch(uiSliceActions.setModal({ assetId: undefined, type: 'deposit' }))
   }
 
+  const nodeNetwork = useAppSelector((s) => s.nodeSettings.data.network)
+  const canMoveFromOnchain = Boolean(nodeNetwork && nodeNetwork !== 'Mainnet')
+
   if (!hasEnoughBalance) {
     return (
       <div className="max-w-2xl w-full bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-6">
@@ -156,14 +174,27 @@ export const NoTradingChannelsMessage: React.FC<
             {t('trade.noChannels.insufficientBalanceMessage')}
           </p>
 
-          <button
-            className="px-5 py-2.5 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg
-                   font-medium transition-colors flex items-center gap-2 text-sm mt-1"
-            onClick={handleShowDepositModal}
-          >
-            <Wallet className="w-4 h-4" />
-            {t('trade.noChannels.depositBTC')}
-          </button>
+          <div className="flex flex-wrap justify-center gap-2 mt-1">
+            <button
+              className="px-5 py-2.5 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg
+                     font-medium transition-colors flex items-center gap-2 text-sm"
+              onClick={handleShowDepositModal}
+            >
+              <Wallet className="w-4 h-4" />
+              {t('trade.noChannels.depositBTC')}
+            </button>
+            {canMoveFromOnchain && (
+              <button
+                className="px-5 py-2.5 bg-surface-overlay hover:bg-surface-elevated text-content-primary border border-border-default rounded-lg
+                       font-medium transition-colors flex items-center gap-2 text-sm"
+                onClick={() => onNavigate(`${TRADE_NOSTR_P2P_PATH}?funds=1`)}
+                type="button"
+              >
+                <ArrowLeftRight className="w-4 h-4" />
+                {t('p2pMarket.funds.title2', 'Move funds')}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     )

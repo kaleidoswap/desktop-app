@@ -4,14 +4,8 @@ import {
   TRADE_MANUAL_PATH,
   TRADE_DCA_PATH,
   TRADE_LIMIT_PATH,
-  TRADE_NOSTR_P2P_PATH,
 } from '../../app/router/paths'
 import { RouteTabs, type RouteTab } from '../Layout/RouteTabs'
-import { useAppSelector } from '../../app/store/hooks'
-import {
-  nodeWalletNetworkKey,
-  useDesktopTestNetworks,
-} from '../../routes/p2p-home/networks'
 
 const tabs: RouteTab[] = [
   {
@@ -28,23 +22,7 @@ const tabs: RouteTab[] = [
   { icon: 'tune', labelKey: 'navigation.limitOrders', to: TRADE_LIMIT_PATH },
 ]
 
-const transfers: RouteTab = {
-  icon: 'swap_horiz',
-  labelKey: 'navigation.p2pTransfers',
-  to: `${TRADE_NOSTR_P2P_PATH}?funds=1`,
-}
-
 export function TradeNav() {
   const { t } = useTranslation()
-  const node = useAppSelector((state) => state.nodeSettings.data)
-  const networks = useDesktopTestNetworks()
-  const canTransfer =
-    node.name &&
-    networks.some(({ key }) => key === nodeWalletNetworkKey(node.network))
-  return (
-    <RouteTabs
-      label={t('navigation.trade')}
-      tabs={canTransfer ? [...tabs, transfers] : tabs}
-    />
-  )
+  return <RouteTabs label={t('navigation.trade')} tabs={tabs} />
 }

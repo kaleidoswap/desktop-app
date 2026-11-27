@@ -1,4 +1,4 @@
-import { buttonVariants, cn, Icon, type IconName } from 'kaleido-ui'
+import { cn, Icon, type IconName } from 'kaleido-ui'
 import { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, useLocation } from 'react-router-dom'
@@ -32,19 +32,17 @@ export function RouteTabs({
   return (
     <nav
       aria-label={label}
-      className="mb-4 flex min-w-0 gap-1 overflow-x-auto border-b border-divider/30 p-1"
+      className="mb-4 flex min-w-0 gap-1 overflow-x-auto border-b border-divider/30"
       ref={nav}
     >
       {tabs.map((tab) => (
         <NavLink
           className={({ isActive }) =>
             cn(
-              buttonVariants({
-                size: 'sm',
-                variant: isActive ? 'ghost' : 'quiet',
-              }),
-              'shrink-0',
-              isActive && 'bg-primary/10 text-brand'
+              'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+              isActive
+                ? 'border-primary text-brand font-semibold'
+                : 'border-transparent text-content-secondary hover:text-content-primary'
             )
           }
           end

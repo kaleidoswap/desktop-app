@@ -128,7 +128,7 @@ it.each([true, false])(
           'aria-current',
           'page'
         )
-        fireEvent.click(nav.getByRole('link', { name: 'Node wallet' }))
+        fireEvent.click(nav.getByRole('link', { name: 'Lightning node' }))
         expect(screen.getByText('Node balances')).toBeVisible()
       } else expect(sources).toBeNull()
     } finally {

@@ -23,6 +23,7 @@ import {
   CHANNELS_PATH,
   CREATE_NEW_CHANNEL_PATH,
   ORDER_CHANNEL_PATH,
+  TRADE_NOSTR_P2P_PATH,
   TRADE_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
   WALLET_HISTORY_ASSETS_PATH,
@@ -401,8 +402,8 @@ function NodeWallet({ network }: { network: string }) {
       {assetDetails && (
         <AssetDetailsModal
           asset={assetDetails}
-          network={network}
           isOpen
+          network={network}
           onClose={() => setAssetDetails(null)}
         />
       )}
@@ -521,6 +522,14 @@ function NodeWallet({ network }: { network: string }) {
             onRefresh={refreshData}
             onSend={openSend}
             refreshing={isRefreshing}
+            transferAction={
+              network && network !== 'Mainnet'
+                ? {
+                    label: t('p2pMarket.funds.title2', 'Move funds'),
+                    onClick: () => navigate(`${TRADE_NOSTR_P2P_PATH}?funds=1`),
+                  }
+                : undefined
+            }
           />
         </div>
 

@@ -3427,16 +3427,16 @@
       "amountLabel": "Montant",
       "title2": "Transférer des fonds",
       "nodeLoading": "Lecture de votre nœud…",
-      "tradingSub": "utilisé pour le marché",
-      "depositTab": "Déposer dans le portefeuille de trading",
+      "tradingSub": "RGB · Nostr P2P",
+      "depositTab": "Transférer vers le portefeuille on-chain",
       "enterAmount": "Saisissez un montant",
       "assetLabel": "Quoi transférer",
-      "tradingTitle": "Portefeuille de trading",
-      "nodeTitle": "Nœud",
-      "withdrawTab": "Retirer vers le nœud",
+      "tradingTitle": "Portefeuille on-chain",
+      "nodeTitle": "Nœud Lightning",
+      "withdrawTab": "Transférer vers le nœud Lightning",
       "max": "Max",
       "share": "Part du solde",
-      "nodeSub": "votre épargne"
+      "nodeSub": "Lightning et canaux"
     },
     "market": {
       "reputation": {

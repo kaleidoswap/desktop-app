@@ -1,7 +1,6 @@
 import {
   Button,
   Card,
-  PageHeader,
   Table,
   TableBody,
   TableCell,
@@ -33,12 +32,15 @@ export function WalletPage({
   const { t } = useTranslation()
   return (
     <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-5">
-      <PageHeader
-        action={action}
-        description={description}
-        title={t('p2pShell.wallet')}
-        variant="page"
-      />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="sr-only">{t('p2pShell.wallet')}</h1>
+        {description ? (
+          <p className="text-sm text-content-secondary">{description}</p>
+        ) : (
+          <span />
+        )}
+        {action}
+      </div>
       {children}
     </div>
   )
@@ -76,6 +78,7 @@ interface WalletOverviewProps {
   onManageCoins: () => void
   onIssue: () => void
   marketAction: { label: string; onClick: () => void }
+  transferAction?: { label: string; onClick: () => void }
 }
 
 /** Present one wallet. The caller supplies its own unit, asset columns and actions. */
@@ -100,6 +103,7 @@ export function WalletOverview({
   onManageCoins,
   onIssue,
   marketAction,
+  transferAction,
 }: WalletOverviewProps) {
   const { t } = useTranslation()
   const balanceId = useId()
@@ -270,6 +274,16 @@ export function WalletOverview({
             <ArrowUpRight aria-hidden size={16} />
             {send}
           </Button>
+          {transferAction && (
+            <Button
+              onClick={transferAction.onClick}
+              type="button"
+              variant="surface"
+            >
+              <ArrowLeftRight aria-hidden size={16} />
+              {transferAction.label}
+            </Button>
+          )}
           <Button onClick={marketAction.onClick} type="button" variant="quiet">
             <ArrowLeftRight aria-hidden size={16} />
             {marketAction.label}

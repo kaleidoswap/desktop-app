@@ -19,6 +19,9 @@ import {
 import { Component as NodeChooser } from '../node'
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
+vi.mock('../../../slices/nodeAccounts', () => ({
+  useSavedNodeAccountsQuery: () => ({ data: [] }),
+}))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (translationKey: string, options: Record<string, string> = {}) =>
@@ -197,7 +200,7 @@ describe('network selection on a Lightning node', () => {
     const sources = within(
       await screen.findByRole('navigation', { name: 'unified.walletSource' })
     )
-    expect(sources.getByText('unified.nodeWallet')).toHaveAttribute(
+    expect(sources.getByText('unified.node')).toHaveAttribute(
       'aria-current',
       'page'
     )
@@ -242,7 +245,7 @@ describe('network selection on a Lightning node', () => {
     saveNetwork('SignetCustom')
     renderNode('Signet', '/wallet-history/withdrawals')
     fireEvent.click(
-      await screen.findByRole('link', { name: 'p2pMarket.funds.tradingTitle' })
+      await screen.findByRole('link', { name: 'unified.onchainWallet' })
     )
     expect(savedNetwork()).toBe('Signet')
     expect(

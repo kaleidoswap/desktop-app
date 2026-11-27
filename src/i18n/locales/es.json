@@ -3427,16 +3427,16 @@
       "amountLabel": "Cantidad",
       "title2": "Mover fondos",
       "nodeLoading": "Leyendo tu nodo…",
-      "tradingSub": "usado para el mercado",
-      "depositTab": "Depositar en el monedero de trading",
+      "tradingSub": "RGB · Nostr P2P",
+      "depositTab": "Mover a monedero on-chain",
       "enterAmount": "Introduce una cantidad",
       "assetLabel": "Qué mover",
-      "tradingTitle": "Monedero de trading",
-      "nodeTitle": "Nodo",
-      "withdrawTab": "Retirar al nodo",
+      "tradingTitle": "Monedero on-chain",
+      "nodeTitle": "Nodo Lightning",
+      "withdrawTab": "Mover al nodo Lightning",
       "max": "Máx",
       "share": "Parte del saldo",
-      "nodeSub": "tus ahorros"
+      "nodeSub": "Lightning y canales"
     },
     "market": {
       "reputation": {

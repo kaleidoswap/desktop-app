@@ -3421,16 +3421,16 @@
       "amountLabel": "Importo",
       "title2": "Sposta fondi",
       "nodeLoading": "Lettura del tuo nodo…",
-      "tradingSub": "usato per il mercato",
-      "depositTab": "Deposita nel wallet di trading",
+      "tradingSub": "RGB · Nostr P2P",
+      "depositTab": "Sposta su On-chain wallet",
       "enterAmount": "Inserisci un importo",
       "assetLabel": "Cosa spostare",
-      "tradingTitle": "Wallet di trading",
-      "nodeTitle": "Nodo",
-      "withdrawTab": "Preleva sul nodo",
+      "tradingTitle": "On-chain wallet",
+      "nodeTitle": "Nodo Lightning",
+      "withdrawTab": "Sposta su Nodo Lightning",
       "max": "Max",
       "share": "Quota del saldo",
-      "nodeSub": "i tuoi risparmi"
+      "nodeSub": "Lightning e canali"
     },
     "market": {
       "reputation": {

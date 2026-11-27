@@ -18,7 +18,7 @@ describe('saved trading wallets', () => {
     const next = saveWallet('signetcustom', { id: 'bob', label: 'Bob' }, store)
     expect(next.map((w) => w.id)).toEqual(['', 'bob'])
     expect(readWalletList('signetcustom', store).map((w) => w.label)).toEqual([
-      'Trading wallet',
+      'Default wallet',
       'Bob',
     ])
   })

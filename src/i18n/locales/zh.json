@@ -3418,16 +3418,16 @@
       "amountLabel": "数量",
       "title2": "转移资金",
       "nodeLoading": "正在读取你的节点…",
-      "tradingSub": "用于市场",
-      "depositTab": "存入交易钱包",
+      "tradingSub": "RGB · Nostr P2P",
+      "depositTab": "转入链上钱包",
       "enterAmount": "请输入数量",
       "assetLabel": "转移什么",
-      "tradingTitle": "交易钱包",
-      "nodeTitle": "节点",
-      "withdrawTab": "提取到节点",
+      "tradingTitle": "链上钱包",
+      "nodeTitle": "闪电节点",
+      "withdrawTab": "转入闪电节点",
       "max": "最大",
       "share": "占余额的比例",
-      "nodeSub": "你的积蓄"
+      "nodeSub": "闪电网络与通道"
     },
     "market": {
       "reputation": {

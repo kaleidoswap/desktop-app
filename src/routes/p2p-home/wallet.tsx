@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next'
 
 import { useNavigate } from 'react-router-dom'
 
-import { P2P_TRADE_PATH } from '../../app/router/paths'
+import { P2P_TRADE_PATH, TRADE_NOSTR_P2P_PATH } from '../../app/router/paths'
 import {
   WalletOverview,
   WalletPage,
 } from '../../components/Wallet/WalletOverview'
-import { useAppDispatch } from '../../app/store/hooks'
+import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import { UTXOManagementModal } from '../../components/UTXOManagementModal'
 import { useSettings } from '../../hooks/useSettings'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
@@ -26,6 +26,7 @@ import { WalletSwitch } from '../trade/nostr-p2p/WalletSwitch'
 
 import { FaucetCard } from './FaucetCard'
 import { IssueDialog } from './IssueDialog'
+import { nodeWalletNetworkKey } from './networks'
 import { bitcoinSummary } from './summary'
 
 /**
@@ -38,6 +39,12 @@ export const Component = () => {
   const navigate = useNavigate()
   const { bitcoinUnit } = useSettings()
   const session = useP2pSession()
+  const nodeAccount = useAppSelector((state) => state.nodeSettings.data)
+  const canTransfer = Boolean(
+    nodeAccount.name &&
+    session.config &&
+    session.config.key === nodeWalletNetworkKey(nodeAccount.network)
+  )
   const balance = usePoll(marketApi.balance, 5_000)
   const info = usePoll(marketApi.info, 60_000)
   const [coins, setCoins] = useState(false)
@@ -155,6 +162,14 @@ export const Component = () => {
         }}
         onSend={(assetId) =>
           dispatch(uiSliceActions.setModal({ assetId, type: 'withdraw' }))
+        }
+        transferAction={
+          canTransfer
+            ? {
+                label: t('p2pMarket.funds.title2', 'Move funds'),
+                onClick: () => navigate(`${TRADE_NOSTR_P2P_PATH}?funds=1`),
+              }
+            : undefined
         }
       />
       {session.config?.faucet_url &&

@@ -66,34 +66,31 @@ export function WalletNodeSources({
   if (!account.name || !sameChain) return null
 
   const paths = destinations[section]
-  const walletLabel = mainnet
-    ? 'p2pShell.wallet'
-    : 'p2pMarket.funds.tradingTitle'
   const links = [
     {
       current: source !== 'node',
-      label: t(section === 'wallet' ? 'unified.onchainWallet' : walletLabel),
+      label: t('unified.onchainWallet'),
       onClick: testWallet ? () => saveNetwork(testWallet.key) : undefined,
       to: mainnet ? paths.mainnet : paths.trading,
     },
     {
       current: source === 'node',
-      label: t(section === 'wallet' ? 'unified.nodeWallet' : 'unified.node'),
+      label: t('unified.node'),
       to: paths.node,
     },
   ]
   return (
     <nav
       aria-label={t(paths.label)}
-      className="mb-4 flex w-fit max-w-full flex-wrap gap-1 rounded-xl bg-surface-card p-1"
+      className="mb-4 inline-flex w-fit max-w-full flex-wrap gap-1 rounded-xl border border-divider/20 bg-surface-card p-1"
     >
       {links.map(({ current, label, to, onClick }) =>
         current ? (
           <span
             aria-current="page"
             className={cn(
-              buttonVariants({ size: 'sm', variant: 'surface' }),
-              'text-brand'
+              buttonVariants({ size: 'sm', variant: 'ghost' }),
+              'bg-primary/15 text-brand'
             )}
             key={to}
           >

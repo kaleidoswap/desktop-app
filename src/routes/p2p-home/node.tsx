@@ -21,6 +21,7 @@ import {
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import { getNetworkDisplayName } from '../../constants'
 import { setAppMode } from '../../slices/settings/settings.slice'
+import { useSavedNodeAccountsQuery } from '../../slices/nodeAccounts'
 import {
   nodeWalletNetworkKey,
   useSelectedTestNetwork,
@@ -67,6 +68,7 @@ export function Component() {
   const dispatch = useAppDispatch()
   const account = useAppSelector((s) => s.nodeSettings.data)
   const reachable = useAppSelector((s) => s.node.reachability === 'reachable')
+  const { data: savedAccounts = [] } = useSavedNodeAccountsQuery()
   const networks = useDesktopTestNetworks()
   const selected = useSelectedTestNetwork(networks)
   const connected =
@@ -78,6 +80,7 @@ export function Component() {
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col items-start gap-5">
       <PageHeader
+        className="sr-only"
         title={t('unified.node', { defaultValue: 'Lightning node' })}
         variant="page"
       />
@@ -94,6 +97,34 @@ export function Component() {
             })}
           </Link>
         </Button>
+      )}
+      {savedAccounts.length > 0 && (
+        <Card className="w-full" role="region">
+          <CardHeader>
+            <h2 className="text-subhead font-bold">
+              {t('unified.manageNodes', { defaultValue: 'Saved nodes' })}
+            </h2>
+          </CardHeader>
+          <CardFooter className="flex-wrap gap-2">
+            {savedAccounts.map(({ name }) => {
+              const isConnected = reachable && name === account.name
+              return (
+                <Button asChild key={name} size="sm" variant="surface">
+                  <Link
+                    onClick={activateNode}
+                    state={{ selectNodeAccount: name, walletContext: 'test' }}
+                    to={isConnected ? CHANNELS_PATH : WALLET_SETUP_PATH}
+                  >
+                    <span
+                      className={`size-2 rounded-full ${isConnected ? 'bg-status-success' : 'border border-content-tertiary'}`}
+                    />
+                    {name}
+                  </Link>
+                </Button>
+              )
+            })}
+          </CardFooter>
+        </Card>
       )}
       <Card aria-labelledby="node-setup-title" className="w-full" role="region">
         <CardHeader>

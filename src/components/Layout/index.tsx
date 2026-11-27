@@ -294,13 +294,17 @@ export const Layout = (props: Props) => {
 
   const title = isMindRoute
     ? t('navigation.kaleidoMind')
-    : isSettingsRoute || market || pathname === WALLET_DASHBOARD_PATH
-      ? undefined
-      : isActivityRoute
-        ? t('unified.activity')
-        : pathname === CREATEUTXOS_PATH
-          ? t('createUtxos.title')
-          : (activeLink?.label ?? t('unified.node'))
+    : isSettingsRoute
+      ? t('navigation.settings')
+      : market
+        ? t('unified.markets')
+        : pathname === WALLET_DASHBOARD_PATH
+          ? t('p2pShell.wallet')
+          : isActivityRoute
+            ? t('unified.activity')
+            : pathname === CREATEUTXOS_PATH
+              ? t('createUtxos.title')
+              : (activeLink?.label ?? t('unified.node'))
 
   const [lock] = nodeApi.endpoints.lock.useMutation()
 

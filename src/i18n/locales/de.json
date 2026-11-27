@@ -3421,16 +3421,16 @@
       "amountLabel": "Betrag",
       "title2": "Guthaben verschieben",
       "nodeLoading": "Dein Node wird gelesen…",
-      "tradingSub": "für den Markt genutzt",
-      "depositTab": "Ins Trading-Wallet einzahlen",
+      "tradingSub": "RGB · Nostr P2P",
+      "depositTab": "Auf On-Chain-Wallet verschieben",
       "enterAmount": "Gib einen Betrag ein",
       "assetLabel": "Was verschoben werden soll",
-      "tradingTitle": "Trading-Wallet",
-      "nodeTitle": "Node",
-      "withdrawTab": "Zum Node auszahlen",
+      "tradingTitle": "On-Chain-Wallet",
+      "nodeTitle": "Lightning-Node",
+      "withdrawTab": "Auf Lightning-Node verschieben",
       "max": "Max",
       "share": "Anteil am Guthaben",
-      "nodeSub": "deine Ersparnisse"
+      "nodeSub": "Lightning & Kanäle"
     },
     "market": {
       "reputation": {
